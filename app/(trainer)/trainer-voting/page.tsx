@@ -41,7 +41,7 @@ export default function TrainerVotingPage() {
       <div className="min-h-screen bg-gray-50">
         <PageHeader 
           title="Новое голосование"
-          backHref="/voting"
+          backHref="/trainer-voting"
         />
         <div className="p-4">
           <CreateVotingForm />
