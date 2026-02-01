@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Пользователи
+model User {
+  id            String   @id @default(uuid())
+  telegramId    String?  @unique
+  firstName     String
+  lastName      String?
+  phone         String?
+  email         String?
+  role          Role     @default(STUDENT)
+  balance       Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  bookings      Booking[]
+  payments      Payment[]
+  votes         Vote[]
+  groupStudents GroupStudent[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  TRAINER
+  ADMIN
+}
+
+// Группы занятий
+model Group {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  maxStudents   Int      @default(15)
+  telegramChat  String?
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  schedules     Schedule[]
+  students      GroupStudent[]
+  votings       Voting[]
+
+  @@map("groups")
+}
+
+// Расписание группы
+model Schedule {
+  id        String   @id @default(uuid())
+  groupId   String
+  dayOfWeek Int      // 0-6 (воскресенье-суббота)
+  time      String   // "07:30"
+  
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  classes   Class[]
+
+  @@map("schedules")
+}
+
+// Связь группа-студент
+model GroupStudent {
+  id        String   @id @default(uuid())
+  groupId   String
+  userId    String
+  joinedAt  DateTime @default(now())
+  
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_students")
+}
+
+// Занятия
+model Class {
+  id              String    @id @default(uuid())
+  scheduleId      String
+  date            DateTime
+  maxStudents     Int       @default(15)
+  price           Int       @default(700)
+  status          ClassStatus @default(SCHEDULED)
+  createdAt       DateTime  @default(now())
+  
+  schedule        Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+
+  @@map("classes")
+}
+
+enum ClassStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// Бронирования
+model Booking {
+  id          String        @id @default(uuid())
+  userId      String
+  classId     String
+  status      BookingStatus @default(CONFIRMED)
+  createdAt   DateTime      @default(now())
+  
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+// Платежи
+model Payment {
+  id          String        @id @default(uuid())
+  userId      String
+  amount      Int
+  classesCount Int
+  status      PaymentStatus @default(PENDING)
+  provider    String        // "tbank", "telegram_stars"
+  externalId  String?
+  createdAt   DateTime      @default(now())
+  
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Голосования
+model Voting {
+  id              String        @id @default(uuid())
+  groupId         String
+  title           String
+  type            VotingType
+  minParticipants Int           @default(10)
+  deadline        DateTime
+  status          VotingStatus  @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  
+  group           Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  options         VotingOption[]
+  votes           Vote[]
+
+  @@map("votings")
+}
+
+enum VotingType {
+  CONDITIONAL  // Условное (пт, если наберется N человек)
+  ONLINE       // Онлайн с плавающей ценой
+}
+
+enum VotingStatus {
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
+// Варианты голосования
+model VotingOption {
+  id        String   @id @default(uuid())
+  votingId  String
+  dayOfWeek Int
+  time      String
+  
+  voting    Voting   @relation(fields: [votingId], references: [id], onDelete: Cascade)
+  votes     Vote[]
+
+  @@map("voting_options")
+}
+
+// Голоса
+model Vote {
+  id        String   @id @default(uuid())
+  votingId  String
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+  
+  voting    Voting   @relation(fields: [votingId], references: [id], onDelete: Cascade)
+  option    VotingOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([votingId, userId]) // Один пользователь - один голос
+  @@map("votes")
+}

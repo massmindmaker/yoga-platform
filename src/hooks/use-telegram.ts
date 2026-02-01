@@ -77,6 +77,7 @@ declare global {
 interface UseTelegramReturn {
   webApp: TelegramWebApp | null;
   user: User | null;
+  initData: string;
   isReady: boolean;
   isInTelegram: boolean;
   theme: 'light' | 'dark';
@@ -167,6 +168,7 @@ export function useTelegram(): UseTelegramReturn {
   return {
     webApp,
     user,
+    initData: webApp?.initData || '',
     isReady,
     isInTelegram: !!webApp,
     theme: webApp?.colorScheme || 'light',

@@ -47,3 +47,5 @@ next-env.d.ts
 Thumbs.db
 
 .vercel
+
+/src/generated/prisma
