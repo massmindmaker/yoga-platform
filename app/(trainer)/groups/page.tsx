@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Clock, Users, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,9 +14,6 @@ const groups = [
     schedule: "Пн, Ср, Пт — 7:00",
     students: 18,
     maxStudents: 20,
-    level: "Начинающие",
-    color: "bg-orange-100",
-    textColor: "text-orange-600",
   },
   {
     id: "2",
@@ -25,9 +21,6 @@ const groups = [
     schedule: "Вт, Чт — 19:00",
     students: 15,
     maxStudents: 18,
-    level: "Средний",
-    color: "bg-purple-100",
-    textColor: "text-purple-600",
   },
   {
     id: "3",
@@ -35,9 +28,6 @@ const groups = [
     schedule: "Сб — 10:00",
     students: 12,
     maxStudents: 15,
-    level: "Продвинутый",
-    color: "bg-green-100",
-    textColor: "text-green-600",
   },
 ];
 
@@ -78,9 +68,6 @@ export default function GroupsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-gray-900">{group.name}</h3>
-                        <Badge variant="secondary" className={`${group.color} ${group.textColor} border-0`}>
-                          {group.level}
-                        </Badge>
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
@@ -125,9 +112,11 @@ export default function GroupsPage() {
         transition={{ delay: 0.4 }}
         className="pt-4"
       >
-        <button className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-purple-400 hover:text-purple-600 transition-colors">
-          + Создать новую группу
-        </button>
+        <Link href="/groups/create">
+          <button className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-purple-400 hover:text-purple-600 transition-colors">
+            + Создать новую группу
+          </button>
+        </Link>
       </motion.div>
     </div>
   );

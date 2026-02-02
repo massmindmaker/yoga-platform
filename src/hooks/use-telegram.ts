@@ -98,9 +98,14 @@ export function useTelegram(): UseTelegramReturn {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      setWebApp(tg);
+    if (typeof window === 'undefined') return;
+    if (!window.Telegram?.WebApp) {
+      setIsReady(true);
+      return;
+    }
+    
+    const tg = window.Telegram.WebApp;
+    setWebApp(tg);
 
       // Initialize WebApp
       tg.ready();
@@ -123,7 +128,6 @@ export function useTelegram(): UseTelegramReturn {
       }
 
       setIsReady(true);
-    }
   }, []);
 
   const showMainButton = useCallback((text: string, onClick: () => void) => {
