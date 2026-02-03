@@ -75,7 +75,7 @@ export default function VotingPage() {
 
   // Transform API data to VotingCard format
   const activeVotings = votings
-    .filter((v) => v.status === "active")
+    .filter((v) => v.status === "ACTIVE")
     .map((v) => ({
       id: v.id,
       title: v.title,
