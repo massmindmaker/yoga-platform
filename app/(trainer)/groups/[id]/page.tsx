@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,7 +62,7 @@ export default function GroupDetailPage() {
     } else {
       setIsDeleting(false);
       setShowDeleteDialog(false);
-      alert(result.error || "Ошибка удаления группы");
+      toast.error(result.error || "Ошибка удаления группы");
     }
   };
 

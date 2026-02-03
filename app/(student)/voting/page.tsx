@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { VotingCard } from "@/components/voting/voting-card";
 import { motion } from "framer-motion";
@@ -40,7 +41,7 @@ export default function VotingPage() {
   const handleVote = async (votingId: string, optionId: string) => {
     const result = await vote(votingId, optionId);
     if (!result.success) {
-      alert(result.error || "Ошибка голосования");
+      toast.error(result.error || "Ошибка голосования");
     }
   };
 

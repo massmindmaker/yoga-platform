@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useParams } from "next/navigation";
@@ -99,7 +100,7 @@ export default function EditGroupPage() {
       router.push(`/groups/${groupId}`);
     } else {
       setIsSaving(false);
-      alert(result.error || "Ошибка сохранения");
+      toast.error(result.error || "Ошибка сохранения");
     }
   };
 
