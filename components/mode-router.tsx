@@ -42,7 +42,7 @@ function StudentDashboard() {
   const { bookings } = useBooking("1");
 
   const upcomingClasses = bookings
-    .filter((b) => b.status === "confirmed")
+    .filter((b) => b.status === "CONFIRMED")
     .slice(0, 2);
 
   const featuredIntensive = mockIntensives[0];

@@ -9,10 +9,10 @@ import Link from "next/link";
 
 // Mock платежи
 const payments = [
-  { id: "1", date: "30.01.2026", amount: 4500, description: "4 занятия", type: "purchase", status: "completed" },
-  { id: "2", date: "15.01.2026", amount: 8500, description: "8 занятий", type: "purchase", status: "completed" },
-  { id: "3", date: "20.12.2025", amount: 12000, description: "12 занятий", type: "purchase", status: "completed" },
-  { id: "4", date: "05.12.2025", amount: 1500, description: "Разовое занятие", type: "purchase", status: "completed" },
+  { id: "1", date: "30.01.2026", amount: 4500, description: "4 занятия", type: "purchase",     status: "COMPLETED" },
+  { id: "2", date: "15.01.2026", amount: 8500, description: "8 занятий", type: "purchase",     status: "COMPLETED" },
+  { id: "3", date: "20.12.2025", amount: 12000, description: "12 занятий", type: "purchase",     status: "COMPLETED" },
+  { id: "4", date: "05.12.2025", amount: 1500, description: "Разовое занятие", type: "purchase",     status: "COMPLETED" },
 ];
 
 const stats = {

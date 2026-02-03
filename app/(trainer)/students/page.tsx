@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Search, Wallet, Calendar } from "lucide-react";
 
 const students = [
-  { id: 1, name: "Анна Морозова", balance: 12, lastVisit: "Сегодня", status: "active", phone: "+7 999 123-45-67" },
-  { id: 2, name: "Мария Козлова", balance: 5, lastVisit: "Вчера", status: "active", phone: "+7 999 234-56-78" },
+  { id: 1, name: "Анна Морозова", balance: 12, lastVisit: "Сегодня",       status: "ACTIVE", phone: "+7 999 123-45-67" },
+  { id: 2, name: "Мария Козлова", balance: 5, lastVisit: "Вчера",       status: "ACTIVE", phone: "+7 999 234-56-78" },
   { id: 3, name: "Елена Соколова", balance: 0, lastVisit: "3 дня назад", status: "attention", phone: "+7 999 345-67-89" },
-  { id: 4, name: "Ольга Петрова", balance: 8, lastVisit: "Сегодня", status: "active", phone: "+7 999 456-78-90" },
+  { id: 4, name: "Ольга Петрова", balance: 8, lastVisit: "Сегодня",       status: "ACTIVE", phone: "+7 999 456-78-90" },
   { id: 5, name: "Наталья Иванова", balance: 3, lastVisit: "Неделю назад", status: "attention", phone: "+7 999 567-89-01" },
-  { id: 6, name: "Татьяна Смирнова", balance: 15, lastVisit: "Сегодня", status: "active", phone: "+7 999 678-90-12" },
-  { id: 7, name: "Ирина Волкова", balance: 7, lastVisit: "2 дня назад", status: "active", phone: "+7 999 789-01-23" },
+  { id: 6, name: "Татьяна Смирнова", balance: 15, lastVisit: "Сегодня",       status: "ACTIVE", phone: "+7 999 678-90-12" },
+  { id: 7, name: "Ирина Волкова", balance: 7, lastVisit: "2 дня назад",       status: "ACTIVE", phone: "+7 999 789-01-23" },
   { id: 8, name: "Светлана Лебедева", balance: 1, lastVisit: "5 дней назад", status: "danger", phone: "+7 999 890-12-34" },
 ];
 
@@ -60,7 +60,7 @@ export default function StudentsPage() {
                       <p className="font-medium text-gray-900 truncate">{student.name}</p>
                       <div
                         className={`w-2 h-2 rounded-full ${
-                          student.status === "active"
+                          student.status === "ACTIVE"
                             ? "bg-green-500"
                             : student.status === "attention"
                             ? "bg-yellow-500"

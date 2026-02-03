@@ -17,7 +17,7 @@ interface Voting {
   description: string | null;
   deadline: string;
   minVotes: number;
-  status: "active" | "completed" | "cancelled";
+  status: "ACTIVE" | "CLOSED" | "CANCELLED";
   options: VotingOption[];
   _count: {
     votes: number;

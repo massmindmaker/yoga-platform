@@ -247,7 +247,7 @@ async function handleSchedule(chatId: number, isGroup: boolean) {
 // Обработка команды /vote
 async function handleVote(chatId: number, user: any) {
   const activeVotings = await prisma.voting.findMany({
-    where: { status: "active" },
+    where: { status: "ACTIVE" },
     include: { options: { include: { _count: { select: { votes: true } } } } },
   });
 

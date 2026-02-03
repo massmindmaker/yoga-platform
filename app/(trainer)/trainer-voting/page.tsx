@@ -17,7 +17,7 @@ const activeVotings = [
     deadline: "2026-02-06T18:00:00",
     minParticipants: 10,
     currentVotes: 8,
-    status: "active" as const,
+    status: "ACTIVE" as const,
   },
 ];
 
@@ -28,7 +28,7 @@ const pastVotings = [
     deadline: "2026-01-30T22:00:00",
     minParticipants: 5,
     currentVotes: 12,
-    status: "completed" as const,
+    status: "CLOSED" as const,
     result: "success" as const,
   },
 ];
