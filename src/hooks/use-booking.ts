@@ -47,7 +47,7 @@ export function useBooking(studentId?: string): UseBookingReturn {
         try {
           // Check if already booked
           const existingBooking = mockBookings.find(
-            b => b.classId === classId && b.studentId === studentId && b.status === 'confirmed'
+            b => b.classId === classId && b.studentId === studentId && b.status === 'CONFIRMED'
           );
 
           if (existingBooking) {
@@ -61,7 +61,7 @@ export function useBooking(studentId?: string): UseBookingReturn {
             student: mockBookings[0].student,
             classId,
             yogaClass: mockBookings[0].yogaClass,
-            status: 'confirmed',
+            status: 'CONFIRMED',
             bookedAt: new Date(),
           };
 
@@ -101,13 +101,13 @@ export function useBooking(studentId?: string): UseBookingReturn {
           }
 
           // Update booking status
-          mockBookings[bookingIndex].status = 'cancelled';
+          mockBookings[bookingIndex].status = 'CANCELLED';
           mockBookings[bookingIndex].cancelledAt = new Date();
 
           setBookings(prev => 
             prev.map(b => 
               b.id === bookingId 
-                ? { ...b, status: 'cancelled' as BookingStatus, cancelledAt: new Date() }
+                ? { ...b, status: 'CANCELLED' as BookingStatus, cancelledAt: new Date() }
                 : b
             )
           );
