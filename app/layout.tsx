@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TelegramProvider } from "@/components/providers/telegram-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ModeProvider } from "@/src/hooks/use-mode";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -33,9 +34,11 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${inter.className} antialiased`}>
         <TelegramProvider>
-          <div className="min-h-screen bg-background">
-            {children}
-          </div>
+          <ModeProvider>
+            <div className="min-h-screen bg-background">
+              {children}
+            </div>
+          </ModeProvider>
           <Toaster 
             position="top-center"
             toastOptions={{
