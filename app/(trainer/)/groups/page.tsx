@@ -8,55 +8,49 @@ import { Clock, Users, ChevronRight, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGroups } from "@/src/hooks/use-groups";
 
-const DAYS_OF_WEEK = [
-  "Воскресенье",
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-];
+const weekDays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+const avatars = ["АМ", "МК", "ЕС", "ОП", "+14"];
 
 function formatSchedule(schedules: { dayOfWeek: number; time: string }[]) {
   if (!schedules || schedules.length === 0) return "Нет расписания";
   
-  // Group by time
-  const byTime = schedules.reduce((acc, s) => {
-    if (!acc[s.time]) acc[s.time] = [];
-    acc[s.time].push(s.dayOfWeek);
-    return acc;
-  }, {} as Record<string, number[]>);
-
-  return Object.entries(byTime)
-    .map(([time, days]) => {
-      const dayNames = days.map(d => DAYS_OF_WEEK[d].slice(0, 2)).join(", ");
-      return `${dayNames} — ${time}`;
-    })
-    .join("; ");
+  const days = schedules.map(s => weekDays[s.dayOfWeek]).join(", ");
+  const time = schedules[0]?.time || "";
+  return `${days} — ${time}`;
 }
 
 export default function GroupsPage() {
-  const { groups, isLoading, error } = useGroups();
+  const { groups, isLoading, error, refetch } = useGroups();
 
   if (isLoading) {
     return (
-      <div className="p-4 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Мои группы</h1>
+            <span className="text-sm text-gray-500">Загрузка...</span>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-red-500">{error}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          className="mt-4 bg-purple-600 hover:bg-purple-700"
-        >
-          Повторить
-        </Button>
+      <div className="p-4">
+        <div className="text-center py-12">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={refetch} variant="outline">
+            <Loader2 className="w-4 h-4 mr-2" />
+            Повторить
+          </Button>
+        </div>
       </div>
     );
   }
@@ -110,20 +104,16 @@ export default function GroupsPage() {
 
                       <div className="flex items-center">
                         <div className="flex -space-x-2">
-                          {group._count.students > 0 ? (
-                            <>
-                              <Avatar className="w-7 h-7 border-2 border-white">
-                                <AvatarFallback className="text-xs bg-purple-100 text-purple-600">
-                                  {group._count.students}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="ml-3 text-xs text-gray-500">
-                                {group._count.students} учеников
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-xs text-gray-400">Нет учеников</span>
-                          )}
+                          {avatars.slice(0, 4).map((avatar, i) => (
+                            <Avatar key={i} className="w-7 h-7 border-2 border-white">
+                              <AvatarFallback className="text-xs bg-gray-100 text-gray-600">
+                                {avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                          <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
+                            <span className="text-xs text-gray-600">{avatars[4]}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -136,22 +126,6 @@ export default function GroupsPage() {
           </motion.div>
         ))}
       </div>
-
-      {groups.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-12"
-        >
-          <p className="text-gray-500 mb-4">У вас пока нет групп</p>
-          <Link href="/groups/create">
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Создать первую группу
-            </Button>
-          </Link>
-        </motion.div>
-      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
