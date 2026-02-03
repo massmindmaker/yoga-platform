@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { createGroupSchema } from "@/lib/validation";
 
 // GET /api/groups - получить все группы
 export async function GET() {
@@ -28,7 +29,21 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, description, maxStudents, telegramChat, schedules } = body;
+
+    // Validate request body
+    const validationResult = createGroupSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { name, description, maxStudents, telegramChat, schedules } = validationResult.data;
 
     const group = await prisma.group.create({
       data: {
@@ -37,7 +52,7 @@ export async function POST(req: NextRequest) {
         maxStudents: maxStudents || 20,
         telegramChat,
         schedules: {
-          create: schedules?.map((s: any) => ({
+          create: schedules?.map((s) => ({
             dayOfWeek: s.dayOfWeek,
             time: s.time,
           })) || []

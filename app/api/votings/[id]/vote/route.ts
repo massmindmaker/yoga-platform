@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { voteSchema, idParamSchema } from '@/lib/validation';
 
 // POST /api/votings/[id]/vote - проголосовать
 export async function POST(
@@ -8,7 +9,36 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { optionId, userId } = await req.json();
+
+    // Validate ID param
+    const idValidation = idParamSchema.safeParse({ id });
+    if (!idValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid ID format",
+          details: idValidation.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+
+    // Validate request body
+    const validationResult = voteSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { optionId, userId } = validationResult.data;
 
     // Проверяем существует ли голосование
     const voting = await prisma.voting.findUnique({

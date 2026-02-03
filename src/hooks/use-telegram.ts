@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { User } from '../types';
+import type { User, TelegramWebAppUser } from '../types';
 
 interface TelegramWebApp {
   ready: () => void;
@@ -118,10 +118,13 @@ export function useTelegram(): UseTelegramReturn {
           id: tgUser.id.toString(),
           telegramId: tgUser.id.toString(),
           firstName: tgUser.first_name,
-          lastName: tgUser.last_name,
+          lastName: tgUser.last_name ?? null,
           username: tgUser.username,
           photoUrl: tgUser.photo_url,
-          role: 'student', // Default role
+          role: 'STUDENT', // Default role
+          balance: 0,
+          phone: null,
+          email: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });

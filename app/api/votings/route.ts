@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { createVotingSchema } from '@/lib/validation';
 
 // GET /api/votings - получить все активные голосования
 export async function GET() {
@@ -34,7 +35,21 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { groupId, title, type, minParticipants, deadline, options } = body;
+
+    // Validate request body
+    const validationResult = createVotingSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { groupId, title, type, minParticipants, deadline, options } = validationResult.data;
 
     const voting = await prisma.voting.create({
       data: {
@@ -44,7 +59,7 @@ export async function POST(req: NextRequest) {
         minParticipants,
         deadline: new Date(deadline),
         options: {
-          create: options.map((opt: any) => ({
+          create: options.map((opt) => ({
             dayOfWeek: opt.dayOfWeek,
             time: opt.time,
           }))

@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { createUserSchema } from '@/lib/validation';
 
 // POST /api/users - создать пользователя
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { telegramId, firstName, lastName, role } = body;
+
+    // Validate request body
+    const validationResult = createUserSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { telegramId, firstName, lastName, role } = validationResult.data;
 
     // Проверяем существует ли пользователь
     const existingUser = await prisma.user.findFirst({

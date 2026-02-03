@@ -2,15 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useTelegram } from "./use-telegram";
-
-interface User {
-  id: string;
-  telegramId: string;
-  firstName: string;
-  lastName?: string;
-  role: string;
-  balance: number;
-}
+import type { User, ApiResponse } from "../types";
 
 interface UserContextType {
   user: User | null;
@@ -45,6 +37,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
           lastName: "Пользователь",
           role: "STUDENT",
           balance: 5,
+          phone: null,
+          email: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
         setIsLoading(false);
         return;
@@ -75,6 +71,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         lastName: "Пользователь",
         role: "STUDENT",
         balance: 5,
+        phone: null,
+        email: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     } finally {
       setIsLoading(false);

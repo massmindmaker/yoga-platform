@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { updateGroupSchema, idParamSchema } from "@/lib/validation";
+import type { ScheduleInput } from "@/src/types";
 
 // GET /api/groups/[id] - получить группу
 export async function GET(
@@ -8,7 +10,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
+    // Validate ID param
+    const idValidation = idParamSchema.safeParse({ id });
+    if (!idValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid ID format",
+          details: idValidation.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
     const group = await prisma.group.findUnique({
       where: { id },
       include: {
@@ -55,11 +70,39 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+
+    // Validate ID param
+    const idValidation = idParamSchema.safeParse({ id });
+    if (!idValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid ID format",
+          details: idValidation.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
-    const { name, description, maxStudents, telegramChat, schedules } = body;
+
+    // Validate request body
+    const validationResult = updateGroupSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { name, description, maxStudents, telegramChat, schedules } = validationResult.data;
 
     // Обновляем основную информацию
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (maxStudents !== undefined) updateData.maxStudents = maxStudents;
@@ -70,9 +113,9 @@ export async function PATCH(
       await prisma.schedule.deleteMany({
         where: { groupId: id }
       });
-      
+
       updateData.schedules = {
-        create: schedules.map((s: any) => ({
+        create: schedules.map((s) => ({
           dayOfWeek: s.dayOfWeek,
           time: s.time,
         }))
@@ -104,7 +147,20 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
+
+    // Validate ID param
+    const idValidation = idParamSchema.safeParse({ id });
+    if (!idValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid ID format",
+          details: idValidation.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
     await prisma.group.delete({
       where: { id }
     });

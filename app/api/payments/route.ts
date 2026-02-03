@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createPayment, handlePaymentWebhook } from "@/lib/tbank";
+import { createPaymentSchema, getPaymentsQuerySchema } from "@/lib/validation";
 
 // POST /api/payments - создать платеж
 export async function POST(req: NextRequest) {
   try {
-    const { userId, amount, classesCount, telegramId } = await req.json();
+    const body = await req.json();
+
+    // Validate request body
+    const validationResult = createPaymentSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { userId, amount, classesCount, telegramId } = validationResult.data;
 
     // Создаем запись о платеже в базе
     const payment = await prisma.payment.create({
@@ -66,15 +82,21 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
-    if (!userId) {
+    // Validate query params
+    const validationResult = getPaymentsQuerySchema.safeParse({ userId });
+    if (!validationResult.success) {
       return NextResponse.json(
-        { success: false, error: "userId required" },
+        {
+          success: false,
+          error: "Validation failed",
+          details: validationResult.error.issues,
+        },
         { status: 400 }
       );
     }
 
     const payments = await prisma.payment.findMany({
-      where: { userId },
+      where: { userId: validationResult.data.userId },
       orderBy: { createdAt: "desc" },
     });
 

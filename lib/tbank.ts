@@ -1,4 +1,5 @@
 // T-Bank (Tinkoff) Payment Integration
+import crypto from "crypto";
 
 const TERMINAL_KEY = process.env.TBANK_TERMINAL_KEY;
 const PASSWORD = process.env.TBANK_PASSWORD;
@@ -123,8 +124,52 @@ function generateToken(params: Record<string, string>): string {
   const values = sortedKeys.map((key) => params[key]).join("");
 
   // SHA-256 hash
-  const crypto = require("crypto");
   return crypto.createHash("sha256").update(values).digest("hex");
+}
+
+// Проверка подписи webhook от T-Bank
+export function verifyTBankSignature(payload: Record<string, unknown>): boolean {
+  try {
+    if (!PASSWORD) {
+      console.error("T-Bank password not configured");
+      return false;
+    }
+
+    // Копируем payload для проверки
+    const data = { ...payload };
+    
+    // Получаем переданную подпись
+    const receivedToken = data.Token as string;
+    if (!receivedToken) {
+      console.error("No Token in webhook payload");
+      return false;
+    }
+    
+    // Удаляем Token из данных для проверки
+    delete data.Token;
+    
+    // Добавляем пароль
+    const paramsWithPassword = {
+      ...data,
+      Password: PASSWORD,
+    };
+    
+    // Сортируем и конкатенируем значения
+    const sortedKeys = Object.keys(paramsWithPassword).sort();
+    const values = sortedKeys.map((key) => String(paramsWithPassword[key as keyof typeof paramsWithPassword])).join("");
+    
+    // Вычисляем ожидаемую подпись
+    const expectedToken = crypto.createHash("sha256").update(values).digest("hex");
+    
+    // Сравниваем подписи (constant-time comparison)
+    return crypto.timingSafeEqual(
+      Buffer.from(receivedToken, "hex"),
+      Buffer.from(expectedToken, "hex")
+    );
+  } catch (error) {
+    console.error("Error verifying T-Bank signature:", error);
+    return false;
+  }
 }
 
 // Обработка webhook от T-Bank

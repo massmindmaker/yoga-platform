@@ -13,6 +13,7 @@ model User {
   telegramId    String?  @unique
   firstName     String
   lastName      String?
+  username      String?
   phone         String?
   email         String?
   role          Role     @default(STUDENT)
@@ -25,7 +26,16 @@ model User {
   payments      Payment[]
   votes         Vote[]
   groupStudents GroupStudent[]
+  
+  // Trainer relations
+  classes       Class[]   @relation("ClassTrainer")
+  groups        Group[]   @relation("GroupTrainer")
+  
+  // Balance audit
+  balanceTransactions BalanceTransaction[]
 
+  @@index([role])
+  @@index([telegramId])
   @@map("users")
 }
 
@@ -42,13 +52,16 @@ model Group {
   description   String?
   maxStudents   Int      @default(15)
   telegramChat  String?
+  trainerId     String
   createdAt     DateTime @default(now())
   
   // Relations
+  trainer       User     @relation("GroupTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
   schedules     Schedule[]
   students      GroupStudent[]
   votings       Voting[]
 
+  @@index([trainerId])
   @@map("groups")
 }
 
@@ -62,6 +75,7 @@ model Schedule {
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   classes   Class[]
 
+  @@index([groupId])
   @@map("schedules")
 }
 
@@ -76,6 +90,8 @@ model GroupStudent {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId])
   @@map("group_students")
 }
 
@@ -83,6 +99,7 @@ model GroupStudent {
 model Class {
   id              String    @id @default(uuid())
   scheduleId      String
+  trainerId       String
   date            DateTime
   maxStudents     Int       @default(15)
   price           Int       @default(700)
@@ -90,8 +107,13 @@ model Class {
   createdAt       DateTime  @default(now())
   
   schedule        Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  trainer         User      @relation("ClassTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
   bookings        Booking[]
 
+  @@index([scheduleId])
+  @@index([trainerId])
+  @@index([date])
+  @@index([status])
   @@map("classes")
 }
 
@@ -113,6 +135,9 @@ model Booking {
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([classId])
+  @@index([status])
   @@map("bookings")
 }
 
@@ -134,8 +159,11 @@ model Payment {
   externalId  String?
   createdAt   DateTime      @default(now())
   
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Restrict)
 
+  @@index([userId])
+  @@index([status])
+  @@index([externalId])
   @@map("payments")
 }
 
@@ -144,6 +172,38 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+// Транзакции баланса (аудит)
+model BalanceTransaction {
+  id          String    @id @default(uuid())
+  userId      String
+  amount      Int       // Положительное = начисление, отрицательное = списание
+  type        TransactionType
+  description String?
+  
+  // Связанные сущности (опционально)
+  bookingId   String?
+  paymentId   String?
+  
+  createdAt   DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([bookingId])
+  @@index([paymentId])
+  @@map("balance_transactions")
+}
+
+enum TransactionType {
+  BOOKING_DEDUCTION     // Списание за запись
+  BOOKING_REFUND        // Возврат за отмену
+  PAYMENT_CREDIT        // Начисление за оплату
+  MANUAL_ADJUSTMENT     // Ручная корректировка
+  INTENSIVE_DEDUCTION   // Списание за интенсив
 }
 
 // Голосования
@@ -161,6 +221,8 @@ model Voting {
   options         VotingOption[]
   votes           Vote[]
 
+  @@index([groupId])
+  @@index([status])
   @@map("votings")
 }
 
@@ -185,6 +247,7 @@ model VotingOption {
   voting    Voting   @relation(fields: [votingId], references: [id], onDelete: Cascade)
   votes     Vote[]
 
+  @@index([votingId])
   @@map("voting_options")
 }
 
@@ -201,5 +264,7 @@ model Vote {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([votingId, userId]) // Один пользователь - один голос
+  @@index([userId])
+  @@index([optionId])
   @@map("votes")
 }

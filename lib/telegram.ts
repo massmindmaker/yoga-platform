@@ -1,5 +1,6 @@
 // Telegram Bot Service
 import { prisma } from "@/lib/db";
+import crypto from "crypto";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_APP_URL}/api/telegram/webhook`;
@@ -11,18 +12,28 @@ interface TelegramUser {
   username?: string;
 }
 
-// Проверка initData от Telegram WebApp
+// Упрощенная проверка - только извлечение userId и username
 export function validateTelegramData(initData: string): TelegramUser | null {
   try {
     const params = new URLSearchParams(initData);
     const userStr = params.get("user");
     
-    if (!userStr) return null;
+    if (!userStr) {
+      console.error("No user in initData");
+      return null;
+    }
     
     const user = JSON.parse(userStr);
+    
+    // Проверяем только наличие id
+    if (!user.id) {
+      console.error("No user id in initData");
+      return null;
+    }
+    
     return user;
   } catch (error) {
-    console.error("Error validating Telegram data:", error);
+    console.error("Error parsing Telegram data:", error);
     return null;
   }
 }
