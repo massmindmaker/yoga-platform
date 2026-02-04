@@ -91,7 +91,7 @@ export default function EditGroupPage() {
     const result = await updateGroup({
       name: formData.name,
       description: formData.description,
-      maxStudents: parseInt(formData.minStudents),
+      minStudents: parseInt(formData.minStudents),
       telegramChat: formData.telegramChat,
       schedules,
     });
