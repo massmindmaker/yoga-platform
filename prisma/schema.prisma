@@ -52,11 +52,11 @@ model Group {
   description   String?
   maxStudents   Int      @default(15)
   telegramChat  String?
-  trainerId     String
+  trainerId     String?
   createdAt     DateTime @default(now())
   
   // Relations
-  trainer       User     @relation("GroupTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
+  trainer       User?    @relation("GroupTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
   schedules     Schedule[]
   students      GroupStudent[]
   votings       Voting[]

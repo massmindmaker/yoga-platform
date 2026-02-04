@@ -124,7 +124,7 @@ export async function PATCH(
 
     const group = await prisma.group.update({
       where: { id },
-      data: updateData,
+      data: updateData as any,
       include: {
         schedules: true
       }
