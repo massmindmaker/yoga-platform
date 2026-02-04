@@ -9,6 +9,8 @@ import { useState } from "react";
 import { YogaClass } from "@/src/types";
 import { BookingModal } from "@/components/booking/booking-modal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CalendarX } from "lucide-react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -87,32 +89,11 @@ export default function SchedulePage() {
             </motion.div>
           ))
         ) : (
-          <motion.div
-            variants={itemVariants}
-            className="text-center py-12"
-          >
-            <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <svg
-                className="w-10 h-10 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <p className="text-gray-500 text-lg font-medium">
-              Нет занятий на этот день
-            </p>
-            <p className="text-gray-400 text-sm mt-1">
-              Выберите другую дату
-            </p>
-          </motion.div>
+          <EmptyState
+            icon={CalendarX}
+            title="Нет занятий на этот день"
+            description="Выберите другую дату или проверьте расписание позже"
+          />
         )}
       </motion.div>
 

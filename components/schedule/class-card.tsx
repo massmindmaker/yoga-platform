@@ -189,6 +189,7 @@ export function ClassCard({
                     <Button
                       variant="outline"
                       onClick={onCancel}
+                      aria-label={`Отменить запись на занятие ${yogaClass.title}`}
                       className={`${styles.button} font-semibold`}
                     >
                       Отменить
@@ -198,6 +199,7 @@ export function ClassCard({
                   <div className="flex flex-col items-end gap-1">
                     <Button
                       disabled
+                      aria-label={`Мест нет на занятие ${yogaClass.title}`}
                       className={styles.button}
                     >
                       Мест нет
@@ -208,6 +210,7 @@ export function ClassCard({
                           variant="ghost"
                           size="sm"
                           onClick={onJoinWaitlist}
+                          aria-label={`Встать в очередь на занятие ${yogaClass.title}`}
                           className="text-[#F97316] hover:text-[#EA580C] text-xs h-auto py-1 font-medium"
                         >
                           В очередь →
@@ -223,6 +226,7 @@ export function ClassCard({
                   >
                     <Button
                       onClick={onBook}
+                      aria-label={`Записаться на занятие ${yogaClass.title}`}
                       className={`${styles.button} font-semibold px-6`}
                     >
                       Записаться
