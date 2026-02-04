@@ -97,12 +97,11 @@ async function handleStart(chatId: number, user: any, isGroup: boolean) {
   // Получаем или создаем пользователя
   const dbUser = await prisma.user.upsert({
     where: { telegramId: user.id.toString() },
-    update: { username: user.username },
+    update: { firstName: user.first_name },
     create: {
       telegramId: user.id.toString(),
       firstName: user.first_name,
       lastName: user.last_name || null,
-      username: user.username,
       role: "STUDENT",
       balance: 0,
     },
@@ -261,14 +260,15 @@ async function handleVote(chatId: number, user: any) {
       (sum, opt) => sum + opt._count.votes,
       0
     );
-    const progress = Math.round((totalVotes / voting.minVotes) * 100);
+    const minVotes = voting.minParticipants;
+    const progress = Math.round((totalVotes / minVotes) * 100);
 
     await sendTelegramMessage(
       chatId,
       `🗳️ *${voting.title}*\n\n` +
-        `📊 Проголосовало: *${totalVotes}/${voting.minVotes}* (${progress}%)\n` +
+        `📊 Проголосовало: *${totalVotes}/${minVotes}* (${progress}%)\n` +
         `⏰ До: ${voting.deadline.toLocaleDateString("ru-RU")}\n\n` +
-        `${progress >= 100 ? "✅ Занятие состоится!" : `⚠️ Нужно еще ${Math.max(0, voting.minVotes - totalVotes)} голосов`}`,
+        `${progress >= 100 ? "✅ Занятие состоится!" : `⚠️ Нужно еще ${Math.max(0, minVotes - totalVotes)} голосов`}`,
       {
         inline_keyboard: [
           [
@@ -332,7 +332,6 @@ async function handleGroupSchedule(chatId: number) {
   // Находим группу по chatId (если привязана)
   const group = await prisma.group.findFirst({
     where: { telegramChat: chatId.toString() },
-    include: { schedules: true, trainer: true },
   });
 
   if (!group) {
@@ -343,14 +342,11 @@ async function handleGroupSchedule(chatId: number) {
     return;
   }
 
-  const days = group.schedules.map((s) => `${getDayName(s.dayOfWeek)} ${s.time}`).join("\n");
-
   await sendTelegramMessage(
     chatId,
     `📅 *${group.name}*\n\n` +
-      `👨‍🏫 Тренер: ${group.trainer?.firstName || "Не назначен"}\n` +
       `👥 Мест: ${group.maxStudents}\n\n` +
-      `*Расписание:*\n${days}`
+      `Подробное расписание доступно в приложении.`
   );
 }
 
