@@ -144,9 +144,9 @@ export default function GroupDetailPage() {
                   <Users className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Учеников</p>
+                  <p className="text-sm text-gray-500">Мин. для старта</p>
                   <p className="font-semibold">
-                    {group._count.students} / {group.maxStudents}
+                    {group.maxStudents} учеников
                   </p>
                 </div>
               </div>

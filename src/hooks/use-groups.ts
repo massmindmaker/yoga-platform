@@ -108,7 +108,7 @@ export function useGroup(id: string) {
   const updateGroup = async (groupData: {
     name?: string;
     description?: string;
-    maxStudents?: number;
+    minStudents?: number;
     telegramChat?: string;
     schedules?: { dayOfWeek: number; time: string }[];
   }) => {

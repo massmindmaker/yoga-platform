@@ -104,7 +104,7 @@ export default function GroupsPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Users size={14} />
-                          <span>{group._count.students}/{group.maxStudents}</span>
+                          <span>мин. {group.maxStudents}</span>
                         </div>
                       </div>
 

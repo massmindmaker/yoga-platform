@@ -47,7 +47,7 @@ export default function EditGroupPage() {
     name: "",
     description: "",
     level: "beginner",
-    maxStudents: "15",
+    minStudents: "5",
     selectedDays: [] as number[],
     time: "10:00",
     telegramChat: "",
@@ -63,7 +63,7 @@ export default function EditGroupPage() {
         name: group.name,
         description: group.description || "",
         level: "beginner", // Not stored in DB, default
-        maxStudents: group.maxStudents.toString(),
+        minStudents: group.maxStudents.toString(),
         selectedDays: days,
         time: time,
         telegramChat: group.telegramChat || "",
@@ -91,7 +91,7 @@ export default function EditGroupPage() {
     const result = await updateGroup({
       name: formData.name,
       description: formData.description,
-      maxStudents: parseInt(formData.maxStudents),
+      maxStudents: parseInt(formData.minStudents),
       telegramChat: formData.telegramChat,
       schedules,
     });
@@ -200,12 +200,12 @@ export default function EditGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Максимум учеников *</label>
+                  <label className="block text-sm font-medium mb-1">Минимум учеников *</label>
                   <Input
                     type="number"
-                    placeholder="15"
-                    value={formData.maxStudents}
-                    onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
+                    placeholder="5"
+                    value={formData.minStudents}
+                    onChange={(e) => setFormData({ ...formData, minStudents: e.target.value })}
                   />
                 </div>
               </CardContent>
@@ -350,8 +350,8 @@ export default function EditGroupPage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Макс. учеников:</span>
-                    <span className="font-medium">{formData.maxStudents}</span>
+                    <span className="text-gray-500">Мин. учеников:</span>
+                    <span className="font-medium">{formData.minStudents}</span>
                   </div>
                 </div>
               </CardContent>

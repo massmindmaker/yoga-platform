@@ -99,13 +99,13 @@ export async function PATCH(
       );
     }
 
-    const { name, description, maxStudents, telegramChat, schedules } = validationResult.data;
+    const { name, description, minStudents, telegramChat, schedules } = validationResult.data;
 
     // Обновляем основную информацию
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
-    if (maxStudents !== undefined) updateData.maxStudents = maxStudents;
+    if (minStudents !== undefined) updateData.maxStudents = minStudents;
     if (telegramChat !== undefined) updateData.telegramChat = telegramChat;
 
     // Если есть новое расписание, удаляем старое и создаем новое
