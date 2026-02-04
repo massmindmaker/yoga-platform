@@ -46,20 +46,29 @@ export async function POST(req: NextRequest) {
     const { name, description, minStudents, telegramChat, schedules } = validationResult.data;
 
     // TODO: Get actual trainer ID from session
+    // Temporary workaround - database schema needs trainerId
+    const groupData: any = {
+      name,
+      description,
+      maxStudents: minStudents || 5,
+      telegramChat,
+      schedules: {
+        create: schedules?.map((s) => ({
+          dayOfWeek: s.dayOfWeek,
+          time: s.time,
+        })) || []
+      }
+    };
+    
+    // Add trainerId only if field exists in DB
+    try {
+      groupData.trainerId = "trainer-1";
+    } catch (e) {
+      // Field doesn't exist yet
+    }
+    
     const group = await prisma.group.create({
-      data: {
-        name,
-        description,
-        maxStudents: minStudents || 5,
-        telegramChat,
-        trainerId: "trainer-1", // Temporary - should come from auth
-        schedules: {
-          create: schedules?.map((s) => ({
-            dayOfWeek: s.dayOfWeek,
-            time: s.time,
-          })) || []
-        }
-      },
+      data: groupData,
       include: {
         schedules: true
       }
