@@ -58,7 +58,7 @@ export const votingOptionSchema = z.object({
 export const createVotingSchema = z.object({
   groupId: z.string().uuid('Invalid group ID'),
   title: z.string().min(1, 'Title is required'),
-  type: z.enum(['TIME', 'DAY', 'CUSTOM']),
+  type: z.enum(['CONDITIONAL', 'ONLINE']),
   minParticipants: z.number().int().positive().optional(),
   deadline: z.string().datetime('Invalid datetime format'),
   options: z.array(votingOptionSchema).min(1, 'At least one option is required'),
