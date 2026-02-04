@@ -43,14 +43,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, description, maxStudents, telegramChat, schedules } = validationResult.data;
+    const { name, description, minStudents, telegramChat, schedules } = validationResult.data;
 
+    // TODO: Get actual trainer ID from session
     const group = await prisma.group.create({
       data: {
         name,
         description,
-        maxStudents: maxStudents || 20,
+        maxStudents: minStudents || 5,
         telegramChat,
+        trainerId: "trainer-1", // Temporary - should come from auth
         schedules: {
           create: schedules?.map((s) => ({
             dayOfWeek: s.dayOfWeek,

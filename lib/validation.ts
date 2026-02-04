@@ -36,7 +36,7 @@ export const scheduleItemSchema = z.object({
 export const createGroupSchema = z.object({
   name: z.string().min(1, 'Group name is required'),
   description: z.string().optional(),
-  maxStudents: z.number().int().positive().optional(),
+  minStudents: z.number().int().positive().optional(),
   telegramChat: z.string().optional(),
   schedules: z.array(scheduleItemSchema).optional(),
 });
@@ -44,7 +44,7 @@ export const createGroupSchema = z.object({
 export const updateGroupSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  maxStudents: z.number().int().positive().optional(),
+  minStudents: z.number().int().positive().optional(),
   telegramChat: z.string().optional(),
   schedules: z.array(scheduleItemSchema).optional(),
 });

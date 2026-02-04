@@ -8,17 +8,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Users, Clock, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, MessageCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useGroups } from "@/src/hooks/use-groups";
+import { toast } from "sonner";
 
 const weekDays = [
-  { id: "mon", label: "Пн" },
-  { id: "tue", label: "Вт" },
-  { id: "wed", label: "Ср" },
-  { id: "thu", label: "Чт" },
-  { id: "fri", label: "Пт" },
-  { id: "sat", label: "Сб" },
-  { id: "sun", label: "Вс" },
+  { id: "mon", label: "Пн", dayOfWeek: 1 },
+  { id: "tue", label: "Вт", dayOfWeek: 2 },
+  { id: "wed", label: "Ср", dayOfWeek: 3 },
+  { id: "thu", label: "Чт", dayOfWeek: 4 },
+  { id: "fri", label: "Пт", dayOfWeek: 5 },
+  { id: "sat", label: "Сб", dayOfWeek: 6 },
+  { id: "sun", label: "Вс", dayOfWeek: 0 },
 ];
 
 const timeSlots = [
@@ -35,12 +37,14 @@ const levels = [
 
 export default function CreateGroupPage() {
   const router = useRouter();
+  const { createGroup } = useGroups();
   const [step, setStep] = useState(1);
+  const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     level: "beginner",
-    maxStudents: "15",
+    minStudents: "5",
     selectedDays: [] as string[],
     time: "10:00",
     telegramChat: "",
@@ -55,9 +59,32 @@ export default function CreateGroupPage() {
     }));
   };
 
-  const handleCreate = () => {
-    console.log("Creating group:", formData);
-    router.push("/groups");
+  const handleCreate = async () => {
+    setIsCreating(true);
+    
+    const schedules = formData.selectedDays.map(dayId => {
+      const day = weekDays.find(d => d.id === dayId);
+      return {
+        dayOfWeek: day?.dayOfWeek || 1,
+        time: formData.time,
+      };
+    });
+
+    const result = await createGroup({
+      name: formData.name,
+      description: formData.description,
+      minStudents: parseInt(formData.minStudents),
+      telegramChat: formData.telegramChat,
+      schedules,
+    });
+
+    if (result.success) {
+      toast.success("Группа создана!");
+      router.push("/groups");
+    } else {
+      toast.error(result.error || "Ошибка создания группы");
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -119,13 +146,14 @@ export default function CreateGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Максимум учеников *</label>
+                  <label className="block text-sm font-medium mb-1">Минимум учеников *</label>
                   <Input
                     type="number"
-                    placeholder="15"
-                    value={formData.maxStudents}
-                    onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
+                    placeholder="5"
+                    value={formData.minStudents}
+                    onChange={(e) => setFormData({ ...formData, minStudents: e.target.value })}
                   />
+                  <p className="text-xs text-gray-500 mt-1">Минимальное количество для старта группы</p>
                 </div>
               </CardContent>
             </Card>
@@ -277,8 +305,8 @@ export default function CreateGroupPage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Макс. учеников:</span>
-                    <span className="font-medium">{formData.maxStudents}</span>
+                    <span className="text-gray-500">Мин. учеников:</span>
+                    <span className="font-medium">{formData.minStudents}</span>
                   </div>
                 </div>
               </CardContent>
@@ -289,14 +317,23 @@ export default function CreateGroupPage() {
                 variant="outline"
                 className="flex-1"
                 onClick={() => setStep(2)}
+                disabled={isCreating}
               >
                 Назад
               </Button>
               <Button 
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
                 onClick={handleCreate}
+                disabled={isCreating}
               >
-                Создать группу
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Создание...
+                  </>
+                ) : (
+                  "Создать группу"
+                )}
               </Button>
             </div>
           </motion.div>
