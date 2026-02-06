@@ -31,21 +31,32 @@ export const getPaymentsQuerySchema = z.object({
 export const scheduleItemSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6, 'Day of week must be 0-6'),
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
+  description: z.string().optional(),
 });
 
 export const createGroupSchema = z.object({
   name: z.string().min(1, 'Group name is required'),
   description: z.string().optional(),
-  minStudents: z.number().int().positive().optional(),
+  groupType: z.enum(['REGULAR', 'INTENSIVE']).optional().default('REGULAR'),
+  pricingType: z.enum(['FIXED', 'DYNAMIC']).optional().default('FIXED'),
+  fixedPrice: z.number().int().positive().optional().default(1),
+  maxStudents: z.number().int().positive().optional().default(15),
   telegramChat: z.string().optional(),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional(),
   schedules: z.array(scheduleItemSchema).optional(),
 });
 
 export const updateGroupSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  minStudents: z.number().int().positive().optional(),
+  groupType: z.enum(['REGULAR', 'INTENSIVE']).optional(),
+  pricingType: z.enum(['FIXED', 'DYNAMIC']).optional(),
+  fixedPrice: z.number().int().positive().optional(),
+  maxStudents: z.number().int().positive().optional(),
   telegramChat: z.string().optional(),
+  startsAt: z.string().datetime().optional().nullable(),
+  endsAt: z.string().datetime().optional().nullable(),
   schedules: z.array(scheduleItemSchema).optional(),
 });
 
@@ -53,20 +64,39 @@ export const updateGroupSchema = z.object({
 export const votingOptionSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
+  date: z.string().datetime().optional(),
+  description: z.string().optional(),
 });
 
 export const createVotingSchema = z.object({
   groupId: z.string().uuid('Invalid group ID'),
   title: z.string().min(1, 'Title is required'),
-  type: z.enum(['CONDITIONAL', 'ONLINE']),
-  minParticipants: z.number().int().positive().optional(),
+  type: z.enum(['SCHEDULE', 'CONFIRM', 'SURVEY']).optional().default('SCHEDULE'),
+  chargeOnVote: z.boolean().optional().default(false),
+  multipleChoice: z.boolean().optional().default(true),
+  minParticipants: z.number().int().positive().optional().default(1),
   deadline: z.string().datetime('Invalid datetime format'),
+  weekStart: z.string().datetime().optional(),
+  weekEnd: z.string().datetime().optional(),
+  publishToTelegram: z.boolean().optional().default(false),
   options: z.array(votingOptionSchema).min(1, 'At least one option is required'),
 });
 
 export const voteSchema = z.object({
-  optionId: z.string().uuid('Invalid option ID'),
+  optionIds: z.array(z.string().uuid('Invalid option ID')).min(1, 'Select at least one option'),
   userId: z.string().uuid('Invalid user ID'),
+});
+
+export const finalizeVotingSchema = z.object({
+  prices: z.array(z.object({
+    optionId: z.string().uuid('Invalid option ID'),
+    price: z.number().int().positive('Price must be positive'),
+  })).min(1, 'At least one price required'),
+});
+
+export const refundSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  reason: z.string().optional(),
 });
 
 // Params schemas
@@ -82,3 +112,5 @@ export type CreateGroupInput = z.infer<typeof createGroupSchema>;
 export type UpdateGroupInput = z.infer<typeof updateGroupSchema>;
 export type CreateVotingInput = z.infer<typeof createVotingSchema>;
 export type VoteInput = z.infer<typeof voteSchema>;
+export type FinalizeVotingInput = z.infer<typeof finalizeVotingSchema>;
+export type RefundInput = z.infer<typeof refundSchema>;

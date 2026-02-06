@@ -2,28 +2,45 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createVotingSchema } from '@/lib/validation';
 
-// GET /api/votings - получить все активные голосования
-export async function GET() {
+// GET /api/votings - получить активные голосования
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const groupId = searchParams.get('groupId');
+    const status = searchParams.get('status');
+
+    const where: Record<string, unknown> = {};
+    if (groupId) where.groupId = groupId;
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { in: ['ACTIVE', 'FINALIZED'] };
+    }
+
     const votings = await prisma.voting.findMany({
-      where: { status: 'ACTIVE' },
+      where,
       include: {
+        group: {
+          select: { id: true, name: true, pricingType: true, fixedPrice: true },
+        },
         options: {
           include: {
-            _count: {
-              select: { votes: true }
-            }
-          }
+            _count: { select: { votes: true } },
+            votes: {
+              include: {
+                user: { select: { id: true, firstName: true, lastName: true, balance: true } },
+              },
+            },
+          },
         },
-        _count: {
-          select: { votes: true }
-        }
-      }
+        _count: { select: { votes: true } },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({ success: true, data: votings });
   } catch (error) {
-    console.error('Error fetching votings:', error);
+    console.error('[VOTINGS_GET]', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch votings' },
       { status: 500 }
@@ -31,48 +48,84 @@ export async function GET() {
   }
 }
 
-// POST /api/votings - создать новое голосование
+// POST /api/votings - создать голосование
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Validate request body
     const validationResult = createVotingSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: "Validation failed",
+          error: 'Validation failed',
           details: validationResult.error.issues,
         },
         { status: 400 }
       );
     }
 
-    const { groupId, title, type, minParticipants, deadline, options } = validationResult.data;
+    const {
+      groupId,
+      title,
+      type,
+      chargeOnVote,
+      multipleChoice,
+      minParticipants,
+      deadline,
+      weekStart,
+      weekEnd,
+      options,
+    } = validationResult.data;
+
+    // Verify group exists
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      select: { id: true, pricingType: true, fixedPrice: true, telegramChat: true },
+    });
+
+    if (!group) {
+      return NextResponse.json(
+        { success: false, error: 'Group not found' },
+        { status: 404 }
+      );
+    }
 
     const voting = await prisma.voting.create({
       data: {
         groupId,
         title,
-        type,
-        minParticipants,
+        type: type || 'SCHEDULE',
+        chargeOnVote: chargeOnVote ?? false,
+        multipleChoice: multipleChoice ?? true,
+        minParticipants: minParticipants || 1,
         deadline: new Date(deadline),
+        weekStart: weekStart ? new Date(weekStart) : null,
+        weekEnd: weekEnd ? new Date(weekEnd) : null,
         options: {
           create: options.map((opt) => ({
             dayOfWeek: opt.dayOfWeek,
             time: opt.time,
-          }))
-        }
+            date: opt.date ? new Date(opt.date) : null,
+            description: opt.description || null,
+          })),
+        },
       },
       include: {
-        options: true
-      }
+        group: {
+          select: { id: true, name: true, pricingType: true, fixedPrice: true },
+        },
+        options: {
+          include: { _count: { select: { votes: true } } },
+        },
+      },
     });
+
+    // TODO: Publish to Telegram chat if publishToTelegram is true
 
     return NextResponse.json({ success: true, data: voting });
   } catch (error) {
-    console.error('Error creating voting:', error);
+    console.error('[VOTINGS_POST]', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create voting' },
       { status: 500 }

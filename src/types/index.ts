@@ -165,19 +165,24 @@ export interface Group {
   id: string;
   name: string;
   description?: string;
+  groupType: GroupType;
+  pricingType: PricingType;
+  fixedPrice: number;
   trainerId?: string;
   students?: Student[];
-  schedule?: string;
-  level?: ClassLevel;
   maxStudents: number;
   telegramChat?: string;
+  startsAt?: Date;
+  endsAt?: Date;
   createdAt: Date;
+  schedules?: ScheduleInput[];
 }
 
 // Schedule item for group creation
 export interface ScheduleInput {
   dayOfWeek: number;
   time: string;
+  description?: string;
 }
 
 // Telegram types
@@ -197,15 +202,44 @@ export interface TelegramWebAppUser {
   photo_url?: string;
 }
 
+// Group types
+export type GroupType = 'REGULAR' | 'INTENSIVE';
+export type PricingType = 'FIXED' | 'DYNAMIC';
+
 // Voting types
-export type VotingType = 'CONDITIONAL' | 'ONLINE';
-export type VotingStatus = 'ACTIVE' | 'CLOSED' | 'CANCELLED';
+export type VotingType = 'SCHEDULE' | 'CONFIRM' | 'SURVEY';
+export type VotingStatus = 'ACTIVE' | 'FINALIZED' | 'CLOSED' | 'CANCELLED';
 
 export interface VotingOption {
   id: string;
   votingId: string;
   dayOfWeek: number;
   time: string;
+  date?: Date;
+  description?: string;
+  finalPrice?: number;
+  paymentLink?: string;
+  cancelled: boolean;
+  _count?: { votes: number };
+}
+
+export interface VoteData {
+  id: string;
+  votingId: string;
+  optionId: string;
+  userId: string;
+  balanceCharged: boolean;
+  paidAmount?: number;
+  paidAt?: Date;
+  refunded: boolean;
+  refundedAt?: Date;
+  createdAt: Date;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName?: string;
+    balance: number;
+  };
 }
 
 export interface Voting {
@@ -213,26 +247,49 @@ export interface Voting {
   groupId: string;
   title: string;
   type: VotingType;
+  chargeOnVote: boolean;
+  multipleChoice: boolean;
   minParticipants: number;
   deadline: Date;
+  weekStart?: Date;
+  weekEnd?: Date;
   status: VotingStatus;
+  telegramPollId?: string;
   options: VotingOption[];
+  votes?: VoteData[];
+  _count?: { votes: number };
+  group?: {
+    id: string;
+    name: string;
+    pricingType: PricingType;
+    fixedPrice: number;
+  };
 }
 
 // API input types
 export interface CreateGroupInput {
   name: string;
   description?: string;
+  groupType?: GroupType;
+  pricingType?: PricingType;
+  fixedPrice?: number;
   maxStudents?: number;
   telegramChat?: string;
+  startsAt?: string;
+  endsAt?: string;
   schedules?: ScheduleInput[];
 }
 
 export interface UpdateGroupInput {
   name?: string;
   description?: string;
+  groupType?: GroupType;
+  pricingType?: PricingType;
+  fixedPrice?: number;
   maxStudents?: number;
   telegramChat?: string;
+  startsAt?: string;
+  endsAt?: string;
   schedules?: ScheduleInput[];
 }
 
@@ -240,14 +297,28 @@ export interface CreateVotingInput {
   groupId: string;
   title: string;
   type: VotingType;
+  chargeOnVote?: boolean;
+  multipleChoice?: boolean;
   minParticipants?: number;
   deadline: string;
-  options: ScheduleInput[];
+  weekStart?: string;
+  weekEnd?: string;
+  publishToTelegram?: boolean;
+  options: (ScheduleInput & { date?: string; description?: string })[];
 }
 
 export interface VoteInput {
-  optionId: string;
+  optionIds: string[];  // Множественный выбор
   userId: string;
+}
+
+export interface FinalizeVotingInput {
+  prices: { optionId: string; price: number }[];
+}
+
+export interface RefundInput {
+  userId: string;
+  reason?: string;
 }
 
 export interface CreatePaymentInput {
@@ -270,8 +341,14 @@ export interface PrismaGroup {
   id: string;
   name: string;
   description: string | null;
+  groupType: GroupType;
+  pricingType: PricingType;
+  fixedPrice: number;
   maxStudents: number;
   telegramChat: string | null;
+  trainerId: string | null;
+  startsAt: Date | null;
+  endsAt: Date | null;
   createdAt: Date;
   schedules: PrismaSchedule[];
   students: PrismaGroupStudent[];
@@ -285,6 +362,7 @@ export interface PrismaSchedule {
   groupId: string;
   dayOfWeek: number;
   time: string;
+  description: string | null;
 }
 
 export interface PrismaGroupStudent {
@@ -305,11 +383,18 @@ export interface PrismaVoting {
   groupId: string;
   title: string;
   type: VotingType;
+  chargeOnVote: boolean;
+  multipleChoice: boolean;
   minParticipants: number;
   deadline: Date;
+  weekStart: Date | null;
+  weekEnd: Date | null;
   status: VotingStatus;
+  telegramPollId: string | null;
   createdAt: Date;
   options: PrismaVotingOption[];
+  votes?: PrismaVote[];
+  group?: { id: string; name: string; pricingType: PricingType; fixedPrice: number };
   _count?: {
     votes: number;
   };
@@ -320,9 +405,15 @@ export interface PrismaVotingOption {
   votingId: string;
   dayOfWeek: number;
   time: string;
+  date: Date | null;
+  description: string | null;
+  finalPrice: number | null;
+  paymentLink: string | null;
+  cancelled: boolean;
   _count?: {
     votes: number;
   };
+  votes?: PrismaVote[];
 }
 
 export interface PrismaVote {
@@ -330,7 +421,13 @@ export interface PrismaVote {
   votingId: string;
   optionId: string;
   userId: string;
+  balanceCharged: boolean;
+  paidAmount: number | null;
+  paidAt: Date | null;
+  refunded: boolean;
+  refundedAt: Date | null;
   createdAt: Date;
+  user?: { id: string; firstName: string; lastName: string | null; balance: number };
 }
 
 export interface PrismaPayment {
@@ -363,7 +460,11 @@ export type TransactionType =
   | 'BOOKING_REFUND' 
   | 'PAYMENT_CREDIT' 
   | 'MANUAL_ADJUSTMENT' 
-  | 'INTENSIVE_DEDUCTION';
+  | 'INTENSIVE_DEDUCTION'
+  | 'VOTE_DEDUCTION'
+  | 'VOTE_REFUND'
+  | 'CLASS_CANCELLED'
+  | 'PAYMENT_REFUND';
 
 export interface BalanceTransaction {
   id: string;
@@ -373,5 +474,7 @@ export interface BalanceTransaction {
   description?: string;
   bookingId?: string;
   paymentId?: string;
+  voteId?: string;
+  votingId?: string;
   createdAt: Date;
 }

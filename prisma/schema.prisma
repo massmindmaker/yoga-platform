@@ -47,13 +47,18 @@ enum Role {
 
 // Группы занятий
 model Group {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   name          String
   description   String?
-  maxStudents   Int      @default(15)
+  groupType     GroupType   @default(REGULAR)
+  pricingType   PricingType @default(FIXED)
+  fixedPrice    Int         @default(1)       // Сколько занятий списывать за день (для FIXED)
+  maxStudents   Int         @default(15)
   telegramChat  String?
   trainerId     String?
-  createdAt     DateTime @default(now())
+  startsAt      DateTime?                     // Для INTENSIVE: дата начала
+  endsAt        DateTime?                     // Для INTENSIVE: дата окончания
+  createdAt     DateTime    @default(now())
   
   // Relations
   trainer       User?    @relation("GroupTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
@@ -62,18 +67,30 @@ model Group {
   votings       Voting[]
 
   @@index([trainerId])
+  @@index([groupType])
   @@map("groups")
 }
 
-// Расписание группы
+enum GroupType {
+  REGULAR     // Регулярные — еженедельные, бессрочные
+  INTENSIVE   // Интенсив — разовое событие (1-7 дней)
+}
+
+enum PricingType {
+  FIXED       // Фиксированная — списание с баланса при голосовании
+  DYNAMIC     // Динамическая — цена определяется после голосования
+}
+
+// Расписание группы (шаблон)
 model Schedule {
-  id        String   @id @default(uuid())
-  groupId   String
-  dayOfWeek Int      // 0-6 (воскресенье-суббота)
-  time      String   // "07:30"
+  id          String   @id @default(uuid())
+  groupId     String
+  dayOfWeek   Int      // 0-6 (воскресенье-суббота)
+  time        String   // "07:30"
+  description String?  // "ОФП", "Хатха" и т.д.
   
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  classes   Class[]
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  classes     Class[]
 
   @@index([groupId])
   @@map("schedules")
@@ -185,6 +202,8 @@ model BalanceTransaction {
   // Связанные сущности (опционально)
   bookingId   String?
   paymentId   String?
+  voteId      String?
+  votingId    String?
   
   createdAt   DateTime  @default(now())
   
@@ -195,6 +214,7 @@ model BalanceTransaction {
   @@index([createdAt])
   @@index([bookingId])
   @@index([paymentId])
+  @@index([voteId])
   @@map("balance_transactions")
 }
 
@@ -204,6 +224,10 @@ enum TransactionType {
   PAYMENT_CREDIT        // Начисление за оплату
   MANUAL_ADJUSTMENT     // Ручная корректировка
   INTENSIVE_DEDUCTION   // Списание за интенсив
+  VOTE_DEDUCTION        // Списание за голос (фикс. цена)
+  VOTE_REFUND           // Возврат за отмену голоса
+  CLASS_CANCELLED       // Возврат — занятие не состоялось
+  PAYMENT_REFUND        // Отметка возврата платежа
 }
 
 // Голосования
@@ -211,10 +235,15 @@ model Voting {
   id              String        @id @default(uuid())
   groupId         String
   title           String
-  type            VotingType
-  minParticipants Int           @default(10)
+  type            VotingType    @default(SCHEDULE)
+  chargeOnVote    Boolean       @default(false)  // Списывать с баланса при голосовании
+  multipleChoice  Boolean       @default(true)   // Множественный выбор вариантов
+  minParticipants Int           @default(1)
   deadline        DateTime
+  weekStart       DateTime?                      // Начало периода голосования
+  weekEnd         DateTime?                      // Конец периода голосования
   status          VotingStatus  @default(ACTIVE)
+  telegramPollId  String?                        // ID сообщения в Telegram
   createdAt       DateTime      @default(now())
   
   group           Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -227,25 +256,32 @@ model Voting {
 }
 
 enum VotingType {
-  CONDITIONAL  // Условное (пт, если наберется N человек)
-  ONLINE       // Онлайн с плавающей ценой
+  SCHEDULE    // Еженедельное расписание (кто когда придёт)
+  CONFIRM     // Подтверждение конкретного занятия
+  SURVEY      // Произвольный опрос (без списания)
 }
 
 enum VotingStatus {
-  ACTIVE
-  CLOSED
-  CANCELLED
+  ACTIVE      // Идёт голосование
+  FINALIZED   // Итоги подведены (тренер назначил цены для DYNAMIC)
+  CLOSED      // Закрыто
+  CANCELLED   // Отменено (возврат всем)
 }
 
 // Варианты голосования
 model VotingOption {
-  id        String   @id @default(uuid())
-  votingId  String
-  dayOfWeek Int
-  time      String
+  id          String    @id @default(uuid())
+  votingId    String
+  dayOfWeek   Int
+  time        String
+  date        DateTime?              // Конкретная дата (для интенсивов)
+  description String?                // "ОФП", "Хатха" и т.д.
+  finalPrice  Int?                   // Цена назначенная тренером (для DYNAMIC, в рублях)
+  paymentLink String?                // Ссылка T-Bank для оплаты (для DYNAMIC)
+  cancelled   Boolean   @default(false) // Занятие отменено
   
-  voting    Voting   @relation(fields: [votingId], references: [id], onDelete: Cascade)
-  votes     Vote[]
+  voting      Voting    @relation(fields: [votingId], references: [id], onDelete: Cascade)
+  votes       Vote[]
 
   @@index([votingId])
   @@map("voting_options")
@@ -253,17 +289,23 @@ model VotingOption {
 
 // Голоса
 model Vote {
-  id        String   @id @default(uuid())
-  votingId  String
-  optionId  String
-  userId    String
-  createdAt DateTime @default(now())
+  id              String    @id @default(uuid())
+  votingId        String
+  optionId        String
+  userId          String
+  balanceCharged  Boolean   @default(false)  // Были ли списаны занятия с баланса
+  paidAmount      Int?                       // Оплаченная сумма (для DYNAMIC, в рублях)
+  paidAt          DateTime?                  // Когда оплатил (для DYNAMIC)
+  refunded        Boolean   @default(false)  // Был ли возврат
+  refundedAt      DateTime?                  // Когда был возврат
+  createdAt       DateTime  @default(now())
   
-  voting    Voting   @relation(fields: [votingId], references: [id], onDelete: Cascade)
-  option    VotingOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voting          Voting       @relation(fields: [votingId], references: [id], onDelete: Cascade)
+  option          VotingOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([votingId, userId]) // Один пользователь - один голос
+  @@unique([optionId, userId]) // Один пользователь - один голос за вариант
+  @@index([votingId])
   @@index([userId])
   @@index([optionId])
   @@map("votes")
