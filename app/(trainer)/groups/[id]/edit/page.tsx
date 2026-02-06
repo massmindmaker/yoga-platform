@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, Calendar, Users, CreditCard } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
 
 const weekDays = [
@@ -23,15 +23,10 @@ const weekDays = [
 ];
 
 const timeSlots = [
-  "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
-];
-
-const levels = [
-  { value: "beginner", label: "Начинающие" },
-  { value: "intermediate", label: "Средний" },
-  { value: "advanced", label: "Продвинутый" },
-  { value: "all", label: "Все уровни" },
+  "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30",
+  "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+  "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"
 ];
 
 export default function EditGroupPage() {
@@ -46,27 +41,35 @@ export default function EditGroupPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    level: "beginner",
-    minStudents: "5",
+    groupType: "REGULAR" as "REGULAR" | "INTENSIVE",
+    pricingType: "FIXED" as "FIXED" | "DYNAMIC",
+    fixedPrice: 1,
+    maxStudents: 15,
     selectedDays: [] as number[],
     time: "10:00",
     telegramChat: "",
+    startsAt: "",
+    endsAt: "",
   });
 
   // Load group data when available
   useEffect(() => {
     if (group) {
-      const days = group.schedules.map(s => s.dayOfWeek);
-      const time = group.schedules[0]?.time || "10:00";
+      const days = group.schedules?.map(s => s.dayOfWeek) || [];
+      const time = group.schedules?.[0]?.time || "10:00";
       
       setFormData({
         name: group.name,
         description: group.description || "",
-        level: "beginner", // Not stored in DB, default
-        minStudents: group.maxStudents.toString(),
+        groupType: (group as any).groupType || "REGULAR",
+        pricingType: (group as any).pricingType || "FIXED",
+        fixedPrice: (group as any).fixedPrice || 1,
+        maxStudents: group.maxStudents,
         selectedDays: days,
         time: time,
         telegramChat: group.telegramChat || "",
+        startsAt: (group as any).startsAt ? new Date((group as any).startsAt).toISOString().split('T')[0] : "",
+        endsAt: (group as any).endsAt ? new Date((group as any).endsAt).toISOString().split('T')[0] : "",
       });
     }
   }, [group]);
@@ -91,12 +94,18 @@ export default function EditGroupPage() {
     const result = await updateGroup({
       name: formData.name,
       description: formData.description,
-      minStudents: parseInt(formData.minStudents),
+      groupType: formData.groupType,
+      pricingType: formData.pricingType,
+      fixedPrice: formData.fixedPrice,
+      maxStudents: formData.maxStudents,
       telegramChat: formData.telegramChat,
+      startsAt: formData.startsAt ? new Date(formData.startsAt).toISOString() : null,
+      endsAt: formData.endsAt ? new Date(formData.endsAt).toISOString() : null,
       schedules,
     });
     
     if (result.success) {
+      toast.success("Группа обновлена");
       router.push(`/groups/${groupId}`);
     } else {
       setIsSaving(false);
@@ -158,7 +167,7 @@ export default function EditGroupPage() {
           ))}
         </div>
 
-        {/* Step 1 */}
+        {/* Step 1: Основная информация */}
         {step === 1 && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -187,25 +196,45 @@ export default function EditGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Уровень *</label>
-                  <select
-                    className="w-full h-9 rounded-md border border-input bg-transparent px-3"
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                  >
-                    {levels.map((l) => (
-                      <option key={l.value} value={l.value}>{l.label}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium mb-2">Тип группы *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, groupType: "REGULAR" })}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        formData.groupType === "REGULAR"
+                          ? "border-purple-600 bg-purple-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <Calendar className="w-5 h-5 mx-auto mb-1 text-purple-600" />
+                      <span className="text-sm font-medium">Регулярные</span>
+                      <p className="text-xs text-gray-500 mt-1">Еженедельное расписание</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, groupType: "INTENSIVE" })}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        formData.groupType === "INTENSIVE"
+                          ? "border-purple-600 bg-purple-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <Calendar className="w-5 h-5 mx-auto mb-1 text-orange-600" />
+                      <span className="text-sm font-medium">Интенсив</span>
+                      <p className="text-xs text-gray-500 mt-1">Разовое событие</p>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Минимум учеников *</label>
+                  <label className="block text-sm font-medium mb-1">Максимум учеников *</label>
                   <Input
                     type="number"
-                    placeholder="5"
-                    value={formData.minStudents}
-                    onChange={(e) => setFormData({ ...formData, minStudents: e.target.value })}
+                    min={1}
+                    placeholder="15"
+                    value={formData.maxStudents}
+                    onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 15 })}
                   />
                 </div>
               </CardContent>
@@ -221,15 +250,104 @@ export default function EditGroupPage() {
           </motion.div>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2: Расписание и цены */}
         {step === 2 && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
+            {/* Ценообразование */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium">Ценообразование</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, pricingType: "FIXED" })}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      formData.pricingType === "FIXED"
+                        ? "border-purple-600 bg-purple-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Фиксированная</span>
+                    <p className="text-xs text-gray-500 mt-1">Списание с баланса при голосовании</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, pricingType: "DYNAMIC" })}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      formData.pricingType === "DYNAMIC"
+                        ? "border-purple-600 bg-purple-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Динамическая</span>
+                    <p className="text-xs text-gray-500 mt-1">Цена определяется после голосования</p>
+                  </button>
+                </div>
+
+                {formData.pricingType === "FIXED" && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Стоимость (занятий с баланса)</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={formData.fixedPrice}
+                      onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) || 1 })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Сколько занятий списывается за {formData.groupType === "INTENSIVE" ? "весь интенсив" : "одно занятие"}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Даты для интенсива */}
+            {formData.groupType === "INTENSIVE" && (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                    <span className="font-medium">Даты интенсива</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Начало</label>
+                      <Input
+                        type="date"
+                        value={formData.startsAt}
+                        onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Окончание</label>
+                      <Input
+                        type="date"
+                        value={formData.endsAt}
+                        onChange={(e) => setFormData({ ...formData, endsAt: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Расписание */}
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium">Расписание</span>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Дни недели *</label>
                   <div className="flex flex-wrap gap-2">
@@ -253,7 +371,7 @@ export default function EditGroupPage() {
                 <div>
                   <label className="block text-sm font-medium mb-1">Время занятий *</label>
                   <select
-                    className="w-full h-9 rounded-md border border-input bg-transparent px-3"
+                    className="w-full h-10 rounded-md border border-input bg-transparent px-3"
                     value={formData.time}
                     onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                   >
@@ -296,7 +414,7 @@ export default function EditGroupPage() {
           </motion.div>
         )}
 
-        {/* Step 3 */}
+        {/* Step 3: Telegram и подтверждение */}
         {step === 3 && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -311,17 +429,20 @@ export default function EditGroupPage() {
                   </div>
                   <div>
                     <p className="font-medium">Telegram чат</p>
-                    <p className="text-sm text-gray-500">Опционально</p>
+                    <p className="text-sm text-gray-500">Для уведомлений группы</p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Ссылка на чат группы</label>
+                  <label className="block text-sm font-medium mb-1">ID чата или ссылка</label>
                   <Input
-                    placeholder="https://t.me/+xxxxxxxxxxxx"
+                    placeholder="-1001234567890 или https://t.me/+xxxx"
                     value={formData.telegramChat}
                     onChange={(e) => setFormData({ ...formData, telegramChat: e.target.value })}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Добавьте бота @Yom23_bot в группу и укажите ID чата
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -335,9 +456,17 @@ export default function EditGroupPage() {
                     <span className="font-medium">{formData.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Уровень:</span>
+                    <span className="text-gray-500">Тип:</span>
                     <span className="font-medium">
-                      {levels.find(l => l.value === formData.level)?.label}
+                      {formData.groupType === "REGULAR" ? "Регулярные занятия" : "Интенсив"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Ценообразование:</span>
+                    <span className="font-medium">
+                      {formData.pricingType === "FIXED" 
+                        ? `Фикс. (${formData.fixedPrice} зан.)` 
+                        : "Динамическое"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -349,9 +478,17 @@ export default function EditGroupPage() {
                         .join(", ")} в {formData.time}
                     </span>
                   </div>
+                  {formData.groupType === "INTENSIVE" && formData.startsAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Даты:</span>
+                      <span className="font-medium">
+                        {new Date(formData.startsAt).toLocaleDateString("ru-RU")} — {new Date(formData.endsAt).toLocaleDateString("ru-RU")}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Мин. учеников:</span>
-                    <span className="font-medium">{formData.minStudents}</span>
+                    <span className="text-gray-500">Макс. учеников:</span>
+                    <span className="font-medium">{formData.maxStudents}</span>
                   </div>
                 </div>
               </CardContent>

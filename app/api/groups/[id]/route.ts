@@ -99,14 +99,30 @@ export async function PATCH(
       );
     }
 
-    const { name, description, maxStudents, telegramChat, schedules } = validationResult.data;
+    const { 
+      name, 
+      description, 
+      groupType,
+      pricingType,
+      fixedPrice,
+      maxStudents, 
+      telegramChat, 
+      startsAt,
+      endsAt,
+      schedules 
+    } = validationResult.data;
 
     // Обновляем основную информацию
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
+    if (groupType !== undefined) updateData.groupType = groupType;
+    if (pricingType !== undefined) updateData.pricingType = pricingType;
+    if (fixedPrice !== undefined) updateData.fixedPrice = fixedPrice;
     if (maxStudents !== undefined) updateData.maxStudents = maxStudents;
     if (telegramChat !== undefined) updateData.telegramChat = telegramChat;
+    if (startsAt !== undefined) updateData.startsAt = startsAt ? new Date(startsAt) : null;
+    if (endsAt !== undefined) updateData.endsAt = endsAt ? new Date(endsAt) : null;
 
     // Если есть новое расписание, удаляем старое и создаем новое
     if (schedules) {
