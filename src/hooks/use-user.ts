@@ -1,52 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Student, Trainer } from '../types';
-import { mockStudents, mockTrainers } from '../lib/mock-data';
+import { useState, useEffect, useCallback } from 'react';
+
+interface UserData {
+  id: string;
+  telegramId: string | null;
+  firstName: string;
+  lastName: string | null;
+  username?: string;
+  role: 'STUDENT' | 'TRAINER' | 'ADMIN';
+  balance: number;
+  phone: string | null;
+  email: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface UseUserReturn {
-  user: Student | Trainer | null;
+  user: UserData | null;
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
 }
 
 export function useUser(userId?: string): UseUserReturn {
-  const [user, setUser] = useState<Student | Trainer | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchUser = () => {
-      setIsLoading(true);
-      setError(null);
+  const fetchUser = useCallback(async () => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
 
-      setTimeout(() => {
-        try {
-          // For demo, return first student or trainer based on userId
-          const targetId = userId || '1';
-          const student = mockStudents.find(s => s.id === targetId);
-          const trainer = mockTrainers.find(t => t.id === targetId);
-          
-          setUser(student || trainer || mockStudents[0]);
-          setIsLoading(false);
-        } catch (err) {
-          setError(err instanceof Error ? err : new Error('Failed to fetch user'));
-          setIsLoading(false);
-        }
-      }, 500);
-    };
-
-    fetchUser();
-  }, [userId]);
-
-  const refetch = () => {
     setIsLoading(true);
     setError(null);
-    // Re-trigger the effect
-    setUser(null);
-  };
 
-  return { user, isLoading, error, refetch };
+    try {
+      const res = await fetch(`/api/users/${userId}`);
+      const json = await res.json();
+
+      if (json.success && json.data) {
+        setUser(json.data);
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch user'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  return { user, isLoading, error, refetch: fetchUser };
 }

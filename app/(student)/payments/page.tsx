@@ -1,26 +1,22 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, ArrowRight, CreditCard, Download, TrendingUp, Calendar, CheckCircle2 } from "lucide-react";
+import { Wallet, ArrowRight, CreditCard, TrendingUp, Calendar, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
 
-// Mock платежи
-const payments = [
-  { id: "1", date: "30.01.2026", amount: 4500, description: "4 занятия", type: "purchase",     status: "COMPLETED" },
-  { id: "2", date: "15.01.2026", amount: 8500, description: "8 занятий", type: "purchase",     status: "COMPLETED" },
-  { id: "3", date: "20.12.2025", amount: 12000, description: "12 занятий", type: "purchase",     status: "COMPLETED" },
-  { id: "4", date: "05.12.2025", amount: 1500, description: "Разовое занятие", type: "purchase",     status: "COMPLETED" },
-];
-
-const stats = {
-  totalSpent: 26500,
-  totalClasses: 25,
-  avgPrice: 1060,
-  lastPayment: "30.01.2026",
-};
+interface PaymentRecord {
+  id: string;
+  amount: number;
+  classesCount: number;
+  status: string;
+  provider: string;
+  createdAt: string;
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -40,7 +36,18 @@ const itemVariants = {
 };
 
 export default function StudentPaymentsPage() {
-  const currentBalance: number = 5;
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentBalance, setCurrentBalance] = useState(0);
+
+  useEffect(() => {
+    // TODO: fetch payments from /api/payments?userId=...
+    setIsLoading(false);
+    setPayments([]);
+  }, []);
+
+  const totalSpent = payments.reduce((sum, p) => sum + p.amount, 0);
+  const totalClasses = payments.reduce((sum, p) => sum + p.classesCount, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -86,21 +93,21 @@ export default function StudentPaymentsPage() {
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     <span className="text-xs text-gray-500">Потрачено</span>
                   </div>
-                  <p className="font-bold text-gray-900">{stats.totalSpent.toLocaleString()} ₽</p>
+                  <p className="font-bold text-gray-900">{totalSpent.toLocaleString()} ₽</p>
                 </div>
                 <div className="text-center border-x border-gray-100">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <Calendar className="w-4 h-4 text-purple-500" />
                     <span className="text-xs text-gray-500">Куплено</span>
                   </div>
-                  <p className="font-bold text-gray-900">{stats.totalClasses} занятий</p>
+                  <p className="font-bold text-gray-900">{totalClasses} занятий</p>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <CreditCard className="w-4 h-4 text-blue-500" />
                     <span className="text-xs text-gray-500">Средняя цена</span>
                   </div>
-                  <p className="font-bold text-gray-900">{stats.avgPrice} ₽</p>
+                  <p className="font-bold text-gray-900">{totalClasses > 0 ? Math.round(totalSpent / totalClasses) : 0} ₽</p>
                 </div>
               </div>
             </CardContent>
@@ -109,67 +116,55 @@ export default function StudentPaymentsPage() {
 
         {/* История платежей */}
         <motion.div variants={itemVariants}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">История платежей</h2>
-            <Button variant="ghost" size="sm" className="text-purple-600">
-              <Download className="w-4 h-4 mr-1" />
-              Экспорт
-            </Button>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">История платежей</h2>
 
-          <div className="space-y-3">
-            {payments.map((payment, index) => (
-              <motion.div
-                key={payment.id}
-                variants={itemVariants}
-                custom={index}
-                whileHover={{ x: 4 }}
-                className="cursor-pointer"
-              >
-                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-emerald-50 flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">{payment.description}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-sm text-gray-500">{payment.date}</span>
-                            <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                            <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                              Оплачено
-                            </span>
+          {payments.length > 0 ? (
+            <div className="space-y-3">
+              {payments.map((payment, index) => (
+                <motion.div
+                  key={payment.id}
+                  variants={itemVariants}
+                  custom={index}
+                  whileHover={{ x: 4 }}
+                  className="cursor-pointer"
+                >
+                  <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-emerald-50 flex items-center justify-center">
+                            <CreditCard className="w-6 h-6 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{payment.classesCount} занятий</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-sm text-gray-500">
+                                {new Date(payment.createdAt).toLocaleDateString('ru-RU')}
+                              </span>
+                              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                              <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                {payment.status === 'COMPLETED' ? 'Оплачено' : payment.status}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
                         <span className="font-bold text-gray-900 text-lg">
                           {payment.amount.toLocaleString()} ₽
                         </span>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Пустое состояние, если нет платежей */}
-        {payments.length === 0 && (
-          <motion.div
-            variants={itemVariants}
-            className="text-center py-12"
-          >
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-              <CreditCard className="w-10 h-10 text-gray-400" />
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Нет платежей</h3>
-            <p className="text-gray-500 mb-4">Вы еще не совершали покупок</p>
-          </motion.div>
-        )}
+          ) : (
+            <EmptyState
+              icon={CreditCard}
+              title="Нет платежей"
+              description="Вы ещё не совершали покупок"
+            />
+          )}
+        </motion.div>
       </motion.div>
 
       {/* Фиксированная кнопка покупки */}

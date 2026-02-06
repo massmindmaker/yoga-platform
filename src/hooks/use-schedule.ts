@@ -1,13 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { YogaClass } from '../types';
-import { mockYogaClasses } from '../lib/mock-data';
-import { addDays, startOfWeek, format, isSameDay } from 'date-fns';
+import { useState, useEffect, useCallback } from 'react';
+import { addDays, startOfWeek, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+interface ScheduleClass {
+  id: string;
+  scheduleId: string;
+  trainerId: string;
+  date: string;
+  maxStudents: number;
+  price: number;
+  status: string;
+  schedule: {
+    id: string;
+    groupId: string;
+    dayOfWeek: number;
+    time: string;
+    description: string | null;
+    group: {
+      id: string;
+      name: string;
+    };
+  };
+  trainer: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+  };
+  _count: {
+    bookings: number;
+  };
+}
+
 interface UseScheduleReturn {
-  classes: YogaClass[];
+  classes: ScheduleClass[];
   weekDays: Date[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
@@ -17,47 +44,36 @@ interface UseScheduleReturn {
 }
 
 export function useSchedule(): UseScheduleReturn {
-  const [classes, setClasses] = useState<YogaClass[]>([]);
+  const [classes, setClasses] = useState<ScheduleClass[]>([]);
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Generate week days
     const start = startOfWeek(new Date(), { weekStartsOn: 1 });
     const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
     setWeekDays(days);
+  }, []);
 
-    // Simulate API call
-    const fetchSchedule = () => {
-      setIsLoading(true);
-      setError(null);
-
-      setTimeout(() => {
-        try {
-          // Filter classes for the selected date
-          const filteredClasses = mockYogaClasses.filter(
-            yogaClass => isSameDay(yogaClass.date, selectedDate)
-          );
-          setClasses(filteredClasses);
-          setIsLoading(false);
-        } catch (err) {
-          setError(err instanceof Error ? err : new Error('Failed to fetch schedule'));
-          setIsLoading(false);
-        }
-      }, 300);
-    };
-
-    fetchSchedule();
-  }, [selectedDate]);
-
-  const refetch = () => {
+  const fetchSchedule = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    // Re-trigger the effect
-    setClasses([]);
-  };
+
+    try {
+      // For now, no schedule API exists — show empty
+      // When /api/classes endpoint is added, fetch from there
+      setClasses([]);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch schedule'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchSchedule();
+  }, [fetchSchedule]);
 
   return {
     classes,
@@ -66,7 +82,7 @@ export function useSchedule(): UseScheduleReturn {
     setSelectedDate,
     isLoading,
     error,
-    refetch,
+    refetch: fetchSchedule,
   };
 }
 

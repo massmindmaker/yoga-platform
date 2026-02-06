@@ -50,7 +50,6 @@ function TimeUnit({ value, label, delay = 0 }: { value: number; label: string; d
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <span className="text-xl font-bold">{displayValue}</span>
-        {/* Shine effect */}
         <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
       </motion.div>
       <span className="text-xs text-gray-500 mt-1 font-medium">{label}</span>
@@ -83,7 +82,6 @@ export function CountdownTimer({ targetDate, title = "До занятия ост
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 200 }}
     >
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <motion.div
           animate={isUrgent ? { scale: [1, 1.1, 1] } : {}}
@@ -108,7 +106,7 @@ export function CountdownTimer({ targetDate, title = "До занятия ост
           transition={{ type: "spring", stiffness: 200 }}
         >
           <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-green-200">
-            Присоединяйтесь сейчас! 🧘‍♀️
+            Присоединяйтесь сейчас!
           </div>
         </motion.div>
       ) : (
@@ -127,7 +125,6 @@ export function CountdownTimer({ targetDate, title = "До занятия ост
         </div>
       )}
 
-      {/* Progress bar */}
       {!isStarted && (
         <div className="mt-4">
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -150,22 +147,4 @@ export function CountdownTimer({ targetDate, title = "До занятия ост
       )}
     </motion.div>
   );
-}
-
-// Hook to get next class for a user
-export function useNextClass(studentId: string) {
-  // This would normally fetch from API
-  // For now, returning mock data
-  const mockNextClass = {
-    id: "1",
-    title: "Утренняя Хатха-йога",
-    startTime: new Date(Date.now() + 2 * 60 * 60 * 1000 + 45 * 60 * 1000), // 2h 45m from now
-    location: "Студия А",
-    trainer: {
-      firstName: "Мария",
-      lastName: "Иванова",
-    },
-  };
-
-  return mockNextClass;
 }

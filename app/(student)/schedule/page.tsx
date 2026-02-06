@@ -3,11 +3,7 @@
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/page-header";
 import { Calendar } from "@/components/schedule/calendar";
-import { ClassCard } from "@/components/schedule/class-card";
 import { useSchedule } from "@/src/hooks/use-schedule";
-import { useState } from "react";
-import { YogaClass } from "@/src/types";
-import { BookingModal } from "@/components/booking/booking-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CalendarX } from "lucide-react";
@@ -22,29 +18,8 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
-  },
-};
-
 export default function SchedulePage() {
-  const { classes, weekDays, selectedDate, setSelectedDate, isLoading } =
-    useSchedule();
-  const [selectedClass, setSelectedClass] = useState<YogaClass | null>(null);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-
-  const handleBookClass = (yogaClass: YogaClass) => {
-    setSelectedClass(yogaClass);
-    setIsBookingModalOpen(true);
-  };
+  const { classes, selectedDate, setSelectedDate, isLoading } = useSchedule();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +39,6 @@ export default function SchedulePage() {
         className="p-4 space-y-3"
       >
         {isLoading ? (
-          // Loading skeletons
           <>
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
@@ -79,30 +53,14 @@ export default function SchedulePage() {
               </div>
             ))}
           </>
-        ) : classes.length > 0 ? (
-          classes.map((yogaClass) => (
-            <motion.div key={yogaClass.id} variants={itemVariants}>
-              <ClassCard
-                yogaClass={yogaClass}
-                onBook={() => handleBookClass(yogaClass)}
-              />
-            </motion.div>
-          ))
         ) : (
           <EmptyState
             icon={CalendarX}
             title="Нет занятий на этот день"
-            description="Выберите другую дату или проверьте расписание позже"
+            description="Расписание формируется тренером через систему голосований"
           />
         )}
       </motion.div>
-
-      <BookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
-        yogaClass={selectedClass}
-        studentId="1"
-      />
     </div>
   );
 }
