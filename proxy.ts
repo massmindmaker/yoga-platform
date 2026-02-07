@@ -128,12 +128,15 @@ export function proxy(request: NextRequest) {
         "http://localhost:3001",
       ].filter(Boolean);
 
+      // Allow all Vercel preview deployments
+      const isVercelPreview = origin && origin.includes("vercel.app");
+
       // Проверяем origin (разрешаем запросы без origin для мобильных)
       if (origin) {
         const isAllowedOrigin = allowedOrigins.some((allowedOrigin) =>
           allowedOrigin ? origin.startsWith(allowedOrigin) : false
         );
-        if (!isAllowedOrigin) {
+        if (!isAllowedOrigin && !isVercelPreview) {
           return NextResponse.json(
             { success: false, error: `Invalid origin: ${origin}` },
             { status: 403 }

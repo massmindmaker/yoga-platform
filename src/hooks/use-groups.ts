@@ -54,8 +54,13 @@ export function useGroups() {
   const createGroup = async (groupData: {
     name: string;
     description?: string;
-    minStudents?: number;
+    groupType?: "REGULAR" | "INTENSIVE";
+    pricingType?: "FIXED" | "DYNAMIC";
+    fixedPrice?: number;
+    maxStudents?: number;
     telegramChat?: string;
+    startsAt?: string | null;
+    endsAt?: string | null;
     schedules?: { dayOfWeek: number; time: string }[];
   }) => {
     try {
