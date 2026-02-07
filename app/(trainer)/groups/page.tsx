@@ -3,23 +3,15 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, Users, ChevronRight, Plus, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Users, ChevronRight, Plus, Loader2, Calendar, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGroups } from "@/src/hooks/use-groups";
 
-const DAYS_OF_WEEK = [
-  "Воскресенье",
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-];
+const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
 function formatSchedule(schedules: { dayOfWeek: number; time: string }[]) {
-  if (!schedules || schedules.length === 0) return "Нет расписания";
+  if (!schedules || schedules.length === 0) return null;
   
   // Group by time
   const byTime = schedules.reduce((acc, s) => {
@@ -30,10 +22,9 @@ function formatSchedule(schedules: { dayOfWeek: number; time: string }[]) {
 
   return Object.entries(byTime)
     .map(([time, days]) => {
-      const dayNames = days.map(d => DAYS_OF_WEEK[d].slice(0, 2)).join(", ");
-      return `${dayNames} — ${time}`;
-    })
-    .join("; ");
+      const dayNames = days.sort((a, b) => a - b).map(d => DAYS_SHORT[d]).join(", ");
+      return { days: dayNames, time };
+    });
 }
 
 export default function GroupsPage() {
@@ -62,109 +53,157 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Мои группы</h1>
-          <span className="text-sm text-gray-500">{groups.length} групп</span>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Мои группы</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{groups.length} {groups.length === 1 ? "группа" : "групп"}</p>
+            </div>
+            <Link href="/groups/create">
+              <Button size="default" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Создать
+              </Button>
+            </Link>
+          </div>
         </div>
-        <Link href="/groups/create">
-          <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="w-4 h-4 mr-1" />
-            Создать
-          </Button>
-        </Link>
-      </motion.div>
+      </div>
 
-      <div className="space-y-3">
-        {groups.map((group, index) => (
-          <motion.div
-            key={group.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Link href={`/groups/${group.id}`}>
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-gray-900">{group.name}</h3>
+      <div className="p-4 space-y-3">
+        {groups.map((group: any, index) => {
+          const schedule = formatSchedule(group.schedules || []);
+          const isIntensive = group.groupType === "INTENSIVE";
+          
+          return (
+            <motion.div
+              key={group.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Link href={`/groups/${group.id}`}>
+                <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden">
+                  <CardContent className="p-0">
+                    {/* Top colored bar */}
+                    <div className={`h-1 ${isIntensive ? "bg-gradient-to-r from-orange-500 to-red-500" : "bg-gradient-to-r from-purple-500 to-pink-500"}`} />
+                    
+                    <div className="p-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate">{group.name}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge 
+                              variant="secondary" 
+                              className={isIntensive ? "bg-orange-100 text-orange-700" : "bg-purple-100 text-purple-700"}
+                            >
+                              {isIntensive ? "Интенсив" : "Регулярные"}
+                            </Badge>
+                            {group.pricingType && (
+                              <Badge variant="outline" className="text-xs">
+                                {group.pricingType === "FIXED" ? `${group.fixedPrice || 1000}₽` : "Динамика"}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                        <div className="flex items-center gap-1">
-                          <Clock size={14} />
-                          <span>{formatSchedule(group.schedules)}</span>
+                      {/* Schedule */}
+                      {!isIntensive && schedule && schedule.length > 0 && (
+                        <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                          <Clock className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {schedule.map((s, i) => (
+                              <span key={i}>
+                                {s.days} — {s.time}
+                                {i < schedule.length - 1 && "; "}
+                              </span>
+                            ))}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Users size={14} />
+                      )}
+
+                      {/* Intensive dates */}
+                      {isIntensive && group.startsAt && (
+                        <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                          <Calendar className="w-4 h-4 flex-shrink-0" />
+                          <span>
+                            {new Date(group.startsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                            {group.endsAt && ` — ${new Date(group.endsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <Users className="w-4 h-4" />
                           <span>мин. {group.maxStudents}</span>
                         </div>
-                      </div>
-
-                      <div className="flex items-center">
-                        <div className="flex -space-x-2">
-                          {group._count.students > 0 ? (
-                            <>
-                              <Avatar className="w-7 h-7 border-2 border-white">
-                                <AvatarFallback className="text-xs bg-purple-100 text-purple-600">
-                                  {group._count.students}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="ml-3 text-xs text-gray-500">
-                                {group._count.students} учеников
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-xs text-gray-400">Нет учеников</span>
-                          )}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+                          group._count.students > 0 
+                            ? "bg-purple-50 text-purple-700" 
+                            : "bg-gray-50 text-gray-500"
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            group._count.students > 0 ? "bg-purple-500" : "bg-gray-400"
+                          }`} />
+                          <span className="text-xs font-medium">
+                            {group._count.students || 0} учеников
+                          </span>
                         </div>
                       </div>
                     </div>
-
-                    <ChevronRight size={20} className="text-gray-400" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          );
+        })}
       </div>
 
+      {/* Empty state */}
       {groups.length === 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-12"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-4"
         >
-          <p className="text-gray-500 mb-4">У вас пока нет групп</p>
-          <Link href="/groups/create">
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Создать первую группу
-            </Button>
-          </Link>
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">У вас пока нет групп</h3>
+            <p className="text-sm text-gray-500 mb-6">Создайте первую группу для занятий</p>
+            <Link href="/groups/create">
+              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Создать первую группу
+              </Button>
+            </Link>
+          </div>
         </motion.div>
       )}
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="pt-4"
-      >
-        <Link href="/groups/create">
-          <button className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-purple-400 hover:text-purple-600 transition-colors">
-            + Создать новую группу
-          </button>
-        </Link>
-      </motion.div>
+      {/* Create button at bottom */}
+      {groups.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="p-4 pt-0"
+        >
+          <Link href="/groups/create">
+            <button className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all">
+              + Создать новую группу
+            </button>
+          </Link>
+        </motion.div>
+      )}
     </div>
   );
 }
