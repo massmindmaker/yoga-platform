@@ -217,6 +217,78 @@ export default function GroupDetailPage() {
         </Card>
       </motion.div>
 
+      {/* Active Votings */}
+      {(group as any).votings && (group as any).votings.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Vote className="w-4 h-4" />
+                Активные голосования
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="space-y-3">
+                {(group as any).votings.map((voting: any) => {
+                  const totalVotes = voting._count.votes;
+                  const progress = Math.round((totalVotes / voting.minParticipants) * 100);
+                  const isActive = voting.status === 'ACTIVE';
+                  
+                  return (
+                    <div
+                      key={voting.id}
+                      className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{voting.title}</h4>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            До {new Date(voting.deadline).toLocaleDateString("ru-RU", { 
+                              day: "numeric", 
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          isActive 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {isActive ? "Активно" : "Завершено"}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-gray-600">Проголосовало</span>
+                            <span className="text-xs font-medium text-purple-700">
+                              {totalVotes}/{voting.minParticipants} ({progress}%)
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Students Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
