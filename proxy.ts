@@ -124,6 +124,8 @@ export function proxy(request: NextRequest) {
       const allowedOrigins = [
         process.env.NEXT_PUBLIC_APP_URL,
         "https://web.telegram.org",
+        "http://localhost:3000",
+        "http://localhost:3001",
       ].filter(Boolean);
 
       // Проверяем origin (разрешаем запросы без origin для мобильных)
@@ -133,7 +135,7 @@ export function proxy(request: NextRequest) {
         );
         if (!isAllowedOrigin) {
           return NextResponse.json(
-            { success: false, error: "Invalid origin" },
+            { success: false, error: `Invalid origin: ${origin}` },
             { status: 403 }
           );
         }

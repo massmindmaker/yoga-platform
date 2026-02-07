@@ -30,6 +30,7 @@ import {
   MessageCircle,
   Loader2,
   Calendar,
+  Vote,
 } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
 
@@ -257,8 +258,14 @@ export default function GroupDetailPage() {
         transition={{ delay: 0.4 }}
         className="pt-4 space-y-3"
       >
+        <Link href={`/groups/${group.id}/voting/create`}>
+          <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+            <Vote className="w-4 h-4 mr-2" />
+            Создать голосование
+          </Button>
+        </Link>
         <Link href={`/groups/${group.id}/edit`}>
-          <Button className="w-full bg-purple-600 hover:bg-purple-700">
+          <Button variant="outline" className="w-full">
             <Edit className="w-4 h-4 mr-2" />
             Редактировать группу
           </Button>

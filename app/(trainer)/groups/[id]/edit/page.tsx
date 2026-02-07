@@ -43,8 +43,8 @@ export default function EditGroupPage() {
     description: "",
     groupType: "REGULAR" as "REGULAR" | "INTENSIVE",
     pricingType: "FIXED" as "FIXED" | "DYNAMIC",
-    fixedPrice: 1,
-    maxStudents: 15,
+    fixedPrice: 1000,
+    maxStudents: 3,
     selectedDays: [] as number[],
     time: "10:00",
     telegramChat: "",
@@ -63,7 +63,7 @@ export default function EditGroupPage() {
         description: group.description || "",
         groupType: (group as any).groupType || "REGULAR",
         pricingType: (group as any).pricingType || "FIXED",
-        fixedPrice: (group as any).fixedPrice || 1,
+        fixedPrice: (group as any).fixedPrice || 1000,
         maxStudents: group.maxStudents,
         selectedDays: days,
         time: time,
@@ -228,13 +228,13 @@ export default function EditGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Максимум учеников *</label>
+                  <label className="block text-sm font-medium mb-1">Минимум учеников *</label>
                   <Input
                     type="number"
                     min={1}
-                    placeholder="15"
+                    placeholder="3"
                     value={formData.maxStudents}
-                    onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 15 })}
+                    onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 3 })}
                   />
                 </div>
               </CardContent>
@@ -294,15 +294,17 @@ export default function EditGroupPage() {
 
                 {formData.pricingType === "FIXED" && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">Стоимость (занятий с баланса)</label>
+                    <label className="block text-sm font-medium mb-1">Стоимость занятия (₽)</label>
                     <Input
                       type="number"
-                      min={1}
+                      min={100}
+                      step={100}
+                      placeholder="1000"
                       value={formData.fixedPrice}
-                      onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) || 1000 })}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Сколько занятий списывается за {formData.groupType === "INTENSIVE" ? "весь интенсив" : "одно занятие"}
+                      Цена за {formData.groupType === "INTENSIVE" ? "весь интенсив" : "одно занятие"} в рублях. При голосовании списывается 1 занятие с баланса.
                     </p>
                   </div>
                 )}
@@ -465,7 +467,7 @@ export default function EditGroupPage() {
                     <span className="text-gray-500">Ценообразование:</span>
                     <span className="font-medium">
                       {formData.pricingType === "FIXED" 
-                        ? `Фикс. (${formData.fixedPrice} зан.)` 
+                        ? `Фикс. (${formData.fixedPrice}₽)` 
                         : "Динамическое"}
                     </span>
                   </div>
@@ -487,7 +489,7 @@ export default function EditGroupPage() {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Макс. учеников:</span>
+                    <span className="text-gray-500">Мин. учеников:</span>
                     <span className="font-medium">{formData.maxStudents}</span>
                   </div>
                 </div>

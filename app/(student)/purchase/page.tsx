@@ -104,7 +104,7 @@ export default function PurchasePage() {
               <ul className="text-sm text-purple-700 space-y-1">
                 <li>• Занятия не сгорают</li>
                 <li>• Можно заморозить на 2 недели</li>
-                <li>• Оплата через Telegram Pay</li>
+                <li>• Безопасная оплата через T-Bank</li>
               </ul>
             </div>
           </div>
