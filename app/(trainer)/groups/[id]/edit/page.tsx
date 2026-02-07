@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, MessageCircle, Calendar, Users, CreditCard } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, Calendar, CreditCard, Clock } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
 
 const weekDays = [
@@ -29,6 +29,11 @@ const timeSlots = [
   "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"
 ];
 
+type DaySchedule = {
+  dayOfWeek: number;
+  time: string;
+};
+
 export default function EditGroupPage() {
   const router = useRouter();
   const params = useParams();
@@ -45,8 +50,7 @@ export default function EditGroupPage() {
     pricingType: "FIXED" as "FIXED" | "DYNAMIC",
     fixedPrice: 1000,
     maxStudents: 3,
-    selectedDays: [] as number[],
-    time: "10:00",
+    daySchedules: [] as DaySchedule[],
     telegramChat: "",
     startsAt: "",
     endsAt: "",
@@ -55,8 +59,10 @@ export default function EditGroupPage() {
   // Load group data when available
   useEffect(() => {
     if (group) {
-      const days = group.schedules?.map(s => s.dayOfWeek) || [];
-      const time = group.schedules?.[0]?.time || "10:00";
+      const daySchedules: DaySchedule[] = (group.schedules || []).map(s => ({
+        dayOfWeek: s.dayOfWeek,
+        time: s.time
+      }));
       
       setFormData({
         name: group.name,
@@ -65,8 +71,7 @@ export default function EditGroupPage() {
         pricingType: (group as any).pricingType || "FIXED",
         fixedPrice: (group as any).fixedPrice || 1000,
         maxStudents: group.maxStudents,
-        selectedDays: days,
-        time: time,
+        daySchedules,
         telegramChat: group.telegramChat || "",
         startsAt: (group as any).startsAt ? new Date((group as any).startsAt).toISOString().split('T')[0] : "",
         endsAt: (group as any).endsAt ? new Date((group as any).endsAt).toISOString().split('T')[0] : "",
@@ -75,26 +80,41 @@ export default function EditGroupPage() {
   }, [group]);
 
   const handleDayToggle = (dayOfWeek: number) => {
+    setFormData(prev => {
+      const exists = prev.daySchedules.find(d => d.dayOfWeek === dayOfWeek);
+      if (exists) {
+        return {
+          ...prev,
+          daySchedules: prev.daySchedules.filter(d => d.dayOfWeek !== dayOfWeek)
+        };
+      } else {
+        return {
+          ...prev,
+          daySchedules: [...prev.daySchedules, { dayOfWeek, time: "10:00" }]
+        };
+      }
+    });
+  };
+
+  const handleTimeChange = (dayOfWeek: number, time: string) => {
     setFormData(prev => ({
       ...prev,
-      selectedDays: prev.selectedDays.includes(dayOfWeek)
-        ? prev.selectedDays.filter(d => d !== dayOfWeek)
-        : [...prev.selectedDays, dayOfWeek]
+      daySchedules: prev.daySchedules.map(d => 
+        d.dayOfWeek === dayOfWeek ? { ...d, time } : d
+      )
     }));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     
-    const schedules = formData.selectedDays.map(dayOfWeek => ({
-      dayOfWeek,
-      time: formData.time,
-    }));
+    const schedules = formData.groupType === "REGULAR" 
+      ? formData.daySchedules 
+      : [];
     
     const result = await updateGroup({
       name: formData.name,
       description: formData.description,
-      groupType: formData.groupType,
       pricingType: formData.pricingType,
       fixedPrice: formData.fixedPrice,
       maxStudents: formData.maxStudents,
@@ -195,43 +215,19 @@ export default function EditGroupPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Тип группы *</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, groupType: "REGULAR" })}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        formData.groupType === "REGULAR"
-                          ? "border-purple-600 bg-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <Calendar className="w-5 h-5 mx-auto mb-1 text-purple-600" />
-                      <span className="text-sm font-medium">Регулярные</span>
-                      <p className="text-xs text-gray-500 mt-1">Еженедельное расписание</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, groupType: "INTENSIVE" })}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        formData.groupType === "INTENSIVE"
-                          ? "border-purple-600 bg-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <Calendar className="w-5 h-5 mx-auto mb-1 text-orange-600" />
-                      <span className="text-sm font-medium">Интенсив</span>
-                      <p className="text-xs text-gray-500 mt-1">Разовое событие</p>
-                    </button>
-                  </div>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Тип группы:</strong> {formData.groupType === "REGULAR" ? "Регулярные занятия" : "Интенсив"}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Тип группы нельзя изменить после создания
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Минимум учеников *</label>
                   <Input
                     type="number"
-                    min={1}
                     placeholder="3"
                     value={formData.maxStudents}
                     onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 3 })}
@@ -276,7 +272,7 @@ export default function EditGroupPage() {
                     }`}
                   >
                     <span className="text-sm font-medium">Фиксированная</span>
-                    <p className="text-xs text-gray-500 mt-1">Списание с баланса при голосовании</p>
+                    <p className="text-xs text-gray-500 mt-1">Списание с баланса</p>
                   </button>
                   <button
                     type="button"
@@ -288,7 +284,7 @@ export default function EditGroupPage() {
                     }`}
                   >
                     <span className="text-sm font-medium">Динамическая</span>
-                    <p className="text-xs text-gray-500 mt-1">Цена определяется после голосования</p>
+                    <p className="text-xs text-gray-500 mt-1">Цена после голосования</p>
                   </button>
                 </div>
 
@@ -304,7 +300,7 @@ export default function EditGroupPage() {
                       onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) || 1000 })}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Цена за {formData.groupType === "INTENSIVE" ? "весь интенсив" : "одно занятие"} в рублях. При голосовании списывается 1 занятие с баланса.
+                      Цена за {formData.groupType === "INTENSIVE" ? "весь интенсив" : "одно занятие"}. При голосовании списывается 1 занятие.
                     </p>
                   </div>
                 )}
@@ -342,60 +338,66 @@ export default function EditGroupPage() {
               </Card>
             )}
 
-            {/* Расписание */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium">Расписание</span>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Дни недели *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {weekDays.map((day) => (
-                      <button
-                        key={day.id}
-                        type="button"
-                        onClick={() => handleDayToggle(day.dayOfWeek)}
-                        className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                          formData.selectedDays.includes(day.dayOfWeek)
-                            ? "bg-purple-600 text-white"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        {day.label}
-                      </button>
-                    ))}
+            {/* Расписание для регулярных */}
+            {formData.groupType === "REGULAR" && (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium">Расписание</span>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Время занятий *</label>
-                  <select
-                    className="w-full h-10 rounded-md border border-input bg-transparent px-3"
-                    value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  >
-                    {timeSlots.map((time) => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {formData.selectedDays.length > 0 && (
-                  <div className="bg-purple-50 p-3 rounded-lg">
-                    <p className="text-sm text-purple-800">
-                      <strong>Расписание:</strong>{" "}
-                      {formData.selectedDays
-                        .sort((a, b) => a - b)
-                        .map(d => weekDays.find(wd => wd.dayOfWeek === d)?.label)
-                        .join(", ")} в {formData.time}
-                    </p>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Дни недели *</label>
+                    <div className="flex flex-wrap gap-2">
+                      {weekDays.map((day) => {
+                        const isSelected = formData.daySchedules.some(d => d.dayOfWeek === day.dayOfWeek);
+                        return (
+                          <button
+                            key={day.id}
+                            type="button"
+                            onClick={() => handleDayToggle(day.dayOfWeek)}
+                            className={`w-12 h-12 rounded-lg font-medium transition-colors ${
+                              isSelected
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {formData.daySchedules.length > 0 && (
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium">Время для каждого дня</label>
+                      {formData.daySchedules
+                        .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                        .map((daySchedule) => {
+                          const dayLabel = weekDays.find(d => d.dayOfWeek === daySchedule.dayOfWeek)?.label;
+                          return (
+                            <div key={daySchedule.dayOfWeek} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                              <Clock className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm font-medium w-8">{dayLabel}</span>
+                              <select
+                                className="flex-1 h-9 rounded-md border border-input bg-white px-3"
+                                value={daySchedule.time}
+                                onChange={(e) => handleTimeChange(daySchedule.dayOfWeek, e.target.value)}
+                              >
+                                {timeSlots.map((time) => (
+                                  <option key={time} value={time}>{time}</option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <div className="flex gap-3">
               <Button 
@@ -408,7 +410,9 @@ export default function EditGroupPage() {
               <Button 
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
                 onClick={() => setStep(3)}
-                disabled={formData.selectedDays.length === 0}
+                disabled={
+                  formData.groupType === "REGULAR" && formData.daySchedules.length === 0
+                }
               >
                 Далее
               </Button>
@@ -471,15 +475,20 @@ export default function EditGroupPage() {
                         : "Динамическое"}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Расписание:</span>
-                    <span className="font-medium text-right">
-                      {formData.selectedDays
-                        .sort((a, b) => a - b)
-                        .map(d => weekDays.find(wd => wd.dayOfWeek === d)?.label)
-                        .join(", ")} в {formData.time}
-                    </span>
-                  </div>
+                  {formData.groupType === "REGULAR" && formData.daySchedules.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Расписание:</span>
+                      <span className="font-medium text-right">
+                        {formData.daySchedules
+                          .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                          .map(d => {
+                            const day = weekDays.find(wd => wd.dayOfWeek === d.dayOfWeek);
+                            return `${day?.label} ${d.time}`;
+                          })
+                          .join(", ")}
+                      </span>
+                    </div>
+                  )}
                   {formData.groupType === "INTENSIVE" && formData.startsAt && (
                     <div className="flex justify-between">
                       <span className="text-gray-500">Даты:</span>
