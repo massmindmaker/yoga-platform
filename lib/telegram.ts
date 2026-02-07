@@ -64,46 +64,88 @@ export async function getOrCreateUser(telegramUser: TelegramUser) {
   return newUser;
 }
 
-// Отправить сообщение о голосовании
-export async function sendVotingMessage(
+// Отправить голосование с inline кнопками
+export async function sendVotingToChat(
   chatId: string,
   voting: {
     id: string;
     title: string;
-    currentVotes: number;
+    description?: string;
     minParticipants: number;
     deadline: Date;
+    chargeOnVote: boolean;
+    options: Array<{
+      id: string;
+      dayOfWeek: number;
+      time: string;
+      description?: string;
+    }>;
+    group: {
+      fixedPrice?: number;
+    };
   }
 ) {
-  if (!BOT_TOKEN) return;
+  if (!BOT_TOKEN) {
+    console.error("TELEGRAM_BOT_TOKEN not set");
+    return { success: false, error: "Bot token not configured" };
+  }
 
-  const progress = Math.round((voting.currentVotes / voting.minParticipants) * 100);
-  const needed = Math.max(0, voting.minParticipants - voting.currentVotes);
+  const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  
+  // Форматируем дедлайн
+  const deadlineStr = voting.deadline.toLocaleString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
-  const message = `
-🗳️ *${voting.title}*
+  // Формируем текст сообщения
+  let message = `🗳️ *${voting.title}*\n`;
+  if (voting.description) {
+    message += `\n${voting.description}\n`;
+  }
+  message += `\n📅 Дедлайн: ${deadlineStr}`;
+  message += `\n👥 Минимум участников: ${voting.minParticipants}`;
+  
+  if (voting.chargeOnVote) {
+    const price = voting.group.fixedPrice || 1000;
+    message += `\n💰 При голосовании спишется 1 занятие (${price}₽)`;
+  }
+  
+  message += `\n\n_Выберите дни, когда сможете прийти:_`;
 
-📊 Проголосовало: *${voting.currentVotes}/${voting.minParticipants}* (${progress}%)
-⏰ До: ${voting.deadline.toLocaleDateString("ru-RU")}
-
-${needed > 0 ? `⚠️ Нужно еще *${needed}* человек` : "✅ Занятие состоится!"}
-
-[Проголосовать в приложении](${process.env.NEXT_PUBLIC_APP_URL}/voting)
-  `.trim();
+  // Создаём inline кнопки для каждого дня
+  const keyboard = {
+    inline_keyboard: voting.options.map(opt => [{
+      text: `${DAYS_SHORT[opt.dayOfWeek]} ${opt.time}`,
+      callback_data: `vote_${voting.id}_${opt.id}`
+    }])
+  };
 
   try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
         text: message,
         parse_mode: "Markdown",
-        disable_web_page_preview: true,
+        reply_markup: keyboard,
       }),
     });
+
+    const data = await response.json();
+    
+    if (data.ok) {
+      return { success: true, messageId: data.result.message_id };
+    } else {
+      console.error("Telegram API error:", data);
+      return { success: false, error: data.description };
+    }
   } catch (error) {
-    console.error("Error sending Telegram message:", error);
+    console.error("Error sending voting to Telegram:", error);
+    return { success: false, error: "Network error" };
   }
 }
 

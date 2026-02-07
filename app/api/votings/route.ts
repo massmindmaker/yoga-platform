@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createVotingSchema } from '@/lib/validation';
+import { sendVotingToChat } from '@/lib/telegram';
 
 // GET /api/votings - получить активные голосования
 export async function GET(req: NextRequest) {
@@ -121,7 +122,33 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // TODO: Publish to Telegram chat if publishToTelegram is true
+    // Publish to Telegram chat if group has telegramChat
+    if (group.telegramChat) {
+      const telegramResult = await sendVotingToChat(group.telegramChat, {
+        id: voting.id,
+        title: voting.title,
+        minParticipants: voting.minParticipants,
+        deadline: voting.deadline,
+        chargeOnVote: voting.chargeOnVote,
+        options: voting.options.map(opt => ({
+          id: opt.id,
+          dayOfWeek: opt.dayOfWeek,
+          time: opt.time,
+          description: opt.description || undefined,
+        })),
+        group: {
+          fixedPrice: group.fixedPrice || undefined,
+        },
+      });
+
+      if (telegramResult.success && telegramResult.messageId) {
+        // Save Telegram message ID
+        await prisma.voting.update({
+          where: { id: voting.id },
+          data: { telegramPollId: telegramResult.messageId.toString() },
+        });
+      }
+    }
 
     return NextResponse.json({ success: true, data: voting });
   } catch (error) {

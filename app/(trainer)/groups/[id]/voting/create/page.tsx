@@ -126,6 +126,37 @@ export default function CreateVotingPage() {
     );
   }
 
+  // Check if group has Telegram chat
+  if (!group.telegramChat) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Telegram чат не привязан</h3>
+          <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+            Для создания голосования необходимо привязать Telegram чат к группе. 
+            Голосование публикуется в чат группы.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link href={`/groups/${groupId}`}>
+              <Button variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад
+              </Button>
+            </Link>
+            <Link href={`/groups/${groupId}/edit`}>
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                Привязать чат
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}

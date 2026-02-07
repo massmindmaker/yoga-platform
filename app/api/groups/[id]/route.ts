@@ -40,6 +40,21 @@ export async function GET(
             }
           }
         },
+        votings: {
+          where: {
+            status: { in: ['ACTIVE', 'FINALIZED'] }
+          },
+          include: {
+            options: {
+              include: {
+                _count: { select: { votes: true } }
+              }
+            },
+            _count: { select: { votes: true } }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        },
         _count: {
           select: { students: true }
         }
