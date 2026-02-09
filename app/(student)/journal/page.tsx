@@ -98,8 +98,10 @@ export default function StudentJournalPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'PRESENT':
       case 'ATTENDED':
         return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+      case 'ABSENT':
       case 'NO_SHOW':
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
@@ -109,8 +111,11 @@ export default function StudentJournalPage() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
+      'PRESENT': 'Посещено',
       'ATTENDED': 'Посещено',
+      'ABSENT': 'Неявка',
       'NO_SHOW': 'Неявка',
+      'LATE': 'Опоздание',
       'CANCELLED': 'Отменено',
     };
     return labels[status] || status;
@@ -118,8 +123,11 @@ export default function StudentJournalPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
+      'PRESENT': 'bg-green-100 text-green-700',
       'ATTENDED': 'bg-green-100 text-green-700',
+      'ABSENT': 'bg-red-100 text-red-700',
       'NO_SHOW': 'bg-red-100 text-red-700',
+      'LATE': 'bg-yellow-100 text-yellow-700',
       'CANCELLED': 'bg-gray-100 text-gray-600',
     };
     return colors[status] || 'bg-gray-100 text-gray-600';

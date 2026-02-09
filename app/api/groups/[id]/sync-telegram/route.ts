@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+function getBotToken() {
+  return process.env.TELEGRAM_BOT_TOKEN;
+}
 
 // POST /api/groups/[id]/sync-telegram - синхронизировать учеников из Telegram чата
 export async function POST(
@@ -11,6 +13,7 @@ export async function POST(
   try {
     const { id: groupId } = await params;
 
+    const BOT_TOKEN = getBotToken();
     if (!BOT_TOKEN) {
       return NextResponse.json(
         { success: false, error: "TELEGRAM_BOT_TOKEN not configured" },

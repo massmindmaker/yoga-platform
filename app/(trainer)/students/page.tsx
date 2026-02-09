@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Search, Wallet, Calendar } from "lucide-react";
+import { Search, Wallet, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Users } from "lucide-react";
 
@@ -19,29 +19,23 @@ interface StudentData {
 export default function StudentsPage() {
   const [students, setStudents] = useState<StudentData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     async function fetchStudents() {
       try {
-        const res = await fetch('/api/groups');
+        setIsLoading(true);
+        const res = await fetch('/api/users?role=STUDENT');
         const json = await res.json();
         if (json.success && json.data) {
-          // Collect all unique students from all groups
-          const studentsMap = new Map<string, StudentData>();
-          for (const group of json.data) {
-            if (group.students) {
-              for (const gs of group.students) {
-                if (gs.user && !studentsMap.has(gs.user.id)) {
-                  studentsMap.set(gs.user.id, gs.user);
-                }
-              }
-            }
-          }
-          setStudents(Array.from(studentsMap.values()));
+          setStudents(json.data);
+        } else {
+          setError(json.error || "Ошибка загрузки");
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error("Error fetching students:", err);
+        setError("Ошибка сети");
       } finally {
         setIsLoading(false);
       }
@@ -83,7 +77,13 @@ export default function StudentsPage() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <div className="text-center py-8 text-gray-500">Загрузка...</div>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-[#3BCEAC]" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">{error}</p>
+          </div>
         ) : filtered.length > 0 ? (
           filtered.map((student, index) => (
             <motion.div
@@ -124,7 +124,7 @@ export default function StudentsPage() {
           <EmptyState
             icon={Users}
             title="Нет учеников"
-            description="Ученики появятся после того как присоединятся к группам"
+            description="Ученики появятся после регистрации"
           />
         )}
       </div>

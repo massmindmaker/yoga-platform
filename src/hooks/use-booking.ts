@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface BookingData {
@@ -11,19 +11,10 @@ interface BookingData {
   createdAt: string;
 }
 
-interface UseBookingReturn {
-  bookings: BookingData[];
-  isLoading: boolean;
-  error: Error | null;
-  bookClass: (classId: string, userId: string) => Promise<void>;
-  cancelBooking: (bookingId: string) => Promise<void>;
-  refetch: () => void;
-}
-
-export function useBooking(userId?: string): UseBookingReturn {
+export function useBooking(userId?: string) {
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
     if (!userId) return;
@@ -31,52 +22,78 @@ export function useBooking(userId?: string): UseBookingReturn {
     setError(null);
 
     try {
-      // When /api/bookings endpoint is added, fetch from there
-      setBookings([]);
+      const response = await fetch(`/api/bookings?userId=${userId}`);
+      const data = await response.json();
+      if (data.success) {
+        setBookings(data.data || []);
+      } else {
+        setError(data.error || "Ошибка загрузки");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch bookings'));
+      setError("Ошибка сети");
+      console.error("Error fetching bookings:", err);
     } finally {
       setIsLoading(false);
     }
   }, [userId]);
 
-  const bookClass = useCallback(async (classId: string, userId: string): Promise<void> => {
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const bookClass = useCallback(async (classId: string, bookUserId: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // TODO: POST /api/bookings
-      toast.success('Запись подтверждена!', {
-        description: 'Вы успешно записались на занятие',
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId, userId: bookUserId }),
       });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Запись подтверждена!', {
+          description: 'Вы успешно записались на занятие',
+        });
+        await fetchBookings();
+      } else {
+        toast.error('Ошибка записи', { description: data.error });
+      }
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to book class');
-      setError(error);
-      toast.error('Ошибка записи', { description: error.message });
-      throw error;
+      toast.error('Ошибка сети');
+      console.error("Error booking class:", err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchBookings]);
 
   const cancelBooking = useCallback(async (bookingId: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // TODO: PATCH /api/bookings/:id/cancel
-      toast.success('Запись отменена', {
-        description: 'Ваше бронирование успешно отменено',
+      const response = await fetch(`/api/bookings?id=${bookingId}`, {
+        method: 'DELETE',
       });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Запись отменена');
+        await fetchBookings();
+      } else {
+        toast.error('Ошибка отмены', { description: data.error });
+      }
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to cancel booking');
-      setError(error);
-      toast.error('Ошибка отмены', { description: error.message });
-      throw error;
+      toast.error('Ошибка сети');
+      console.error("Error cancelling booking:", err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchBookings]);
 
   return {
     bookings,

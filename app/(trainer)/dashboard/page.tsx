@@ -284,7 +284,7 @@ export default function DashboardPage() {
         transition={{ delay: 0.4 }}
         className="grid grid-cols-2 gap-3"
       >
-        <Link href="/trainer-groups">
+        <Link href="/groups">
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -301,6 +301,7 @@ export default function DashboardPage() {
         </Link>
 
         <Link href="/trainer-voting">
+
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">

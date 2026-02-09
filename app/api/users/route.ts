@@ -57,10 +57,19 @@ export async function POST(req: NextRequest) {
 }
 
 // GET /api/users - получить всех пользователей
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const role = searchParams.get("role");
+    const limit = searchParams.get("limit");
+
+    const where: any = {};
+    if (role) where.role = role;
+
     const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' }
+      where,
+      orderBy: { createdAt: 'desc' },
+      ...(limit ? { take: parseInt(limit) } : {}),
     });
 
     return NextResponse.json({ success: true, data: users });

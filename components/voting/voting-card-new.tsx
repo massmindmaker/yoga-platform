@@ -4,19 +4,27 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Clock, 
-  Users, 
   CheckCircle2, 
-  AlertCircle, 
   ChevronDown, 
   ChevronUp,
   Edit3,
-  Trash2,
   MoreVertical,
   Calendar,
   Wallet,
   MessageSquare,
+  Users,
   X
 } from "lucide-react";
+
+// Russian pluralization helper
+function pluralize(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return many;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+}
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -228,7 +236,7 @@ export function VotingCard({
                       size="xs" 
                     />
                     <span className="text-sm text-white/80">
-                      {uniqueVoters.length} {uniqueVoters.length === 1 ? "человек" : uniqueVoters.length < 5 ? "человека" : "человек"}
+                      {uniqueVoters.length} {pluralize(uniqueVoters.length, "человек", "человека", "человек")}
                     </span>
                   </>
                 ) : (
@@ -269,7 +277,7 @@ export function VotingCard({
               <p className="text-xs text-gray-500 mt-1">
                 {isSuccessful 
                   ? "✅ Занятие состоится!" 
-                  : `Нужно еще ${voting.minParticipants - totalVotes} ${voting.minParticipants - totalVotes === 1 ? "человек" : "человека"}`
+                  : `Нужно еще ${voting.minParticipants - totalVotes} ${pluralize(voting.minParticipants - totalVotes, "человек", "человека", "человек")}`
                 }
               </p>
             </div>

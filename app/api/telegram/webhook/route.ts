@@ -3,90 +3,19 @@ import { prisma } from "@/lib/db";
 import { sendTelegramMessage, sendMainMenu, notifyGroupAboutClass } from "@/lib/bot-messages";
 import { createTelegramInvoice, sendPaymentRequestAfterVote } from "@/lib/telegram";
 
-// POST /api/telegram/webhook - webhook для сообщений от бота
-export async function POST(req: NextRequest) {
-  try {
-    const update = await req.json();
-    console.log("[WEBHOOK] Update received:", JSON.stringify(update).slice(0, 500));
-
-    // Обработка pre-checkout query (проверка перед оплатой)
-    if (update.pre_checkout_query) {
-      await handlePreCheckoutQuery(update.pre_checkout_query);
-      return NextResponse.json({ ok: true });
-    }
-
-    // Обработка успешного платежа
-    if (update.message?.successful_payment) {
-      await handleSuccessfulPayment(update.message);
-      return NextResponse.json({ ok: true });
-    }
-
-    // Обработка callback queries (кнопки)
-    if (update.callback_query) {
-      await handleCallbackQuery(update.callback_query);
-      return NextResponse.json({ ok: true });
-    }
-
-    // Обработка сообщений
-    if (update.message) {
-      const chatId = update.message.chat.id;
-      const from = update.message.from;
-      const text = update.message.text || "";
-      const isGroup = update.message.chat.type === "group" || update.message.chat.type === "supergroup";
-
-      // Команда /start
-      if (text === "/start") {
-        await handleStart(chatId, from, isGroup);
-      }
-      // Команда /help
-      else if (text === "/help") {
-        await handleHelp(chatId, isGroup);
-      }
-      // Команда /balance
-      else if (text === "/balance") {
-        await handleBalance(chatId, from);
-      }
-      // Команда /schedule
-      else if (text === "/schedule") {
-        await handleSchedule(chatId, isGroup);
-      }
-      // Команда /vote
-      else if (text === "/vote") {
-        await handleVote(chatId, from);
-      }
-      // Команда для группы - показать расписание группы
-      else if (isGroup && text === "/groupschedule") {
-        await handleGroupSchedule(chatId);
-      }
-      // Команда для группы - статистика
-      else if (isGroup && text === "/stats") {
-        await handleGroupStats(chatId);
-      }
-      // Если бота добавили в группу
-      else if (update.message.new_chat_members) {
-        const botId = (await getBotInfo()).id;
-        const isBotAdded = update.message.new_chat_members.some(
-          (member: any) => member.id === botId
-        );
-        if (isBotAdded) {
-          await handleBotAddedToGroup(chatId);
-        }
-      }
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error("[WEBHOOK] Error in Telegram webhook:", error);
-    return NextResponse.json({ ok: false, error: String(error) });
-  }
+function getAppUrl(path: string = ""): string {
+  return ((process.env.NEXT_PUBLIC_APP_URL || "").trim() + path);
 }
 
 // Обработка команды /start
 async function handleStart(chatId: number, user: any, isGroup: boolean) {
-  if (isGroup) {
-    await sendTelegramMessage(
-      chatId,
-      `👋 Привет, группа!
+  try {
+    console.log("[WEBHOOK] handleStart called:", { chatId, userId: user?.id, isGroup });
+    
+    if (isGroup) {
+      await sendTelegramMessage(
+        chatId,
+        `👋 Привет, группа!
 
 Я бот Yoga Studio. Я буду присылать сюда:
 • Напоминания о занятиях
@@ -96,34 +25,34 @@ async function handleStart(chatId: number, user: any, isGroup: boolean) {
 Используйте команды:
 /groupschedule - расписание
 /stats - статистика`
-    );
-    return;
-  }
+      );
+      return;
+    }
 
-  // Личное сообщение
-  const telegramUser = {
-    id: user.id,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    username: user.username,
-  };
+    // Личное сообщение
+    console.log("[WEBHOOK] Upserting user:", { telegramId: user.id.toString(), firstName: user.first_name });
 
-  // Получаем или создаем пользователя
-  const dbUser = await prisma.user.upsert({
-    where: { telegramId: user.id.toString() },
-    update: { firstName: user.first_name },
-    create: {
-      telegramId: user.id.toString(),
-      firstName: user.first_name,
-      lastName: user.last_name || null,
-      role: "STUDENT",
-      balance: 0,
-    },
-  });
+    // Получаем или создаем пользователя
+    const dbUser = await prisma.user.upsert({
+      where: { telegramId: user.id.toString() },
+      update: { firstName: user.first_name },
+      create: {
+        telegramId: user.id.toString(),
+        firstName: user.first_name,
+        lastName: user.last_name || null,
+        role: "STUDENT",
+        balance: 0,
+      },
+    });
 
-  await sendTelegramMessage(
-    chatId,
-    `👋 Привет, ${user.first_name}!
+    console.log("[WEBHOOK] User upserted:", { id: dbUser.id, balance: dbUser.balance });
+
+    const appUrl = getAppUrl();
+    console.log("[WEBHOOK] App URL for web_app:", JSON.stringify(appUrl));
+
+    await sendTelegramMessage(
+      chatId,
+      `👋 Привет, ${user.first_name}!
 
 Твой баланс: *${dbUser.balance}* занятий
 
@@ -131,21 +60,39 @@ async function handleStart(chatId: number, user: any, isGroup: boolean) {
 • Записываться на занятия
 • Узнавать о голосованиях
 • Отслеживать баланс`,
-    {
-      inline_keyboard: [
-        [
-          {
-            text: "🧘‍♀️ Открыть приложение",
-            web_app: { url: process.env.NEXT_PUBLIC_APP_URL || "" },
-          },
+      appUrl ? {
+        inline_keyboard: [
+          [
+            {
+              text: "🧘‍♀️ Открыть приложение",
+              web_app: { url: appUrl },
+            },
+          ],
+          [
+            { text: "💰 Мой баланс", callback_data: "show_balance" },
+            { text: "📅 Расписание", callback_data: "show_schedule" },
+          ],
         ],
-        [
-          { text: "💰 Мой баланс", callback_data: "show_balance" },
-          { text: "📅 Расписание", callback_data: "show_schedule" },
+      } : {
+        inline_keyboard: [
+          [
+            { text: "💰 Мой баланс", callback_data: "show_balance" },
+            { text: "📅 Расписание", callback_data: "show_schedule" },
+          ],
         ],
-      ],
+      }
+    );
+    
+    console.log("[WEBHOOK] handleStart completed successfully for chatId:", chatId);
+  } catch (error) {
+    console.error("[WEBHOOK] Error in handleStart:", error);
+    // Try to send a basic error message to the user
+    try {
+      await sendTelegramMessage(chatId, "❌ Произошла ошибка. Попробуйте позже или обратитесь к тренеру.");
+    } catch (sendError) {
+      console.error("[WEBHOOK] Failed to send error message:", sendError);
     }
-  );
+  }
 }
 
 // Обработка команды /help
@@ -176,7 +123,7 @@ async function handleHelp(chatId: number, isGroup: boolean) {
           [
             {
               text: "🧘‍♀️ Открыть приложение",
-              web_app: { url: process.env.NEXT_PUBLIC_APP_URL || "" },
+              web_app: { url: getAppUrl() },
             },
           ],
         ],
@@ -210,7 +157,7 @@ ${dbUser.balance === 0 ? "⚠️ Баланс пуст! Пополните в п
           {
             text: "💳 Пополнить",
             web_app: {
-              url: `${process.env.NEXT_PUBLIC_APP_URL}/purchase`,
+              url: getAppUrl("/purchase"),
             },
           },
         ],
@@ -249,7 +196,7 @@ async function handleSchedule(chatId: number, isGroup: boolean) {
         [
           {
             text: "🧘‍♀️ Записаться",
-            web_app: { url: process.env.NEXT_PUBLIC_APP_URL || "" },
+            web_app: { url: getAppUrl() },
           },
         ],
       ],
@@ -289,152 +236,13 @@ async function handleVote(chatId: number, user: any) {
             {
               text: "🗳️ Проголосовать",
               web_app: {
-                url: `${process.env.NEXT_PUBLIC_APP_URL}/voting`,
+                url: getAppUrl("/voting"),
               },
             },
           ],
         ],
       }
     );
-  }
-}
-
-// Обработка pre-checkout query (проверка перед оплатой)
-async function handlePreCheckoutQuery(preCheckoutQuery: any) {
-  const payload = preCheckoutQuery.invoice_payload;
-  
-  // Проверяем, что голосование и пользователь существуют
-  if (payload.startsWith("voting_")) {
-    const parts = payload.split("_");
-    const votingId = parts[1];
-    const userId = parts[2];
-    
-    const voting = await prisma.voting.findUnique({
-      where: { id: votingId },
-      include: { group: true }
-    });
-    
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-    
-    if (voting && user) {
-      // Подтверждаем оплату
-      await fetch(
-        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pre_checkout_query_id: preCheckoutQuery.id,
-            ok: true
-          }),
-        }
-      );
-      return;
-    }
-  }
-  
-  // Отклоняем оплату
-  await fetch(
-    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pre_checkout_query_id: preCheckoutQuery.id,
-        ok: false,
-        error_message: "Ошибка: голосование или пользователь не найдены"
-      }),
-    }
-  );
-}
-
-// Обработка успешного платежа
-async function handleSuccessfulPayment(message: any) {
-  const chatId = message.chat.id;
-  const payment = message.successful_payment;
-  const payload = payment.invoice_payload;
-  const telegramUserId = message.from.id.toString();
-  
-  if (payload.startsWith("voting_")) {
-    const parts = payload.split("_");
-    const votingId = parts[1];
-    const userId = parts[2];
-    
-    try {
-      // Находим пользователя
-      const user = await prisma.user.findFirst({
-        where: { telegramId: telegramUserId }
-      });
-      
-      if (!user) {
-        await sendTelegramMessage(chatId, "❌ Ошибка: пользователь не найден");
-        return;
-      }
-      
-      // Находим голосование
-      const voting = await prisma.voting.findUnique({
-        where: { id: votingId },
-        include: { group: true }
-      });
-      
-      if (!voting) {
-        await sendTelegramMessage(chatId, "❌ Ошибка: голосование не найдено");
-        return;
-      }
-      
-      // Создаем запись о платеже
-      await prisma.$transaction(async (tx) => {
-        // Создаем платеж
-        await tx.payment.create({
-          data: {
-            userId: user.id,
-            amount: payment.total_amount / 100,
-            status: "COMPLETED",
-            provider: "telegram_stars",
-            classesCount: 1,
-          }
-        });
-        
-        // Увеличиваем баланс пользователя
-        await tx.user.update({
-          where: { id: user.id },
-          data: { balance: { increment: 1 } }
-        });
-        
-        // Создаем запись о транзакции баланса
-        await tx.balanceTransaction.create({
-          data: {
-            userId: user.id,
-            amount: 1,
-            type: "PAYMENT_CREDIT",
-            description: `Оплата через Telegram за голосование: ${voting.title}`
-          }
-        });
-      });
-      
-      // Отправляем подтверждение
-      await sendTelegramMessage(
-        chatId,
-        `✅ *Оплата успешна!*\n\n💰 Сумма: ${payment.total_amount / 100} ${payment.currency}\n🎫 Ваш баланс пополнен на 1 занятие\n\nТеперь вы участвуете в голосовании "${voting.title}"`,
-        {
-          inline_keyboard: [
-            [{
-              text: "🗳️ Перейти к голосованию",
-              web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/voting` }
-            }]
-          ]
-        }
-      );
-      
-    } catch (error) {
-      console.error("Error processing payment:", error);
-      await sendTelegramMessage(
-        chatId,
-        "❌ Произошла ошибка при обработке платежа. Пожалуйста, обратитесь в поддержку."
-      );
-    }
   }
 }
 
@@ -554,7 +362,7 @@ async function handleVoteFromCallback(callbackQuery: any, votingId: string, opti
         inline_keyboard: [
           [{
             text: "🗳️ Посмотреть результаты",
-            web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/voting` }
+            web_app: { url: getAppUrl("/voting") }
           }]
         ]
       }
@@ -740,10 +548,227 @@ async function getBotInfo() {
   return data.result;
 }
 
+// Обработка pre-checkout query (проверка перед оплатой)
+async function handlePreCheckoutQuery(preCheckoutQuery: any) {
+  const payload = preCheckoutQuery.invoice_payload;
+  
+  // Проверяем, что голосование и пользователь существуют
+  if (payload.startsWith("voting_")) {
+    const parts = payload.split("_");
+    const votingId = parts[1];
+    const userId = parts[2];
+    
+    const voting = await prisma.voting.findUnique({
+      where: { id: votingId },
+      include: { group: true }
+    });
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (voting && user) {
+      // Подтверждаем оплату
+      await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pre_checkout_query_id: preCheckoutQuery.id,
+            ok: true
+          }),
+        }
+      );
+      return;
+    }
+  }
+  
+  // Отклоняем оплату
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pre_checkout_query_id: preCheckoutQuery.id,
+        ok: false,
+        error_message: "Ошибка: голосование или пользователь не найдены"
+      }),
+    }
+  );
+}
+
+// Обработка успешного платежа
+async function handleSuccessfulPayment(message: any) {
+  const chatId = message.chat.id;
+  const payment = message.successful_payment;
+  const payload = payment.invoice_payload;
+  const telegramUserId = message.from.id.toString();
+  
+  if (payload.startsWith("voting_")) {
+    const parts = payload.split("_");
+    const votingId = parts[1];
+    const userId = parts[2];
+    
+    try {
+      // Находим пользователя
+      const user = await prisma.user.findFirst({
+        where: { telegramId: telegramUserId }
+      });
+      
+      if (!user) {
+        await sendTelegramMessage(chatId, "❌ Ошибка: пользователь не найден");
+        return;
+      }
+      
+      // Находим голосование
+      const voting = await prisma.voting.findUnique({
+        where: { id: votingId },
+        include: { group: true }
+      });
+      
+      if (!voting) {
+        await sendTelegramMessage(chatId, "❌ Ошибка: голосование не найдено");
+        return;
+      }
+      
+      // Создаем запись о платеже
+      await prisma.$transaction(async (tx) => {
+        // Создаем платеж
+        await tx.payment.create({
+          data: {
+            userId: user.id,
+            amount: payment.total_amount / 100,
+            status: "COMPLETED",
+            provider: "telegram_stars",
+            classesCount: 1,
+          }
+        });
+        
+        // Увеличиваем баланс пользователя
+        await tx.user.update({
+          where: { id: user.id },
+          data: { balance: { increment: 1 } }
+        });
+        
+        // Создаем запись о транзакции баланса
+        await tx.balanceTransaction.create({
+          data: {
+            userId: user.id,
+            amount: 1,
+            type: "PAYMENT_CREDIT",
+            description: `Оплата через Telegram за голосование: ${voting.title}`
+          }
+        });
+      });
+      
+      // Отправляем подтверждение
+      await sendTelegramMessage(
+        chatId,
+        `✅ *Оплата успешна!*\n\n💰 Сумма: ${payment.total_amount / 100} ${payment.currency}\n🎫 Ваш баланс пополнен на 1 занятие\n\nТеперь вы участвуете в голосовании "${voting.title}"`,
+        {
+          inline_keyboard: [
+            [{
+              text: "🗳️ Перейти к голосованию",
+              web_app: { url: getAppUrl("/voting") }
+            }]
+          ]
+        }
+      );
+      
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      await sendTelegramMessage(
+        chatId,
+        "❌ Произошла ошибка при обработке платежа. Пожалуйста, обратитесь в поддержку."
+      );
+    }
+  }
+}
+
+// POST /api/telegram/webhook - webhook для сообщений от бота
+export async function POST(req: NextRequest) {
+  try {
+    const update = await req.json();
+    console.log("[WEBHOOK] Update received:", JSON.stringify(update).slice(0, 500));
+
+    // Обработка pre-checkout query (проверка перед оплатой)
+    if (update.pre_checkout_query) {
+      await handlePreCheckoutQuery(update.pre_checkout_query);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Обработка успешного платежа
+    if (update.message?.successful_payment) {
+      await handleSuccessfulPayment(update.message);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Обработка callback queries (кнопки)
+    if (update.callback_query) {
+      await handleCallbackQuery(update.callback_query);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Обработка сообщений
+    if (update.message) {
+      const chatId = update.message.chat.id;
+      const from = update.message.from;
+      const text = update.message.text || "";
+      const isGroup = update.message.chat.type === "group" || update.message.chat.type === "supergroup";
+
+      // Команда /start
+      if (text === "/start") {
+        await handleStart(chatId, from, isGroup);
+      }
+      // Команда /help
+      else if (text === "/help") {
+        await handleHelp(chatId, isGroup);
+      }
+      // Команда /balance
+      else if (text === "/balance") {
+        await handleBalance(chatId, from);
+      }
+      // Команда /schedule
+      else if (text === "/schedule") {
+        await handleSchedule(chatId, isGroup);
+      }
+      // Команда /vote
+      else if (text === "/vote") {
+        await handleVote(chatId, from);
+      }
+      // Команда для группы - показать расписание группы
+      else if (isGroup && text === "/groupschedule") {
+        await handleGroupSchedule(chatId);
+      }
+      // Команда для группы - статистика
+      else if (isGroup && text === "/stats") {
+        await handleGroupStats(chatId);
+      }
+      // Если бота добавили в группу
+      else if (update.message.new_chat_members) {
+        const botId = (await getBotInfo()).id;
+        const isBotAdded = update.message.new_chat_members.some(
+          (member: any) => member.id === botId
+        );
+        if (isBotAdded) {
+          await handleBotAddedToGroup(chatId);
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[WEBHOOK] Error in Telegram webhook:", error);
+    return NextResponse.json({ ok: false, error: String(error) });
+  }
+}
+
 // GET /api/telegram/webhook - установка webhook
 export async function GET() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/telegram/webhook`;
+  const webhookUrl = getAppUrl("/api/telegram/webhook");
 
   if (!token) {
     return NextResponse.json(

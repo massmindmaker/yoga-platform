@@ -332,7 +332,7 @@ export default function CreateGroupPage() {
 
                   {formData.selectedDays.length > 0 && (
                     <div className="bg-[#F0FDF9] p-3 rounded-lg">
-                      <p className="text-sm text-purple-800">
+                      <p className="text-sm text-[#0D9488]">
                         <strong>Расписание:</strong> { " " }
                         {formData.selectedDays.map(d => 
                           weekDays.find(wd => wd.id === d)?.label
@@ -430,7 +430,7 @@ export default function CreateGroupPage() {
                   <p className="text-sm font-medium">Как привязать чат:</p>
                   <ol className="text-sm text-gray-600 list-decimal list-inside space-y-1">
                     <li>Создайте группу в Telegram</li>
-                    <li>Добавьте бота @yoga_studio_bot</li>
+                    <li>Добавьте бота @Yom23_bot</li>
                     <li>Сделайте бота администратором</li>
                     <li>Вставьте ссылку выше</li>
                   </ol>

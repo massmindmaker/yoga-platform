@@ -265,21 +265,25 @@ export default function GroupDetailPage() {
                             <h4 className="font-medium text-gray-900">{voting.title}</h4>
                             {isExpanded && isActive && (
                               <div className="flex items-center gap-1">
-                                <Link 
-                                  href={`/groups/${group.id}/voting/${voting.id}/edit`}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                                    <Edit className="w-3 h-3 text-gray-600" />
-                                  </Button>
-                                </Link>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-6 w-6 rounded-full"
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation();
-                                    // TODO: Добавить логику удаления голосования
+                                    if (!confirm("Отменить голосование? Баланс будет возвращён участникам.")) return;
+                                    try {
+                                      const res = await fetch(`/api/votings/${voting.id}/cancel`, { method: "POST" });
+                                      const data = await res.json();
+                                      if (data.success) {
+                                        toast.success("Голосование отменено");
+                                        window.location.reload();
+                                      } else {
+                                        toast.error(data.error || "Ошибка отмены");
+                                      }
+                                    } catch {
+                                      toast.error("Ошибка отмены голосования");
+                                    }
                                   }}
                                 >
                                   <Trash2 className="w-3 h-3 text-red-500" />
