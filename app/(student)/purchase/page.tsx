@@ -1,17 +1,50 @@
 "use client";
 
+import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Minus, Plus, Wallet } from "lucide-react";
+import { Minus, Plus, Wallet, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useUser } from "@/src/hooks/use-user-context";
+import { usePayments } from "@/src/hooks/use-payments";
 
-const PRICE_PER_CLASS = 700; // Цена за одно занятие
+const PRICE_PER_CLASS = 700;
 
 export default function PurchasePage() {
   const [count, setCount] = useState(4);
+  const { user } = useUser();
+  const { createPayment, isLoading } = usePayments();
 
   const total = count * PRICE_PER_CLASS;
+
+  const handlePurchase = async () => {
+    if (!user?.id) {
+      toast.error("Необходимо авторизоваться");
+      return;
+    }
+
+    const result = await createPayment(
+      user.id,
+      total,
+      count,
+      user.telegramId || undefined
+    );
+
+    if (result.success) {
+      toast.success("Перенаправляем на страницу оплаты...");
+    } else {
+      if (result.error === "T-Bank credentials not configured") {
+        toast.error("Оплата временно недоступна", {
+          description: "Платёжная система ещё не настроена",
+        });
+      } else {
+        toast.error("Ошибка создания платежа", {
+          description: result.error,
+        });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,10 +151,19 @@ export default function PurchasePage() {
           className="fixed bottom-20 left-4 right-4"
         >
           <Button
-            className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl"
+            onClick={handlePurchase}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl disabled:opacity-50"
             size="lg"
           >
-            Оплатить {total.toLocaleString()} ₽
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Создаём платёж...
+              </>
+            ) : (
+              `Оплатить ${total.toLocaleString()} ₽`
+            )}
           </Button>
         </motion.div>
       </div>

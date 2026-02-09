@@ -63,6 +63,9 @@ export async function GET(req: NextRequest) {
               }
             }
           }
+        },
+        _count: {
+          select: { bookings: true }
         }
       },
       orderBy: {
