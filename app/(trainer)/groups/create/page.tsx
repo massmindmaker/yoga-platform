@@ -40,7 +40,8 @@ export default function CreateGroupPage() {
     description: "",
     groupType: "REGULAR" as "REGULAR" | "INTENSIVE",
     pricingType: "FIXED" as "FIXED" | "DYNAMIC",
-    fixedPrice: 1000,
+    fixedPrice: 1,
+    intensivePrice: 3000,
     minStudents: 3,
     selectedDays: [] as string[],
     time: "10:00",
@@ -75,8 +76,13 @@ export default function CreateGroupPage() {
       name: formData.name,
       description: formData.description,
       groupType: formData.groupType,
-      pricingType: formData.pricingType,
-      fixedPrice: formData.fixedPrice,
+      pricingType: formData.groupType === "REGULAR" ? formData.pricingType : undefined,
+      fixedPrice: formData.groupType === "REGULAR" && formData.pricingType === "FIXED" 
+        ? formData.fixedPrice 
+        : undefined,
+      intensivePrice: formData.groupType === "INTENSIVE" 
+        ? formData.intensivePrice 
+        : undefined,
       maxStudents: formData.minStudents,
       telegramChat: formData.telegramChat,
       startsAt: formData.startsAt ? new Date(formData.startsAt).toISOString() : null,
@@ -159,7 +165,7 @@ export default function CreateGroupPage() {
                       onClick={() => setFormData({ ...formData, groupType: "INTENSIVE" })}
                       className={`p-3 rounded-lg border-2 transition-all ${
                         formData.groupType === "INTENSIVE"
-                          ? "border-purple-600 bg-purple-50"
+                          ? "border-orange-600 bg-orange-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -200,59 +206,87 @@ export default function CreateGroupPage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
-            {/* Ценообразование */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium">Ценообразование</span>
-                </div>
+            {/* Ценообразование для регулярных */}
+            {formData.groupType === "REGULAR" && (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium">Ценообразование</span>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, pricingType: "FIXED" })}
-                    className={`p-3 rounded-lg border-2 transition-all text-left ${
-                      formData.pricingType === "FIXED"
-                        ? "border-purple-600 bg-purple-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <span className="text-sm font-medium block">Фиксированная</span>
-                    <p className="text-xs text-gray-500 mt-1">Списание с баланса</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, pricingType: "DYNAMIC" })}
-                    className={`p-3 rounded-lg border-2 transition-all text-left ${
-                      formData.pricingType === "DYNAMIC"
-                        ? "border-purple-600 bg-purple-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <span className="text-sm font-medium block">Динамическая</span>
-                    <p className="text-xs text-gray-500 mt-1">Цена после голосования</p>
-                  </button>
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, pricingType: "FIXED" })}
+                      className={`p-3 rounded-lg border-2 transition-all text-left ${
+                        formData.pricingType === "FIXED"
+                          ? "border-purple-600 bg-purple-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-sm font-medium block">Фиксированная</span>
+                      <p className="text-xs text-gray-500 mt-1">Списание с баланса</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, pricingType: "DYNAMIC" })}
+                      className={`p-3 rounded-lg border-2 transition-all text-left ${
+                        formData.pricingType === "DYNAMIC"
+                          ? "border-purple-600 bg-purple-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-sm font-medium block">Динамическая</span>
+                      <p className="text-xs text-gray-500 mt-1">Цена после голосования</p>
+                    </button>
+                  </div>
 
-                {formData.pricingType === "FIXED" && (
+                  {formData.pricingType === "FIXED" && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Списывать занятий с баланса</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={formData.fixedPrice}
+                        onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) || 1 })}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Сколько занятий списывать при записи
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Цена для интенсива */}
+            {formData.groupType === "INTENSIVE" && (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="w-5 h-5 text-orange-600" />
+                    <span className="font-medium">Стоимость интенсива</span>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium mb-1">Стоимость занятия (₽)</label>
+                    <label className="block text-sm font-medium mb-1">Цена (₽) *</label>
                     <Input
                       type="number"
                       min={100}
                       step={100}
-                      placeholder="1000"
-                      value={formData.fixedPrice}
-                      onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) || 1000 })}
+                      placeholder="3000"
+                      value={formData.intensivePrice}
+                      onChange={(e) => setFormData({ ...formData, intensivePrice: parseInt(e.target.value) || 3000 })}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      При голосовании списывается 1 занятие с баланса
+                      Единая цена за весь интенсив
                     </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Расписание для REGULAR */}
             {formData.groupType === "REGULAR" && (
@@ -299,7 +333,7 @@ export default function CreateGroupPage() {
                   {formData.selectedDays.length > 0 && (
                     <div className="bg-purple-50 p-3 rounded-lg">
                       <p className="text-sm text-purple-800">
-                        <strong>Расписание:</strong> {" "}
+                        <strong>Расписание:</strong> { " " }
                         {formData.selectedDays.map(d => 
                           weekDays.find(wd => wd.id === d)?.label
                         ).join(", ")} в {formData.time}
@@ -418,14 +452,22 @@ export default function CreateGroupPage() {
                       {formData.groupType === "REGULAR" ? "Регулярные занятия" : "Интенсив"}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Ценообразование:</span>
-                    <span className="font-medium">
-                      {formData.pricingType === "FIXED" 
-                        ? `Фикс. (${formData.fixedPrice}₽)` 
-                        : "Динамическое"}
-                    </span>
-                  </div>
+                  {formData.groupType === "REGULAR" && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Ценообразование:</span>
+                      <span className="font-medium">
+                        {formData.pricingType === "FIXED" 
+                          ? `Списание ${formData.fixedPrice} занятия` 
+                          : "Динамическое"}
+                      </span>
+                    </div>
+                  )}
+                  {formData.groupType === "INTENSIVE" && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Стоимость:</span>
+                      <span className="font-medium">{formData.intensivePrice.toLocaleString()} ₽</span>
+                    </div>
+                  )}
                   {formData.groupType === "REGULAR" && (
                     <div className="flex justify-between">
                       <span className="text-gray-500">Расписание:</span>

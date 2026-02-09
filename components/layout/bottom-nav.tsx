@@ -40,7 +40,7 @@ export function BottomNav() {
                 className={cn(
                   "flex flex-col items-center justify-center w-full h-full relative transition-all duration-200 rounded-xl mx-1",
                   isActive 
-                    ? "bg-purple-50 text-purple-600" 
+                    ? "bg-[#F0FDF9] text-[#3BCEAC]" 
                     : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                 )}
               >

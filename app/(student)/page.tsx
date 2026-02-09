@@ -45,7 +45,7 @@ export default function MainPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-[#F0FDF9] via-white to-[#F8FAFC]">
       <PageHeader title="Yoga Studio" />
 
       <motion.div
@@ -57,14 +57,14 @@ export default function MainPage() {
         {/* Welcome Banner */}
         <motion.div 
           variants={itemVariants}
-          className="bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-xl shadow-purple-200"
+          className="bg-gradient-to-r from-[#3BCEAC] via-[#2DD4BF] to-[#14B8A6] rounded-2xl p-6 text-white shadow-xl shadow-[#3BCEAC]/20"
         >
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="w-5 h-5 text-yellow-300" />
-            <span className="text-purple-100 text-sm font-medium">Добро пожаловать</span>
+            <span className="text-white/80 text-sm font-medium">Добро пожаловать</span>
           </div>
           <h1 className="text-2xl font-bold mb-1">{userName} 👋</h1>
-          <p className="text-purple-100">Готовы к практике сегодня?</p>
+          <p className="text-white/80">Готовы к практике сегодня?</p>
         </motion.div>
 
         {/* Balance Card */}

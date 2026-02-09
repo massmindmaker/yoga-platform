@@ -10,47 +10,47 @@
     @apply bg-background text-foreground;
   }
   :root {
-    --background: 0 0% 100%;
+    --background: 160 40% 97%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 262 83% 58%;
+    --primary: 160 70% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
+    --secondary: 160 30% 95%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --muted: 160 20% 96%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --accent: 160 40% 94%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
+    --border: 160 20% 90%;
+    --input: 160 20% 90%;
+    --ring: 160 70% 45%;
     --chart-1: 262 83% 58%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     --radius: 0.75rem;
-    
+
     /* Custom Yoga Platform Colors - Enhanced Palette */
-    /* Primary Purple */
-    --yoga-primary: #7C3AED;
-    --yoga-primary-light: #A78BFA;
-    --yoga-primary-dark: #5B21B6;
-    --yoga-primary-50: #F5F3FF;
-    --yoga-primary-100: #EDE9FE;
-    --yoga-primary-200: #DDD6FE;
-    --yoga-primary-300: #C4B5FD;
-    --yoga-primary-400: #A78BFA;
-    --yoga-primary-500: #8B5CF6;
-    --yoga-primary-600: #7C3AED;
-    --yoga-primary-700: #6D28D9;
-    --yoga-primary-800: #5B21B6;
-    --yoga-primary-900: #4C1D95;
+    /* Primary Mint */
+    --yoga-primary: #3BCEAC;
+    --yoga-primary-light: #5EEAD4;
+    --yoga-primary-dark: #2A9D8F;
+    --yoga-primary-50: #F0FDF9;
+    --yoga-primary-100: #CCFBF1;
+    --yoga-primary-200: #99F6E4;
+    --yoga-primary-300: #5EEAD4;
+    --yoga-primary-400: #2DD4BF;
+    --yoga-primary-500: #14B8A6;
+    --yoga-primary-600: #3BCEAC;
+    --yoga-primary-700: #0D9488;
+    --yoga-primary-800: #0F766E;
+    --yoga-primary-900: #115E59;
     
     /* Secondary Orange - For mornings/energy */
     --yoga-orange: #F97316;
@@ -105,12 +105,12 @@
     --yoga-gray-900: #111827;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #6366F1 100%);
+    --gradient-primary: linear-gradient(135deg, #3BCEAC 0%, #2DD4BF 50%, #14B8A6 100%);
     --gradient-orange: linear-gradient(135deg, #F97316 0%, #FB923C 50%, #FBBF24 100%);
     --gradient-teal: linear-gradient(135deg, #14B8A6 0%, #2DD4BF 50%, #06B6D4 100%);
     --gradient-success: linear-gradient(135deg, #10B981 0%, #34D399 100%);
     --gradient-dark: linear-gradient(135deg, #1F2937 0%, #374151 100%);
-    --gradient-card: linear-gradient(180deg, rgba(124, 58, 237, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(59, 206, 172, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -255,10 +255,10 @@ body {
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 0 5px rgba(59, 206, 172, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.6);
+    box-shadow: 0 0 20px rgba(59, 206, 172, 0.6);
   }
 }
 
@@ -334,5 +334,5 @@ body {
 /* Focus ring with glow */
 .focus-glow:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 0 0 3px rgba(59, 206, 172, 0.3);
 }

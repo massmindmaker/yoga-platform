@@ -58,14 +58,14 @@ export function BalanceCard({
   const getGradient = () => {
     if (isEmpty) return "from-gray-500 via-gray-600 to-gray-700";
     if (isLowBalance) return "from-orange-500 via-orange-600 to-red-500";
-    return "from-[#7C3AED] via-[#8B5CF6] to-[#6366F1]";
+    return "from-[#3BCEAC] via-[#2DD4BF] to-[#14B8A6]";
   };
 
   // Определяем цвета для прогресс-бара
   const getProgressColor = () => {
     if (isEmpty) return "bg-gray-400";
     if (isLowBalance) return "bg-gradient-to-r from-orange-400 to-red-400";
-    return "bg-gradient-to-r from-white via-purple-100 to-white";
+    return "bg-gradient-to-r from-white via-[#CCFBF1] to-white";
   };
 
   return (
@@ -74,7 +74,7 @@ export function BalanceCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(124, 58, 237, 0.4)" }}
+      whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(59, 206, 172, 0.4)" }}
       whileTap={{ scale: 0.98 }}
     >
       {/* Анимированный фон */}
@@ -236,7 +236,7 @@ export function BalanceCard({
         >
           <Link href="/purchase" className="flex-1">
             <motion.button
-              className="w-full bg-white text-purple-600 py-3 px-4 rounded-xl font-semibold text-sm shadow-lg"
+              className="w-full bg-white text-[#3BCEAC] py-3 px-4 rounded-xl font-semibold text-sm shadow-lg"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >

@@ -25,7 +25,11 @@ interface Voting {
   hasVoted?: boolean;
 }
 
-export function useVotings() {
+interface UseVotingsOptions {
+  userId: string;
+}
+
+export function useVotings({ userId }: UseVotingsOptions) {
   const [votings, setVotings] = useState<Voting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +37,7 @@ export function useVotings() {
   const fetchVotings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/votings");
+      const response = await fetch(`/api/votings?userId=${userId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -47,14 +51,14 @@ export function useVotings() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   const vote = async (votingId: string, optionId: string) => {
     try {
       const response = await fetch(`/api/votings/${votingId}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optionId }),
+        body: JSON.stringify({ optionIds: [optionId], userId }),
       });
 
       const data = await response.json();
@@ -73,8 +77,10 @@ export function useVotings() {
   };
 
   useEffect(() => {
-    fetchVotings();
-  }, [fetchVotings]);
+    if (userId) {
+      fetchVotings();
+    }
+  }, [fetchVotings, userId]);
 
   return { votings, isLoading, error, vote, refetch: fetchVotings };
 }

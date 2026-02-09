@@ -217,3 +217,41 @@ export async function sendClassReminder(
     console.error("Error sending reminder:", error);
   }
 }
+
+// Универсальная функция отправки сообщения
+export async function sendTelegramMessage(
+  chatId: string,
+  message: {
+    text: string;
+    parseMode?: "Markdown" | "HTML";
+  }
+) {
+  if (!BOT_TOKEN) {
+    console.error("TELEGRAM_BOT_TOKEN not set");
+    throw new Error("Bot token not configured");
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message.text,
+        parse_mode: message.parseMode || "Markdown",
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error("Telegram API error:", data);
+      throw new Error(data.description || "Failed to send message");
+    }
+
+    return { success: true, messageId: data.result.message_id };
+  } catch (error) {
+    console.error("Error sending Telegram message:", error);
+    throw error;
+  }
+}

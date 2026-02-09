@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get('groupId');
     const status = searchParams.get('status');
+    const userId = searchParams.get('userId');
 
     const where: Record<string, unknown> = {};
     if (groupId) where.groupId = groupId;
@@ -39,7 +40,20 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ success: true, data: votings });
+    // Add hasVoted flag for each voting if userId provided
+    const votingsWithHasVoted = await Promise.all(
+      votings.map(async (voting) => {
+        if (!userId) return { ...voting, hasVoted: false };
+
+        const userVote = await prisma.vote.findFirst({
+          where: { votingId: voting.id, userId },
+        });
+
+        return { ...voting, hasVoted: !!userVote };
+      })
+    );
+
+    return NextResponse.json({ success: true, data: votingsWithHasVoted });
   } catch (error) {
     console.error('[VOTINGS_GET]', error);
     return NextResponse.json(

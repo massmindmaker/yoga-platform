@@ -61,7 +61,7 @@ export function VotingCard({
     >
       <Card className="border-0 shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] p-4 text-white">
+        <div className="bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] p-4 text-white">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="font-bold text-lg">{title}</h3>

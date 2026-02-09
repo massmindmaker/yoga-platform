@@ -48,13 +48,13 @@ export function ClassCard({
   // Стили для разных состояний - улучшенные с градиентами
   const stateStyles = {
     available: {
-      card: "bg-white border-gray-100 hover:border-purple-200 hover:shadow-purple-100/50",
-      header: "bg-gradient-to-r from-[#F5F3FF] via-[#EDE9FE] to-transparent",
-      button: "bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] hover:from-[#6D28D9] hover:to-[#7C3AED] text-white shadow-lg shadow-purple-200",
-      progress: "bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]",
-      badge: "bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]",
-      timeBox: "bg-gradient-to-br from-white to-[#F5F3FF]",
-      iconColor: "text-[#7C3AED]",
+      card: "bg-white border-gray-100 hover:border-[#CCFBF1] hover:shadow-[#CCFBF1]/50",
+      header: "bg-gradient-to-r from-[#F0FDF9] via-[#CCFBF1] to-transparent",
+      button: "bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] hover:from-[#2DD4BF] hover:to-[#14B8A6] text-white shadow-lg shadow-[#CCFBF1]",
+      progress: "bg-gradient-to-r from-[#3BCEAC] to-[#5EEAD4]",
+      badge: "bg-[#CCFBF1] text-[#0D9488] border-[#99F6E4]",
+      timeBox: "bg-gradient-to-br from-white to-[#F0FDF9]",
+      iconColor: "text-[#0D9488]",
     },
     booked: {
       card: "bg-gradient-to-br from-[#ECFDF5] via-white to-[#F0FDFA] border-[#10B981]/30",

@@ -14,6 +14,7 @@ model User {
   firstName     String
   lastName      String?
   username      String?
+  photoUrl      String?
   phone         String?
   email         String?
   role          Role     @default(STUDENT)
@@ -33,6 +34,16 @@ model User {
   
   // Balance audit
   balanceTransactions BalanceTransaction[]
+  passes        Pass[]
+  notifications Notification[]
+  notificationSettings UserNotificationSettings?
+  
+  // Referral relations
+  referralsMade Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
+  reviews       Review[]
+  activityLogs  ActivityLog[]
+  waitlists     Waitlist[]
 
   @@index([role])
   @@index([telegramId])
@@ -47,24 +58,27 @@ enum Role {
 
 // Группы занятий
 model Group {
-  id            String      @id @default(uuid())
-  name          String
-  description   String?
-  groupType     GroupType   @default(REGULAR)
-  pricingType   PricingType @default(FIXED)
-  fixedPrice    Int         @default(1)       // Сколько занятий списывать за день (для FIXED)
-  maxStudents   Int         @default(15)
-  telegramChat  String?
-  trainerId     String?
-  startsAt      DateTime?                     // Для INTENSIVE: дата начала
-  endsAt        DateTime?                     // Для INTENSIVE: дата окончания
-  createdAt     DateTime    @default(now())
+  id             String      @id @default(uuid())
+  name           String
+  description    String?
+  groupType      GroupType   @default(REGULAR)
+  pricingType    PricingType @default(FIXED)  // Только для REGULAR: FIXED или DYNAMIC
+  fixedPrice     Int         @default(1)      // Для REGULAR FIXED: сколько занятий списывать
+  intensivePrice Int?                         // Для INTENSIVE: стоимость в рублях (единая цена)
+  maxStudents    Int         @default(15)
+  telegramChat   String?
+  trainerId      String?
+  startsAt       DateTime?                    // Для INTENSIVE: дата начала
+  endsAt         DateTime?                    // Для INTENSIVE: дата окончания
+  createdAt      DateTime    @default(now())
   
   // Relations
   trainer       User?    @relation("GroupTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
   schedules     Schedule[]
   students      GroupStudent[]
   votings       Voting[]
+  reviews       Review[]
+  waitlists     Waitlist[]
 
   @@index([trainerId])
   @@index([groupType])
@@ -141,6 +155,12 @@ enum ClassStatus {
   COMPLETED
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
 // Бронирования
 model Booking {
   id          String        @id @default(uuid())
@@ -151,6 +171,7 @@ model Booking {
   
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  attendance  Attendance?
 
   @@index([userId])
   @@index([classId])
@@ -309,4 +330,295 @@ model Vote {
   @@index([userId])
   @@index([optionId])
   @@map("votes")
+}
+
+// Абонементы учеников
+model Pass {
+  id            String      @id @default(uuid())
+  userId        String
+  type          PassType
+  classesTotal  Int         // Общее количество занятий (0 для UNLIMITED)
+  classesUsed   Int         @default(0) // Использовано занятий
+  validDays     Int         // Срок действия в днях
+  validFrom     DateTime    // Дата начала действия
+  validUntil    DateTime    // Дата окончания действия
+  status        PassStatus  @default(ACTIVE)
+  createdAt     DateTime    @default(now())
+  
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([validUntil])
+  @@map("passes")
+}
+
+enum PassType {
+  CLASSES_4       // Абонемент на 4 занятия
+  CLASSES_8       // Абонемент на 8 занятий
+  CLASSES_12      // Абонемент на 12 занятий
+  UNLIMITED_30    // Безлимит на 30 дней
+  UNLIMITED_90    // Безлимит на 90 дней
+}
+
+enum PassStatus {
+  ACTIVE      // Действует
+  EXPIRED     // Истёк по сроку
+  EXHAUSTED   // Исчерпан (все занятия использованы)
+  CANCELLED   // Отменён
+}
+
+// История посещений
+model Attendance {
+  id            String            @id @default(uuid())
+  bookingId     String            @unique
+  status        AttendanceStatus
+  markedBy      String            // Кто отметил (userId тренера или системы)
+  markedAt      DateTime          @default(now())
+  notes         String?
+  createdAt     DateTime          @default(now())
+  
+  booking       Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([markedAt])
+  @@map("attendances")
+}
+
+// Типы уведомлений
+enum NotificationType {
+  CLASS_REMINDER        // Напоминание о занятии (за 2 часа)
+  CLASS_CANCELLED       // Занятие отменено
+  CLASS_CHANGED         // Изменения в занятии
+  PAYMENT_SUCCESS       // Успешная оплата
+  PAYMENT_FAILED        // Ошибка оплаты
+  LOW_BALANCE           // Низкий баланс
+  SUBSCRIPTION_EXPIRING // Абонемент истекает
+  SUBSCRIPTION_EXPIRED  // Абонемент истёк
+  NEW_BOOKING           // Новая запись
+  BOOKING_CANCELLED     // Запись отменена
+  VOTING_STARTED        // Новое голосование
+  VOTING_REMINDER       // Напоминание о голосовании
+  VOTING_FINALIZED      // Голосование завершено
+  NEW_STUDENT           // Новый ученик в группе
+  TRAINER_MESSAGE       // Сообщение от тренера
+  SYSTEM                // Системное уведомление
+}
+
+// Статусы уведомлений
+enum NotificationStatus {
+  PENDING   // Ожидает отправки
+  SENT      // Отправлено
+  FAILED    // Ошибка отправки
+  READ      // Прочитано
+  CANCELLED // Отменено
+}
+
+// Каналы доставки уведомлений
+enum NotificationChannel {
+  TELEGRAM // Telegram Bot
+  EMAIL    // Email
+  PUSH     // Push-уведомления
+  SMS      // SMS
+}
+
+// Уведомления
+model Notification {
+  id            String              @id @default(uuid())
+  userId        String
+  type          NotificationType
+  title         String
+  content       String              @db.Text
+  data          Json?               // Дополнительные данные (classId, paymentId и т.д.)
+  channel       NotificationChannel @default(TELEGRAM)
+  status        NotificationStatus  @default(PENDING)
+  scheduledFor  DateTime?           // Когда запланирована отправка
+  sentAt        DateTime?           // Когда отправлено
+  readAt        DateTime?           // Когда прочитано
+  errorMessage  String?             // Сообщение об ошибке (если FAILED)
+  retryCount    Int                 @default(0) // Количество попыток отправки
+  externalId    String?             // ID сообщения в Telegram/email и т.д.
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  // Relations
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([channel])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// Настройки уведомлений пользователя
+model UserNotificationSettings {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+
+  // Каналы доставки
+  telegramEnabled       Boolean  @default(true)
+  emailEnabled          Boolean  @default(false)
+  pushEnabled           Boolean  @default(false)
+
+  // Типы уведомлений
+  classReminder         Boolean  @default(true)   // Напоминание о занятии (за 2 часа)
+  classReminderMinutes  Int      @default(120)    // За сколько минут напоминать
+  dailyReminder         Boolean  @default(false)  // Утреннее напоминание о занятиях
+  dailyReminderTime     String?  @default("08:00") // Время утреннего напоминания
+
+  lowBalanceThreshold   Int      @default(2)      // При скольки занятиях предупреждать
+  lowBalanceEnabled     Boolean  @default(true)
+
+  votingReminder        Boolean  @default(true)   // Напоминание о голосовании
+  paymentReminder       Boolean  @default(true)   // Уведомления о платежах
+  subscriptionReminders Boolean  @default(true)   // Уведомления об абонементе
+  marketingEmails       Boolean  @default(false)  // Маркетинговые рассылки
+  trainerNotifications  Boolean  @default(true)   // Уведомления от тренера
+
+  timezone              String   @default("Europe/Moscow") // Часовой пояс
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_notification_settings")
+}
+
+// Промокоды для скидок
+model PromoCode {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  discountPercent Int?      // Скидка в процентах (0-100)
+  discountAmount  Int?      // Скидка в рублях
+  validFrom       DateTime  @default(now())
+  validUntil      DateTime
+  maxUses         Int?      // Максимальное количество использований
+  usedCount       Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+  @@index([validUntil])
+  @@map("promo_codes")
+}
+
+// Реферальная программа
+model Referral {
+  id            String          @id @default(uuid())
+  referrerId    String          // Кто пригласил
+  referredId    String          // Кого пригласили
+  status        ReferralStatus  @default(PENDING)
+  rewardAmount  Int?            // Сумма вознаграждения в рублях
+  rewardedAt    DateTime?
+  createdAt     DateTime        @default(now())
+
+  referrer      User            @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred      User            @relation("Referred", fields: [referredId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, referredId])
+  @@index([referrerId])
+  @@index([referredId])
+  @@index([status])
+  @@map("referrals")
+}
+
+enum ReferralStatus {
+  PENDING     // Ожидает выполнения условий
+  COMPLETED   // Условия выполнены, вознаграждение начислено
+  CANCELLED   // Отменено
+}
+
+// Отзывы учеников
+model Review {
+  id          String    @id @default(uuid())
+  userId      String
+  groupId     String
+  rating      Int       // 1-5 звезд
+  comment     String?   @db.Text
+  isVisible   Boolean   @default(false) // Модерация
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([groupId])
+  @@index([rating])
+  @@index([isVisible])
+  @@index([createdAt])
+  @@map("reviews")
+}
+
+// Логи действий
+model ActivityLog {
+  id          String    @id @default(uuid())
+  userId      String?
+  action      String    // CREATE_BOOKING, UPDATE_PAYMENT и т.д.
+  entityType  String    // booking, payment, user и т.д.
+  entityId    String?
+  metadata    Json?     // Дополнительные данные
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// Настройки системы
+model SystemSetting {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  value       String    @db.Text
+  description String?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([key])
+  @@map("system_settings")
+}
+
+// Лист ожидания
+model Waitlist {
+  id          String          @id @default(uuid())
+  userId      String
+  groupId     String?
+  classId     String?
+  priority    Int             @default(0) // Приоритет (чем выше, тем раньше)
+  status      WaitlistStatus  @default(ACTIVE)
+  createdAt   DateTime        @default(now())
+  fulfilledAt DateTime?       // Когда место предоставлено
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       Group?          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([groupId])
+  @@index([classId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@map("waitlists")
+}
+
+enum WaitlistStatus {
+  ACTIVE      // В ожидании
+  FULFILLED   // Место предоставлено
+  CANCELLED   // Отменено пользователем
+  EXPIRED     // Истекло время ожидания
 }
