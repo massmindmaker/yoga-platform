@@ -8,7 +8,7 @@ const createActivityLogSchema = z.object({
   action: z.string().min(1, 'Action is required'),
   entityType: z.string().min(1, 'Entity type is required'),
   entityId: z.string().uuid('Invalid entity ID').optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   ipAddress: z.string().optional(),
   userAgent: z.string().optional(),
 });
@@ -54,7 +54,13 @@ export async function GET(req: NextRequest) {
 
     const { userId, action, entityType, entityId, from, to, limit, offset } = validationResult.data;
 
-    const where: Record<string, unknown> = {};
+    const where: {
+      userId?: string;
+      action?: string;
+      entityType?: string;
+      entityId?: string;
+      createdAt?: { gte?: Date; lte?: Date };
+    } = {};
     
     if (userId) where.userId = userId;
     if (action) where.action = action;
@@ -125,7 +131,7 @@ export async function POST(req: NextRequest) {
         action,
         entityType,
         entityId,
-        metadata,
+        metadata: metadata as Record<string, string | number | boolean | null>,
         ipAddress,
         userAgent,
       },

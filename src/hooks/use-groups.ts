@@ -57,6 +57,7 @@ export function useGroups() {
     groupType?: "REGULAR" | "INTENSIVE";
     pricingType?: "FIXED" | "DYNAMIC";
     fixedPrice?: number;
+    intensivePrice?: number;
     maxStudents?: number;
     telegramChat?: string;
     startsAt?: string | null;

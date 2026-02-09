@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVotings } from "@/src/hooks/use-votings";
+import { useUser } from "@/src/hooks/use-user-context";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -36,7 +37,9 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function VotingPage() {
-  const { votings, isLoading, error, vote, refetch } = useVotings();
+  const { user, isLoading: isUserLoading } = useUser();
+  const userId = user?.id || "";
+  const { votings, isLoading, error, vote, refetch } = useVotings({ userId });
 
   const handleVote = async (votingId: string, optionId: string) => {
     const result = await vote(votingId, optionId);
@@ -45,7 +48,7 @@ export default function VotingPage() {
     }
   };
 
-  if (isLoading) {
+  if (isUserLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Голосования" />

@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db';
 // GET /api/settings/[key] - get specific setting
 export async function GET(
   req: NextRequest,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> }
 ) {
   try {
+    const { key } = await params;
     const setting = await prisma.systemSetting.findUnique({
-      where: { key: params.key },
+      where: { key },
     });
 
     if (!setting) {
@@ -31,19 +32,20 @@ export async function GET(
 // PATCH /api/settings/[key] - update setting
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> }
 ) {
   try {
+    const { key } = await params;
     const { value, description } = await req.json();
 
     const setting = await prisma.systemSetting.upsert({
-      where: { key: params.key },
+      where: { key },
       update: {
         value: JSON.stringify(value),
         ...(description && { description }),
       },
       create: {
-        key: params.key,
+        key,
         value: JSON.stringify(value),
         description: description || '',
       },

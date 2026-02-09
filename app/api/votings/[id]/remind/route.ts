@@ -5,10 +5,10 @@ import { sendTelegramMessage } from '@/lib/telegram';
 // POST /api/votings/[id]/remind - send reminder to users who haven't voted
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const votingId = params.id;
+    const { id: votingId } = await params;
 
     // Get voting with group and participants
     const voting = await prisma.voting.findUnique({
