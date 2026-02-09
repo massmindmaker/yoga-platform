@@ -20,8 +20,18 @@ export async function GET(req: NextRequest) {
 
     if (from || to) {
       where.date = {};
-      if (from) where.date.gte = new Date(from);
-      if (to) where.date.lte = new Date(to);
+      if (from) {
+        // Start of the day
+        const fromDate = new Date(from);
+        fromDate.setUTCHours(0, 0, 0, 0);
+        where.date.gte = fromDate;
+      }
+      if (to) {
+        // End of the day
+        const toDate = new Date(to);
+        toDate.setUTCHours(23, 59, 59, 999);
+        where.date.lte = toDate;
+      }
     }
 
     if (status) {

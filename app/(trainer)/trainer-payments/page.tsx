@@ -26,9 +26,21 @@ export default function TrainerPaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: fetch from /api/payments (trainer view)
-    setIsLoading(false);
-    setPayments([]);
+    async function fetchPayments() {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/payments/all');
+        const data = await response.json();
+        if (data.success) {
+          setPayments(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching payments:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchPayments();
   }, []);
 
   const totalWeek = payments.reduce((sum, p) => sum + p.amount, 0);
