@@ -35,7 +35,8 @@ export async function GET(
                 id: true,
                 firstName: true,
                 lastName: true,
-                balance: true
+                balance: true,
+                telegramId: true
               }
             }
           }
@@ -47,6 +48,18 @@ export async function GET(
           include: {
             options: {
               include: {
+                votes: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        telegramId: true,
+                      }
+                    }
+                  }
+                },
                 _count: { select: { votes: true } }
               }
             },

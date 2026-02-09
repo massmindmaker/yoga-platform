@@ -189,21 +189,6 @@ export default function GroupsPage() {
         </motion.div>
       )}
 
-      {/* Create button at bottom */}
-      {groups.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="p-4 pt-0"
-        >
-          <Link href="/groups/create">
-            <button className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all">
-              + Создать новую группу
-            </button>
-          </Link>
-        </motion.div>
-      )}
     </div>
   );
 }

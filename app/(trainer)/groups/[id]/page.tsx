@@ -31,8 +31,10 @@ import {
   Loader2,
   Calendar,
   Vote,
+  RefreshCw,
 } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const DAYS_OF_WEEK = [
   "Воскресенье",
@@ -50,10 +52,11 @@ export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
   const groupId = params.id as string;
-  
+
   const { group, isLoading, error, deleteGroup } = useGroup(groupId);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [expandedVoting, setExpandedVoting] = useState<string | null>(null);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -237,15 +240,53 @@ export default function GroupDetailPage() {
                   const totalVotes = voting._count.votes;
                   const progress = Math.round((totalVotes / voting.minParticipants) * 100);
                   const isActive = voting.status === 'ACTIVE';
+                  const isExpanded = expandedVoting === voting.id;
+                  
+                  // Получаем уникальных проголосовавших пользователей
+                  const votersMap = new Map();
+                  voting.options?.forEach((option: any) => {
+                    option.votes?.forEach((vote: any) => {
+                      if (vote.user && !votersMap.has(vote.user.id)) {
+                        votersMap.set(vote.user.id, vote.user);
+                      }
+                    });
+                  });
+                  const uniqueVoters = Array.from(votersMap.values());
                   
                   return (
                     <div
                       key={voting.id}
-                      className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100"
+                      className={`p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100 cursor-pointer transition-all ${isExpanded ? 'ring-2 ring-purple-300' : ''}`}
+                      onClick={() => setExpandedVoting(isExpanded ? null : voting.id)}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{voting.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-gray-900">{voting.title}</h4>
+                            {isExpanded && isActive && (
+                              <div className="flex items-center gap-1">
+                                <Link 
+                                  href={`/groups/${group.id}/voting/${voting.id}/edit`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                    <Edit className="w-3 h-3 text-gray-600" />
+                                  </Button>
+                                </Link>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // TODO: Добавить логику удаления голосования
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 mt-0.5">
                             До {new Date(voting.deadline).toLocaleDateString("ru-RU", { 
                               day: "numeric", 
@@ -255,13 +296,20 @@ export default function GroupDetailPage() {
                             })}
                           </p>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          isActive 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-gray-100 text-gray-600"
-                        }`}>
-                          {isActive ? "Активно" : "Завершено"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            isActive 
+                              ? "bg-green-100 text-green-700" 
+                              : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {isActive ? "Активно" : "Завершено"}
+                          </span>
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-3 text-sm">
@@ -272,14 +320,83 @@ export default function GroupDetailPage() {
                               {totalVotes}/{voting.minParticipants} ({progress}%)
                             </span>
                           </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
                             <div 
                               className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
                               style={{ width: `${Math.min(progress, 100)}%` }}
                             />
                           </div>
+                          
+                          {/* Миниатюрные аватарки проголосовавших */}
+                          {uniqueVoters.length > 0 && (
+                            <div className="flex items-center gap-1 mt-2">
+                              <div className="flex -space-x-2">
+                                {uniqueVoters.slice(0, 5).map((voter: any, idx: number) => (
+                                  <Avatar key={voter.id} className="w-6 h-6 border-2 border-white">
+                                    <AvatarFallback className="text-[10px] bg-purple-100 text-purple-700">
+                                      {voter.firstName?.[0]}{voter.lastName?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                              </div>
+                              {uniqueVoters.length > 5 && (
+                                <span className="text-xs text-gray-500 ml-1">+{uniqueVoters.length - 5}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
+                      
+                      {/* Развернутая информация */}
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-4 pt-4 border-t border-purple-200"
+                        >
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Результаты голосования:</h5>
+                          <div className="space-y-2">
+                            {voting.options?.map((option: any) => {
+                              const optionVotes = option.votes?.length || 0;
+                              const optionProgress = voting.minParticipants > 0 
+                                ? Math.round((optionVotes / voting.minParticipants) * 100) 
+                                : 0;
+                              
+                              return (
+                                <div key={option.id} className="bg-white/50 rounded-lg p-2">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-sm">
+                                      {DAYS_SHORT[option.dayOfWeek]} {option.time}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {optionVotes} голосов
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-purple-400 rounded-full"
+                                      style={{ width: `${Math.min(optionProgress, 100)}%` }}
+                                    />
+                                  </div>
+                                  {/* Список проголосовавших за этот вариант */}
+                                  {option.votes?.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {option.votes.map((vote: any) => (
+                                        vote.user && (
+                                          <span key={vote.id} className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                            {vote.user.firstName} {vote.user.lastName?.[0]}.
+                                          </span>
+                                        )
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
                     </div>
                   );
                 })}
@@ -296,27 +413,73 @@ export default function GroupDetailPage() {
         transition={{ delay: 0.3 }}
       >
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Ученики
+              Ученики ({group._count.students})
             </CardTitle>
+            {group.telegramChat && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`/api/groups/${groupId}/sync-telegram`, {
+                      method: 'POST'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                      toast.success(data.message || 'Ученики синхронизированы');
+                      window.location.reload();
+                    } else {
+                      toast.error(data.error || 'Ошибка синхронизации');
+                    }
+                  } catch (error) {
+                    toast.error('Ошибка синхронизации');
+                  }
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Синхронизировать
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-4 pt-0">
             {group._count.students === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">В группе пока нет учеников</p>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Users className="w-4 h-4 mr-2" />
-                  Добавить ученика
-                </Button>
+                {group.telegramChat ? (
+                  <p className="text-sm text-gray-400">
+                    Нажмите "Синхронизировать" для загрузки учеников из Telegram чата
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    Привяжите Telegram чат к группе для автоматической загрузки учеников
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
-                {/* Placeholder for students list - would fetch actual students */}
-                <p className="text-sm text-gray-500">
-                  Список учеников будет здесь
-                </p>
+                {(group as any).students?.map((student: any) => (
+                  <div
+                    key={student.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                  >
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback className="bg-purple-100 text-purple-700">
+                        {student.user?.firstName?.[0]}{student.user?.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {student.user?.firstName} {student.user?.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Баланс: {student.user?.balance || 0} занятий
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -328,7 +491,7 @@ export default function GroupDetailPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="pt-4 space-y-3"
+        className="pt-4"
       >
         <Link href={`/groups/${group.id}/voting/create`}>
           <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
@@ -336,20 +499,6 @@ export default function GroupDetailPage() {
             Создать голосование
           </Button>
         </Link>
-        <Link href={`/groups/${group.id}/edit`}>
-          <Button variant="outline" className="w-full">
-            <Edit className="w-4 h-4 mr-2" />
-            Редактировать группу
-          </Button>
-        </Link>
-        <Button
-          variant="outline"
-          className="w-full text-red-500 border-red-200 hover:bg-red-50"
-          onClick={() => setShowDeleteDialog(true)}
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Удалить группу
-        </Button>
       </motion.div>
 
       {/* Delete Confirmation Dialog */}
