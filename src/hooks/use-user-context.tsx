@@ -28,15 +28,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const initData = telegram.initData || "";
 
       if (!initData) {
-        // Для разработки - используем тестового пользователя
-        console.log("No Telegram data, using dev mode");
+        // Для разработки - используем реального студента из базы
+        console.log("No Telegram data, using dev mode with real student");
         setUser({
-          id: "test-user-id",
-          telegramId: "123456789",
-          firstName: "Тестовый",
-          lastName: "Пользователь",
+          id: "0ed1ec7c-fd36-4b32-a437-a42eace04409",
+          telegramId: "student_8",
+          firstName: "Ирина",
+          lastName: "Михайлова",
           role: "STUDENT",
-          balance: 5,
+          balance: 46,
           phone: null,
           email: null,
           createdAt: new Date(),
@@ -63,14 +63,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Auth error:", err);
       setError("Failed to authenticate");
-      // Для разработки
+      // Для разработки - используем реального студента
       setUser({
-        id: "test-user-id",
-        telegramId: "123456789",
-        firstName: "Тестовый",
-        lastName: "Пользователь",
+        id: "0ed1ec7c-fd36-4b32-a437-a42eace04409",
+        telegramId: "student_8",
+        firstName: "Ирина",
+        lastName: "Михайлова",
         role: "STUDENT",
-        balance: 5,
+        balance: 46,
         phone: null,
         email: null,
         createdAt: new Date(),

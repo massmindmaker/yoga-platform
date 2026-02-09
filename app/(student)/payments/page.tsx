@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, ArrowRight, CreditCard, TrendingUp, Calendar, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useUser } from "@/src/hooks/use-user-context";
 
 interface PaymentRecord {
   id: string;
@@ -36,18 +37,68 @@ const itemVariants = {
 };
 
 export default function StudentPaymentsPage() {
+  const { user, isLoading: isUserLoading } = useUser();
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentBalance, setCurrentBalance] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: fetch payments from /api/payments?userId=...
-    setIsLoading(false);
-    setPayments([]);
-  }, []);
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
 
-  const totalSpent = payments.reduce((sum, p) => sum + p.amount, 0);
-  const totalClasses = payments.reduce((sum, p) => sum + p.classesCount, 0);
+    async function fetchPayments() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/payments?userId=${user!.id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setPayments(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch payments");
+        }
+      } catch (err) {
+        console.error("Error fetching payments:", err);
+        setError("Failed to load payments");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPayments();
+  }, [user?.id]);
+
+  const totalSpent = payments
+    .filter(p => p.status === 'COMPLETED')
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalClasses = payments
+    .filter(p => p.status === 'COMPLETED')
+    .reduce((sum, p) => sum + p.classesCount, 0);
+  const averagePrice = totalClasses > 0 ? Math.round(totalSpent / totalClasses) : 0;
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'COMPLETED': 'Оплачено',
+      'PENDING': 'В обработке',
+      'FAILED': 'Ошибка',
+      'REFUNDED': 'Возвращено',
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'COMPLETED': 'bg-green-100 text-green-700',
+      'PENDING': 'bg-yellow-100 text-yellow-700',
+      'FAILED': 'bg-red-100 text-red-700',
+      'REFUNDED': 'bg-gray-100 text-gray-600',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-600';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -71,9 +122,9 @@ export default function StudentPaymentsPage() {
                       <span className="text-white/80 text-sm">Текущий баланс</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-bold">{currentBalance}</span>
+                      <span className="text-5xl font-bold">{isUserLoading ? "..." : user?.balance || 0}</span>
                       <span className="text-xl text-white/80">
-                        {currentBalance === 1 ? "занятие" : currentBalance <= 4 ? "занятия" : "занятий"}
+                        {(user?.balance || 0) === 1 ? "занятие" : (user?.balance || 0) <= 4 ? "занятия" : "занятий"}
                       </span>
                     </div>
                   </div>
@@ -93,21 +144,21 @@ export default function StudentPaymentsPage() {
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     <span className="text-xs text-gray-500">Потрачено</span>
                   </div>
-                  <p className="font-bold text-gray-900">{totalSpent.toLocaleString()} ₽</p>
+                  <p className="font-bold text-gray-900">{isLoading ? "..." : totalSpent.toLocaleString()} ₽</p>
                 </div>
                 <div className="text-center border-x border-gray-100">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <Calendar className="w-4 h-4 text-[#3BCEAC]" />
                     <span className="text-xs text-gray-500">Куплено</span>
                   </div>
-                  <p className="font-bold text-gray-900">{totalClasses} занятий</p>
+                  <p className="font-bold text-gray-900">{isLoading ? "..." : totalClasses} занятий</p>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <CreditCard className="w-4 h-4 text-blue-500" />
                     <span className="text-xs text-gray-500">Средняя цена</span>
                   </div>
-                  <p className="font-bold text-gray-900">{totalClasses > 0 ? Math.round(totalSpent / totalClasses) : 0} ₽</p>
+                  <p className="font-bold text-gray-900">{isLoading ? "..." : averagePrice} ₽</p>
                 </div>
               </div>
             </CardContent>
@@ -118,7 +169,35 @@ export default function StudentPaymentsPage() {
         <motion.div variants={itemVariants}>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">История платежей</h2>
 
-          {payments.length > 0 ? (
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gray-200 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : error ? (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-6 text-center">
+                <p className="text-red-500 mb-4">{error}</p>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6]"
+                >
+                  Попробовать снова
+                </Button>
+              </CardContent>
+            </Card>
+          ) : payments.length > 0 ? (
             <div className="space-y-3">
               {payments.map((payment, index) => (
                 <motion.div
@@ -142,8 +221,8 @@ export default function StudentPaymentsPage() {
                                 {new Date(payment.createdAt).toLocaleDateString('ru-RU')}
                               </span>
                               <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                              <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                                {payment.status === 'COMPLETED' ? 'Оплачено' : payment.status}
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(payment.status)}`}>
+                                {getStatusLabel(payment.status)}
                               </span>
                             </div>
                           </div>
@@ -175,7 +254,8 @@ export default function StudentPaymentsPage() {
         className="fixed bottom-20 left-4 right-4 z-40"
       >
         <Link href="/purchase">
-          <Button className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all">
+          <Button className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"
+          >
             Купить занятия
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
