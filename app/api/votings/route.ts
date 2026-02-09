@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (groupId) where.groupId = groupId;
     if (status) {
-      where.status = status;
+      // Support comma-separated statuses: ?status=CLOSED,CANCELLED,FINALIZED
+      const statuses = status.split(',').map(s => s.trim());
+      where.status = statuses.length > 1 ? { in: statuses } : statuses[0];
     } else {
       where.status = { in: ['ACTIVE', 'FINALIZED'] };
     }

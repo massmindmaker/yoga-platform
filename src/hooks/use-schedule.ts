@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { addDays, startOfWeek, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-interface ScheduleClass {
+export interface ScheduleClass {
   id: string;
   scheduleId: string;
   trainerId: string;
@@ -31,6 +31,11 @@ interface ScheduleClass {
   _count: {
     bookings: number;
   };
+  bookings?: Array<{
+    id: string;
+    userId: string;
+    status: string;
+  }>;
 }
 
 interface UseScheduleReturn {
@@ -39,7 +44,7 @@ interface UseScheduleReturn {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   isLoading: boolean;
-  error: Error | null;
+  error: string | null;
   refetch: () => void;
 }
 
@@ -48,11 +53,11 @@ export function useSchedule(): UseScheduleReturn {
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+    const days = Array.from({ length: 14 }, (_, i) => addDays(start, i));
     setWeekDays(days);
   }, []);
 
@@ -61,11 +66,18 @@ export function useSchedule(): UseScheduleReturn {
     setError(null);
 
     try {
-      // For now, no schedule API exists — show empty
-      // When /api/classes endpoint is added, fetch from there
-      setClasses([]);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const response = await fetch(`/api/classes?from=${dateStr}&to=${dateStr}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setClasses(data.data || []);
+      } else {
+        setError(data.error || 'Failed to fetch schedule');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch schedule'));
+      console.error('Error fetching schedule:', err);
+      setError('Ошибка загрузки расписания');
     } finally {
       setIsLoading(false);
     }

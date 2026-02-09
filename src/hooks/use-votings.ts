@@ -2,34 +2,62 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+interface VoteUser {
+  id: string;
+  firstName: string;
+  lastName?: string;
+  photoUrl?: string | null;
+  balance?: number;
+}
+
 interface VotingOption {
   id: string;
   dayOfWeek: number;
   time: string;
-  _count: {
-    votes: number;
-  };
+  date?: string | null;
+  description?: string | null;
+  finalPrice?: number | null;
+  cancelled: boolean;
+  _count: { votes: number };
+  votes: Array<{
+    id: string;
+    userId: string;
+    balanceCharged: boolean;
+    user: VoteUser;
+  }>;
 }
 
-interface Voting {
+export interface Voting {
   id: string;
   title: string;
-  description: string | null;
+  type: "SCHEDULE" | "CONFIRM" | "SURVEY";
+  status: "ACTIVE" | "FINALIZED" | "CLOSED" | "CANCELLED";
+  chargeOnVote: boolean;
+  multipleChoice: boolean;
+  minParticipants: number;
   deadline: string;
-  minVotes: number;
-  status: "ACTIVE" | "CLOSED" | "CANCELLED";
-  options: VotingOption[];
-  _count: {
-    votes: number;
+  weekStart?: string | null;
+  weekEnd?: string | null;
+  telegramPollId?: string | null;
+  createdAt: string;
+  hasVoted: boolean;
+  group: {
+    id: string;
+    name: string;
+    pricingType: "FIXED" | "DYNAMIC";
+    fixedPrice?: number;
   };
-  hasVoted?: boolean;
+  options: VotingOption[];
+  _count: { votes: number };
 }
 
 interface UseVotingsOptions {
-  userId: string;
+  userId?: string;
+  groupId?: string;
+  status?: string;
 }
 
-export function useVotings({ userId }: UseVotingsOptions) {
+export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) {
   const [votings, setVotings] = useState<Voting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +65,14 @@ export function useVotings({ userId }: UseVotingsOptions) {
   const fetchVotings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/votings?userId=${userId}`);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (userId) params.set("userId", userId);
+      if (groupId) params.set("groupId", groupId);
+      if (status) params.set("status", status);
+
+      const response = await fetch(`/api/votings?${params.toString()}`);
       const data = await response.json();
 
       if (data.success) {
@@ -51,24 +86,25 @@ export function useVotings({ userId }: UseVotingsOptions) {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, groupId, status]);
 
-  const vote = async (votingId: string, optionId: string) => {
+  const vote = async (votingId: string, optionIds: string[]) => {
+    if (!userId) return { success: false, error: "Пользователь не авторизован" };
+
     try {
       const response = await fetch(`/api/votings/${votingId}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optionIds: [optionId], userId }),
+        body: JSON.stringify({ optionIds, userId }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Обновляем список голосований
         await fetchVotings();
         return { success: true };
       } else {
-        return { success: false, error: data.error };
+        return { success: false, error: data.error, code: data.code, details: data.details };
       }
     } catch (err) {
       console.error("Error voting:", err);
@@ -76,11 +112,104 @@ export function useVotings({ userId }: UseVotingsOptions) {
     }
   };
 
-  useEffect(() => {
-    if (userId) {
-      fetchVotings();
-    }
-  }, [fetchVotings, userId]);
+  const cancelVote = async (votingId: string, optionIds?: string[]) => {
+    if (!userId) return { success: false, error: "Пользователь не авторизован" };
 
-  return { votings, isLoading, error, vote, refetch: fetchVotings };
+    try {
+      const response = await fetch(`/api/votings/${votingId}/vote`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, optionIds }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchVotings();
+        return { success: true };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      console.error("Error cancelling vote:", err);
+      return { success: false, error: "Ошибка сети" };
+    }
+  };
+
+  const finalize = async (votingId: string, prices?: Array<{ optionId: string; price: number }>) => {
+    try {
+      const response = await fetch(`/api/votings/${votingId}/finalize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(prices ? { prices } : {}),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchVotings();
+        return { success: true };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      console.error("Error finalizing:", err);
+      return { success: false, error: "Ошибка сети" };
+    }
+  };
+
+  const cancel = async (votingId: string) => {
+    try {
+      const response = await fetch(`/api/votings/${votingId}/cancel`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchVotings();
+        return { success: true };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      console.error("Error cancelling:", err);
+      return { success: false, error: "Ошибка сети" };
+    }
+  };
+
+  const remind = async (votingId: string) => {
+    try {
+      const response = await fetch(`/api/votings/${votingId}/remind`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        return { success: true, data: data.data };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      console.error("Error sending reminder:", err);
+      return { success: false, error: "Ошибка сети" };
+    }
+  };
+
+  useEffect(() => {
+    fetchVotings();
+  }, [fetchVotings]);
+
+  return {
+    votings,
+    isLoading,
+    error,
+    vote,
+    cancelVote,
+    finalize,
+    cancel,
+    remind,
+    refetch: fetchVotings,
+  };
 }

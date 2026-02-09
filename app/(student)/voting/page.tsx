@@ -2,12 +2,13 @@
 
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { VotingCard } from "@/components/voting/voting-card";
+import { VotingCard } from "@/components/voting/voting-card-new";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVotings } from "@/src/hooks/use-votings";
 import { useUser } from "@/src/hooks/use-user-context";
+import { useState } from "react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,24 +27,21 @@ const itemVariants = {
   },
 };
 
-const DAYS_OF_WEEK = [
-  "Воскресенье",
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-];
-
 export default function VotingPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const userId = user?.id || "";
   const { votings, isLoading, error, vote, refetch } = useVotings({ userId });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleVote = async (votingId: string, optionId: string) => {
-    const result = await vote(votingId, optionId);
-    if (!result.success) {
+    const result = await vote(votingId, [optionId]);
+    if (result.success) {
+      toast.success("Голос принят!");
+    } else if (result.code === "INSUFFICIENT_BALANCE") {
+      toast.error("Недостаточно средств", {
+        description: `На балансе: ${result.details?.currentBalance}, нужно: ${result.details?.required}`,
+      });
+    } else {
       toast.error(result.error || "Ошибка голосования");
     }
   };
@@ -65,8 +63,8 @@ export default function VotingPage() {
         <PageHeader title="Голосования" />
         <div className="p-4 text-center">
           <p className="text-red-500">{error}</p>
-          <Button 
-            onClick={refetch} 
+          <Button
+            onClick={refetch}
             className="mt-4 bg-[#3BCEAC] hover:bg-[#14B8A6]"
           >
             Повторить
@@ -76,23 +74,7 @@ export default function VotingPage() {
     );
   }
 
-  // Transform API data to VotingCard format
-  const activeVotings = votings
-    .filter((v) => v.status === "ACTIVE")
-    .map((v) => ({
-      id: v.id,
-      title: v.title,
-      deadline: v.deadline,
-      minParticipants: v.minVotes,
-      currentVotes: v._count.votes,
-      hasVoted: v.hasVoted || false,
-      options: v.options.map((o) => ({
-        id: o.id,
-        day: DAYS_OF_WEEK[o.dayOfWeek],
-        time: o.time,
-        votes: o._count.votes,
-      })),
-    }));
+  const activeVotings = votings.filter((v) => v.status === "ACTIVE");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,8 +98,14 @@ export default function VotingPage() {
         {activeVotings.map((voting) => (
           <motion.div key={voting.id} variants={itemVariants}>
             <VotingCard
-              {...voting}
+              voting={voting}
+              currentUserId={userId}
+              isTrainer={false}
               onVote={(optionId) => handleVote(voting.id, optionId)}
+              expanded={expandedId === voting.id}
+              onExpandChange={(expanded) =>
+                setExpandedId(expanded ? voting.id : null)
+              }
             />
           </motion.div>
         ))}
