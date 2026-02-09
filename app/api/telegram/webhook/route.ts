@@ -7,6 +7,7 @@ import { createTelegramInvoice, sendPaymentRequestAfterVote } from "@/lib/telegr
 export async function POST(req: NextRequest) {
   try {
     const update = await req.json();
+    console.log("[WEBHOOK] Update received:", JSON.stringify(update).slice(0, 500));
 
     // Обработка pre-checkout query (проверка перед оплатой)
     if (update.pre_checkout_query) {
@@ -75,8 +76,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Error in Telegram webhook:", error);
-    return NextResponse.json({ ok: false });
+    console.error("[WEBHOOK] Error in Telegram webhook:", error);
+    return NextResponse.json({ ok: false, error: String(error) });
   }
 }
 

@@ -1,6 +1,9 @@
 // lib/bot-messages.ts - утилиты для отправки сообщений ботом
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// Read at call time, not module load time (important for serverless)
+function getBotToken() {
+  return process.env.TELEGRAM_BOT_TOKEN;
+}
 
 interface InlineKeyboardButton {
   text: string;
@@ -15,17 +18,18 @@ interface ReplyMarkup {
 
 // Отправить текстовое сообщение
 export async function sendTelegramMessage(
-  chatId: number,
+  chatId: number | string,
   text: string,
   replyMarkup?: ReplyMarkup
 ) {
-  if (!BOT_TOKEN) {
-    console.error("TELEGRAM_BOT_TOKEN not set");
+  const token = getBotToken();
+  if (!token) {
+    console.error("[BOT] TELEGRAM_BOT_TOKEN not set!");
     return;
   }
 
   try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -35,8 +39,14 @@ export async function sendTelegramMessage(
         reply_markup: replyMarkup,
       }),
     });
+
+    const data = await response.json();
+    if (!data.ok) {
+      console.error("[BOT] Telegram API error:", data.description, "chatId:", chatId);
+    }
+    return data;
   } catch (error) {
-    console.error("Error sending Telegram message:", error);
+    console.error("[BOT] Error sending Telegram message:", error);
   }
 }
 
