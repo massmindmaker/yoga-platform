@@ -20,10 +20,10 @@ export function IntensiveCard({ intensive, onRegister }: IntensiveCardProps) {
 
   return (
     <Card className="border-0 shadow-md overflow-hidden">
-      <div className="h-24 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
+      <div className="h-24 bg-gradient-to-r from-[#3BCEAC] via-[#2DD4BF] to-[#14B8A6] relative">
         <div className="absolute inset-0 bg-black/20" />
         <div className="absolute top-3 right-3">
-          <Badge className="bg-white/90 text-purple-700">
+          <Badge className="bg-white/90 text-[#3BCEAC]">
             {intensive.durationDays} дней
           </Badge>
         </div>
@@ -64,7 +64,7 @@ export function IntensiveCard({ intensive, onRegister }: IntensiveCardProps) {
           <Button
             onClick={onRegister}
             disabled={isFull}
-            className={isFull ? "" : "bg-purple-600 hover:bg-purple-700"}
+            className={isFull ? undefined : "bg-[#3BCEAC] hover:bg-[#14B8A6]"}
           >
             {isFull ? "Мест нет" : "Записаться"}
             {!isFull && <ArrowRight className="w-4 h-4 ml-1" />}

@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const statCards = [
     { label: "Учеников", value: stats.totalStudents.toString(), icon: Users, color: "bg-blue-500" },
     { label: "Групп", value: stats.totalGroups.toString(), icon: Calendar, color: "bg-green-500" },
-    { label: "Занятий сегодня", value: stats.todayClasses.toString(), icon: Wallet, color: "bg-purple-500" },
+    { label: "Занятий сегодня", value: stats.todayClasses.toString(), icon: Wallet, color: "bg-[#3BCEAC]" },
   ];
 
   return (

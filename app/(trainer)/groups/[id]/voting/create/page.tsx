@@ -105,7 +105,7 @@ export default function CreateVotingPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
       </div>
     );
   }
@@ -116,7 +116,7 @@ export default function CreateVotingPage() {
         <div className="text-center">
           <p className="text-red-500">{error || "Группа не найдена"}</p>
           <Link href="/groups">
-            <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+            <Button className="mt-4 bg-[#3BCEAC] hover:bg-[#14B8A6]">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Назад к группам
             </Button>
@@ -147,7 +147,7 @@ export default function CreateVotingPage() {
               </Button>
             </Link>
             <Link href={`/groups/${groupId}/edit`}>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-[#3BCEAC] hover:bg-[#14B8A6]">
                 Привязать чат
               </Button>
             </Link>
@@ -181,7 +181,7 @@ export default function CreateVotingPage() {
             <div
               key={s}
               className={`h-2 flex-1 rounded-full ${
-                s <= step ? "bg-purple-600" : "bg-gray-200"
+                s <= step ? "bg-[#3BCEAC]" : "bg-gray-200"
               }`}
             />
           ))}
@@ -223,11 +223,11 @@ export default function CreateVotingPage() {
                       onClick={() => setFormData({ ...formData, period: "daily" })}
                       className={`p-3 rounded-lg border-2 transition-all ${
                         formData.period === "daily"
-                          ? "border-purple-600 bg-purple-50"
+                          ? "border-[#3BCEAC] bg-[#F0FDF9]"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <Calendar className="w-5 h-5 mx-auto mb-1 text-purple-600" />
+                      <Calendar className="w-5 h-5 mx-auto mb-1 text-[#3BCEAC]" />
                       <span className="text-sm font-medium">На день</span>
                       <p className="text-xs text-gray-500 mt-1">Голосование на каждый день</p>
                     </button>
@@ -236,7 +236,7 @@ export default function CreateVotingPage() {
                       onClick={() => setFormData({ ...formData, period: "weekly" })}
                       className={`p-3 rounded-lg border-2 transition-all ${
                         formData.period === "weekly"
-                          ? "border-purple-600 bg-purple-50"
+                          ? "border-[#3BCEAC] bg-[#F0FDF9]"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function CreateVotingPage() {
             </Card>
 
             <Button 
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-[#3BCEAC] hover:bg-[#14B8A6]"
               onClick={() => setStep(2)}
               disabled={!formData.title || !formData.deadline}
             >
@@ -281,7 +281,7 @@ export default function CreateVotingPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Vote className="w-5 h-5 text-purple-600" />
+                  <Vote className="w-5 h-5 text-[#3BCEAC]" />
                   <span className="font-medium">Дни для голосования</span>
                 </div>
 
@@ -305,7 +305,7 @@ export default function CreateVotingPage() {
                         }}
                         className={`w-12 h-12 rounded-lg font-medium transition-colors ${
                           formData.selectedDays.includes(day.dayOfWeek)
-                            ? "bg-purple-600 text-white"
+                            ? "bg-[#3BCEAC] text-white"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
@@ -321,7 +321,7 @@ export default function CreateVotingPage() {
                 </div>
 
                 {formData.selectedDays.length > 0 && (
-                  <div className="bg-purple-50 p-3 rounded-lg">
+                  <div className="bg-[#F0FDF9] p-3 rounded-lg">
                     <p className="text-sm text-purple-800">
                       <strong>Выбрано:</strong>{" "}
                       {formData.selectedDays
@@ -343,7 +343,7 @@ export default function CreateVotingPage() {
                 Назад
               </Button>
               <Button 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6]"
                 onClick={() => setStep(3)}
                 disabled={formData.selectedDays.length === 0}
               >
@@ -363,7 +363,7 @@ export default function CreateVotingPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="w-5 h-5 text-purple-600" />
+                  <CreditCard className="w-5 h-5 text-[#3BCEAC]" />
                   <span className="font-medium">Оплата</span>
                 </div>
 
@@ -373,13 +373,13 @@ export default function CreateVotingPage() {
                     onClick={() => setFormData({ ...formData, pricingMode: "balance" })}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
                       formData.pricingMode === "balance"
-                        ? "border-purple-600 bg-purple-50"
+                        ? "border-[#3BCEAC] bg-[#F0FDF9]"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                        <CreditCard className="w-5 h-5 text-purple-600" />
+                      <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="w-5 h-5 text-[#3BCEAC]" />
                       </div>
                       <div>
                         <span className="text-sm font-medium block mb-1">Списание с баланса</span>
@@ -395,7 +395,7 @@ export default function CreateVotingPage() {
                     onClick={() => setFormData({ ...formData, pricingMode: "payment" })}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
                       formData.pricingMode === "payment"
-                        ? "border-purple-600 bg-purple-50"
+                        ? "border-[#3BCEAC] bg-[#F0FDF9]"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -417,7 +417,7 @@ export default function CreateVotingPage() {
                     onClick={() => setFormData({ ...formData, pricingMode: "free" })}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
                       formData.pricingMode === "free"
-                        ? "border-purple-600 bg-purple-50"
+                        ? "border-[#3BCEAC] bg-[#F0FDF9]"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -498,7 +498,7 @@ export default function CreateVotingPage() {
                 Назад
               </Button>
               <Button 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6]"
                 onClick={handleCreate}
                 disabled={isSaving}
               >

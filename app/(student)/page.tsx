@@ -84,7 +84,7 @@ export default function MainPage() {
             </h2>
             <Link
               href="/schedule"
-              className="text-sm text-purple-600 flex items-center hover:text-purple-700 font-medium"
+              className="text-sm text-[#3BCEAC] flex items-center hover:text-[#14B8A6] font-medium"
             >
               Все
               <ChevronRight className="w-4 h-4" />
@@ -93,12 +93,12 @@ export default function MainPage() {
 
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#F0FDF9] flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-[#2DD4BF]" />
               </div>
               <p className="text-gray-600 mb-4 font-medium">У вас нет предстоящих занятий</p>
               <Link href="/schedule">
-                <Button className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-200">
+                <Button className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] shadow-lg shadow-[#3BCEAC]/20">
                   Записаться
                 </Button>
               </Link>

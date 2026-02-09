@@ -12,8 +12,8 @@ export function ModeToggle() {
       onClick={toggleMode}
       className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-full shadow-lg border-2 transition-colors"
       style={{
-        backgroundColor: mode === "student" ? "#7C3AED" : "#10B981",
-        borderColor: mode === "student" ? "#6D28D9" : "#059669",
+        backgroundColor: mode === "student" ? "#3BCEAC" : "#14B8A6",
+        borderColor: mode === "student" ? "#2DD4BF" : "#0D9488",
       }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}

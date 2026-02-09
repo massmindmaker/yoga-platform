@@ -59,7 +59,7 @@ export function BookingModal({
             >
               <DialogHeader>
                 <DialogTitle className="text-xl flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  <Sparkles className="w-5 h-5 text-[#3BCEAC]" />
                   Запись на занятие
                 </DialogTitle>
                 <DialogDescription>
@@ -69,13 +69,13 @@ export function BookingModal({
 
               <div className="mt-4 space-y-4">
                 {/* Class Info */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 space-y-3">
+                <div className="bg-gradient-to-br from-[#F0FDF9] to-[#CCFBF1] rounded-xl p-4 space-y-3">
                   <h3 className="font-semibold text-lg text-gray-900">
                     {yogaClass.title}
                   </h3>
 
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <Calendar className="w-4 h-4 text-[#3BCEAC]" />
                     <span>
                       {format(new Date(yogaClass.date), "EEEE, d MMMM", {
                         locale: ru,
@@ -84,7 +84,7 @@ export function BookingModal({
                   </div>
 
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4 text-purple-600" />
+                    <Clock className="w-4 h-4 text-[#3BCEAC]" />
                     <span>
                       {yogaClass.startTime} - {yogaClass.endTime} (
                       {yogaClass.duration} мин)
@@ -92,7 +92,7 @@ export function BookingModal({
                   </div>
 
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User className="w-4 h-4 text-purple-600" />
+                    <User className="w-4 h-4 text-[#3BCEAC]" />
                     <span>
                       {yogaClass.trainer.firstName} {yogaClass.trainer.lastName}
                     </span>
@@ -100,7 +100,7 @@ export function BookingModal({
 
                   {yogaClass.location && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 text-purple-600" />
+                      <MapPin className="w-4 h-4 text-[#3BCEAC]" />
                       <span>{yogaClass.location}</span>
                     </div>
                   )}
@@ -109,7 +109,7 @@ export function BookingModal({
                 {/* Price Info */}
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-gray-600">Стоимость:</span>
-                  <span className="text-lg font-bold text-purple-600">
+                    <span className="text-lg font-bold text-[#3BCEAC]">
                     {yogaClass.price.toLocaleString()} ₽
                   </span>
                 </div>
@@ -117,7 +117,7 @@ export function BookingModal({
                 {/* Confirmation Text */}
                 <p className="text-sm text-gray-500 text-center">
                   С вашего баланса будет списано{" "}
-                  <span className="font-semibold text-purple-600">1 занятие</span>
+                    <span className="font-semibold text-[#3BCEAC]">1 занятие</span>
                 </p>
 
                 {/* Buttons */}
@@ -131,7 +131,7 @@ export function BookingModal({
                     Отмена
                   </Button>
                   <Button
-                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                    className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6]"
                     onClick={handleConfirm}
                     disabled={isLoading}
                   >

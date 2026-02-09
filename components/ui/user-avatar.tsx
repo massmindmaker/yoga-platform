@@ -33,7 +33,7 @@ export function UserAvatar({
   
   // Градиент на основе имени
   const gradients = [
-    "from-purple-500 to-pink-500",
+    "from-[#3BCEAC] to-[#2DD4BF]",
     "from-blue-500 to-cyan-500",
     "from-green-500 to-emerald-500",
     "from-orange-500 to-amber-500",

@@ -186,10 +186,10 @@ export function VotingCard({
       >
         <Card className={cn(
           "border-0 shadow-lg overflow-hidden transition-shadow",
-          isExpanded && "shadow-xl ring-2 ring-purple-200"
+          isExpanded && "shadow-xl ring-2 ring-[#2DD4BF]"
         )}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] p-4 text-white">
+          <div className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] p-4 text-white">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg truncate">{voting.title}</h3>
@@ -309,10 +309,10 @@ export function VotingCard({
                             className={cn(
                               "w-full p-3 rounded-xl border-2 text-left transition-all",
                               isSelected || selectedOption === option.id
-                                ? "border-purple-500 bg-purple-50"
+                                ? "border-[#3BCEAC] bg-[#F0FDF9]"
                                 : hasVoted
                                 ? "border-gray-100 bg-gray-50 opacity-60"
-                                : "border-gray-100 hover:border-purple-200 bg-white"
+                                : "border-gray-100 hover:border-[#2DD4BF] bg-white"
                             )}
                             whileTap={!hasVoted && voting.status === "ACTIVE" ? { scale: 0.98 } : undefined}
                           >
@@ -321,7 +321,7 @@ export function VotingCard({
                                 <div className={cn(
                                   "w-5 h-5 rounded-full border-2 flex items-center justify-center",
                                   isSelected || selectedOption === option.id
-                                    ? "border-purple-500 bg-purple-500"
+                                    ? "border-[#3BCEAC] bg-[#3BCEAC]"
                                     : "border-gray-300"
                                 )}>
                                   {(isSelected || selectedOption === option.id) && (
@@ -356,7 +356,7 @@ export function VotingCard({
                       <Button
                         onClick={() => selectedOption && handleVote(selectedOption)}
                         disabled={!selectedOption || isVoting}
-                        className="w-full bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] hover:from-[#6D28D9] hover:to-[#7C3AED] text-white h-12 rounded-xl font-semibold shadow-lg disabled:opacity-50"
+                        className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white h-12 rounded-xl font-semibold shadow-lg disabled:opacity-50"
                       >
                         {isVoting ? "Голосование..." : "Проголосовать"}
                       </Button>
@@ -455,7 +455,7 @@ export function VotingCard({
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-purple-600" />
+                  <Calendar className="w-5 h-5 text-[#3BCEAC]" />
                   <div>
                     <p className="text-sm font-medium">Дедлайн</p>
                     <p className="text-sm text-gray-500">
@@ -465,7 +465,7 @@ export function VotingCard({
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-purple-600" />
+                  <Users className="w-5 h-5 text-[#3BCEAC]" />
                   <div>
                     <p className="text-sm font-medium">Минимум участников</p>
                     <p className="text-sm text-gray-500">{voting.minParticipants} человек</p>
@@ -474,7 +474,7 @@ export function VotingCard({
 
                 {voting.chargeOnVote && (
                   <div className="flex items-center gap-3">
-                    <Wallet className="w-5 h-5 text-purple-600" />
+                    <Wallet className="w-5 h-5 text-[#3BCEAC]" />
                     <div>
                       <p className="text-sm font-medium">Списание с баланса</p>
                       <p className="text-sm text-gray-500">При голосовании списывается 1 занятие</p>

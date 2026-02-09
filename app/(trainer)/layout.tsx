@@ -45,7 +45,7 @@ export default function TrainerLayout({
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute inset-0 bg-purple-50 rounded-lg"
+                    className="absolute inset-0 bg-[#F0FDF9] rounded-lg"
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
@@ -53,11 +53,11 @@ export default function TrainerLayout({
                 <div className="relative z-10 flex flex-col items-center">
                   <Icon
                     size={20}
-                    className={isActive ? "text-purple-600" : "text-gray-400"}
+                    className={isActive ? "text-[#3BCEAC]" : "text-gray-400"}
                   />
                   <span
                     className={`text-[10px] mt-1 ${
-                      isActive ? "text-purple-600 font-medium" : "text-gray-400"
+                      isActive ? "text-[#3BCEAC] font-medium" : "text-gray-400"
                     }`}
                   >
                     {tab.label}

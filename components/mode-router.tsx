@@ -57,19 +57,19 @@ function StudentDashboard() {
         <motion.div variants={itemVariants}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900">Ближайшие занятия</h2>
-            <Link href="/schedule" className="text-sm text-purple-600 flex items-center">
+            <Link href="/schedule" className="text-sm text-[#3BCEAC] flex items-center">
               Все<ChevronRight className="w-4 h-4" />
             </Link>
           </div>
 
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#F0FDF9] flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-[#2DD4BF]" />
               </div>
               <p className="text-gray-500 mb-4">У вас нет предстоящих занятий</p>
               <Link href="/schedule">
-                <Button className="bg-purple-600 hover:bg-purple-700">Записаться</Button>
+                <Button className="bg-[#3BCEAC] hover:bg-[#14B8A6]">Записаться</Button>
               </Link>
             </CardContent>
           </Card>

@@ -33,7 +33,7 @@ export default function GroupsPage() {
   if (isLoading) {
     return (
       <div className="p-4 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
       </div>
     );
   }
@@ -44,7 +44,7 @@ export default function GroupsPage() {
         <p className="text-red-500">{error}</p>
         <Button 
           onClick={() => window.location.reload()} 
-          className="mt-4 bg-purple-600 hover:bg-purple-700"
+          className="mt-4 bg-[#3BCEAC] hover:bg-[#14B8A6]"
         >
           Повторить
         </Button>
@@ -63,7 +63,7 @@ export default function GroupsPage() {
               <p className="text-sm text-gray-500 mt-0.5">{groups.length} {groups.length === 1 ? "группа" : "групп"}</p>
             </div>
             <Link href="/groups/create">
-              <Button size="default" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Button size="default" className="bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] hover:from-[#2DD4BF] hover:to-[#3BCEAC]">
                 <Plus className="w-4 h-4 mr-2" />
                 Создать
               </Button>
@@ -88,7 +88,7 @@ export default function GroupsPage() {
                 <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden">
                   <CardContent className="p-0">
                     {/* Top colored bar */}
-                    <div className={`h-1 ${isIntensive ? "bg-gradient-to-r from-orange-500 to-red-500" : "bg-gradient-to-r from-purple-500 to-pink-500"}`} />
+                    <div className={`h-1 ${isIntensive ? "bg-gradient-to-r from-orange-500 to-red-500" : "bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF]"}`} />
                     
                     <div className="p-4">
                       {/* Header */}
@@ -98,7 +98,7 @@ export default function GroupsPage() {
                           <div className="flex flex-wrap gap-2">
                             <Badge 
                               variant="secondary" 
-                              className={isIntensive ? "bg-orange-100 text-orange-700" : "bg-purple-100 text-purple-700"}
+                              className={isIntensive ? "bg-orange-100 text-orange-700" : "bg-[#CCFBF1] text-[#14B8A6]"}
                             >
                               {isIntensive ? "Интенсив" : "Регулярные"}
                             </Badge>
@@ -146,11 +146,11 @@ export default function GroupsPage() {
                         </div>
                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
                           group._count.students > 0 
-                            ? "bg-purple-50 text-purple-700" 
+                            ? "bg-[#F0FDF9] text-[#3BCEAC]" 
                             : "bg-gray-50 text-gray-500"
                         }`}>
                           <div className={`w-2 h-2 rounded-full ${
-                            group._count.students > 0 ? "bg-purple-500" : "bg-gray-400"
+                            group._count.students > 0 ? "bg-[#3BCEAC]" : "bg-gray-400"
                           }`} />
                           <span className="text-xs font-medium">
                             {group._count.students || 0} учеников
@@ -173,14 +173,14 @@ export default function GroupsPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="p-4"
         >
-          <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-purple-600" />
+            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+            <div className="w-16 h-16 bg-[#CCFBF1] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-[#3BCEAC]" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">У вас пока нет групп</h3>
             <p className="text-sm text-gray-500 mb-6">Создайте первую группу для занятий</p>
             <Link href="/groups/create">
-              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Button className="bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] hover:from-[#2DD4BF] hover:to-[#3BCEAC]">
                 <Plus className="w-4 h-4 mr-2" />
                 Создать первую группу
               </Button>

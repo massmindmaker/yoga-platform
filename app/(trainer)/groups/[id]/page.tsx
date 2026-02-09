@@ -73,7 +73,7 @@ export default function GroupDetailPage() {
   if (isLoading) {
     return (
       <div className="p-4 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
       </div>
     );
   }
@@ -83,7 +83,7 @@ export default function GroupDetailPage() {
       <div className="p-4 text-center">
         <p className="text-red-500">{error || "Группа не найдена"}</p>
         <Link href="/groups">
-          <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+          <Button className="mt-4 bg-[#3BCEAC] hover:bg-[#14B8A6]">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Назад к группам
           </Button>
@@ -144,8 +144,8 @@ export default function GroupDetailPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center">
+                  <Users className="w-5 h-5 text-[#3BCEAC]" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Мин. для старта</p>
@@ -197,8 +197,8 @@ export default function GroupDetailPage() {
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-purple-600">
+                    <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center">
+                      <span className="text-sm font-medium text-[#3BCEAC]">
                           {DAYS_SHORT[schedule.dayOfWeek]}
                         </span>
                       </div>
@@ -256,7 +256,7 @@ export default function GroupDetailPage() {
                   return (
                     <div
                       key={voting.id}
-                      className={`p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100 cursor-pointer transition-all ${isExpanded ? 'ring-2 ring-purple-300' : ''}`}
+                      className={`p-3 bg-gradient-to-r from-[#F0FDF9] to-[#CCFBF1] rounded-lg border border-[#CCFBF1] cursor-pointer transition-all ${isExpanded ? 'ring-2 ring-[#2DD4BF]' : ''}`}
                       onClick={() => setExpandedVoting(isExpanded ? null : voting.id)}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -316,13 +316,13 @@ export default function GroupDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-gray-600">Проголосовало</span>
-                            <span className="text-xs font-medium text-purple-700">
+                            <span className="text-xs font-medium text-[#3BCEAC]">
                               {totalVotes}/{voting.minParticipants} ({progress}%)
                             </span>
                           </div>
                           <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
                             <div 
-                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                              className="h-full bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] transition-all duration-300"
                               style={{ width: `${Math.min(progress, 100)}%` }}
                             />
                           </div>
@@ -333,7 +333,7 @@ export default function GroupDetailPage() {
                               <div className="flex -space-x-2">
                                 {uniqueVoters.slice(0, 5).map((voter: any, idx: number) => (
                                   <Avatar key={voter.id} className="w-6 h-6 border-2 border-white">
-                                    <AvatarFallback className="text-[10px] bg-purple-100 text-purple-700">
+                                    <AvatarFallback className="text-[10px] bg-[#CCFBF1] text-[#3BCEAC]">
                                       {voter.firstName?.[0]}{voter.lastName?.[0]}
                                     </AvatarFallback>
                                   </Avatar>
@@ -353,7 +353,7 @@ export default function GroupDetailPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-4 pt-4 border-t border-purple-200"
+                          className="mt-4 pt-4 border-t border-[#CCFBF1]"
                         >
                           <h5 className="text-sm font-medium text-gray-700 mb-2">Результаты голосования:</h5>
                           <div className="space-y-2">
@@ -375,7 +375,7 @@ export default function GroupDetailPage() {
                                   </div>
                                   <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                     <div 
-                                      className="h-full bg-purple-400 rounded-full"
+                                      className="h-full bg-[#2DD4BF] rounded-full"
                                       style={{ width: `${Math.min(optionProgress, 100)}%` }}
                                     />
                                   </div>
@@ -384,7 +384,7 @@ export default function GroupDetailPage() {
                                     <div className="flex flex-wrap gap-1 mt-2">
                                       {option.votes.map((vote: any) => (
                                         vote.user && (
-                                          <span key={vote.id} className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                          <span key={vote.id} className="text-xs bg-[#CCFBF1] text-[#3BCEAC] px-2 py-0.5 rounded-full">
                                             {vote.user.firstName} {vote.user.lastName?.[0]}.
                                           </span>
                                         )
@@ -466,7 +466,7 @@ export default function GroupDetailPage() {
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                   >
                     <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-purple-100 text-purple-700">
+                      <AvatarFallback className="bg-[#CCFBF1] text-[#3BCEAC]">
                         {student.user?.firstName?.[0]}{student.user?.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
@@ -494,7 +494,7 @@ export default function GroupDetailPage() {
         className="pt-4"
       >
         <Link href={`/groups/${group.id}/voting/create`}>
-          <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+          <Button className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white">
             <Vote className="w-4 h-4 mr-2" />
             Создать голосование
           </Button>

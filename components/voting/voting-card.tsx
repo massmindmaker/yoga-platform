@@ -121,10 +121,10 @@ export function VotingCard({
                 disabled={hasVoted}
                 className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
                   selectedOption === option.id
-                    ? "border-purple-500 bg-purple-50"
+                    ? "border-[#3BCEAC] bg-[#F0FDF9]"
                     : hasVoted
                     ? "border-gray-100 bg-gray-50 opacity-60"
-                    : "border-gray-100 hover:border-purple-200 bg-white"
+                    : "border-gray-100 hover:border-[#2DD4BF] bg-white"
                 }`}
                 whileTap={!hasVoted ? { scale: 0.98 } : undefined}
               >
@@ -132,7 +132,7 @@ export function VotingCard({
                   <div className="flex items-center gap-3">
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                       selectedOption === option.id
-                        ? "border-purple-500 bg-purple-500"
+                        ? "border-[#3BCEAC] bg-[#3BCEAC]"
                         : "border-gray-300"
                     }`}>
                       {selectedOption === option.id && (
@@ -156,7 +156,7 @@ export function VotingCard({
             <Button
               onClick={() => selectedOption && onVote?.(selectedOption)}
               disabled={!selectedOption}
-              className="w-full bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] hover:from-[#6D28D9] hover:to-[#7C3AED] text-white h-12 rounded-xl font-semibold shadow-lg disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white h-12 rounded-xl font-semibold shadow-lg disabled:opacity-50"
             >
               Проголосовать
             </Button>
@@ -227,8 +227,8 @@ export function CreateVotingForm() {
                   onClick={() => setFormData({ ...formData, type: "conditional" })}
                   className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                     formData.type === "conditional"
-                      ? "border-purple-500 bg-purple-50"
-                      : "border-gray-100 hover:border-purple-200"
+                      ? "border-[#3BCEAC] bg-[#F0FDF9]"
+                      : "border-gray-100 hover:border-[#2DD4BF]"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -239,7 +239,7 @@ export function CreateVotingForm() {
                       </p>
                     </div>
                     {formData.type === "conditional" && (
-                      <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                      <CheckCircle2 className="w-5 h-5 text-[#3BCEAC]" />
                     )}
                   </div>
                 </button>
@@ -248,8 +248,8 @@ export function CreateVotingForm() {
                   onClick={() => setFormData({ ...formData, type: "online" })}
                   className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                     formData.type === "online"
-                      ? "border-purple-500 bg-purple-50"
-                      : "border-gray-100 hover:border-purple-200"
+                      ? "border-[#3BCEAC] bg-[#F0FDF9]"
+                      : "border-gray-100 hover:border-[#2DD4BF]"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -260,7 +260,7 @@ export function CreateVotingForm() {
                       </p>
                     </div>
                     {formData.type === "online" && (
-                      <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                      <CheckCircle2 className="w-5 h-5 text-[#3BCEAC]" />
                     )}
                   </div>
                 </button>
@@ -270,7 +270,7 @@ export function CreateVotingForm() {
 
           <Button 
             onClick={() => setStep(2)}
-            className="w-full bg-purple-600 hover:bg-purple-700 h-12"
+            className="w-full bg-[#3BCEAC] hover:bg-[#14B8A6] h-12"
           >
             Далее
           </Button>
@@ -295,7 +295,7 @@ export function CreateVotingForm() {
                       onClick={() => toggleDay(day.id)}
                       className={`w-12 h-12 rounded-xl font-medium transition-colors ${
                         formData.days.includes(day.id)
-                          ? "bg-purple-600 text-white"
+                          ? "bg-[#3BCEAC] text-white"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
@@ -351,7 +351,7 @@ export function CreateVotingForm() {
             <Button 
               onClick={() => setStep(3)}
               disabled={formData.days.length === 0 || !formData.deadline}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 h-12"
+              className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6] h-12"
             >
               Далее
             </Button>
@@ -413,7 +413,7 @@ export function CreateVotingForm() {
               Назад
             </Button>
             <Button 
-              className="flex-1 bg-purple-600 hover:bg-purple-700 h-12"
+              className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6] h-12"
               onClick={() => console.log("Create voting:", formData)}
             >
               Создать голосование

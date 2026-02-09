@@ -63,7 +63,7 @@ export default function StudentPaymentsPage() {
         <motion.div variants={itemVariants}>
           <Card className="border-0 shadow-lg overflow-hidden">
             <CardContent className="p-0">
-              <div className="bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] p-6 text-white">
+              <div className="bg-gradient-to-br from-[#3BCEAC] via-[#2DD4BF] to-[#14B8A6] p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -97,7 +97,7 @@ export default function StudentPaymentsPage() {
                 </div>
                 <div className="text-center border-x border-gray-100">
                   <div className="flex items-center justify-center gap-1 mb-1">
-                    <Calendar className="w-4 h-4 text-purple-500" />
+                    <Calendar className="w-4 h-4 text-[#3BCEAC]" />
                     <span className="text-xs text-gray-500">Куплено</span>
                   </div>
                   <p className="font-bold text-gray-900">{totalClasses} занятий</p>
@@ -175,7 +175,7 @@ export default function StudentPaymentsPage() {
         className="fixed bottom-20 left-4 right-4 z-40"
       >
         <Link href="/purchase">
-          <Button className="w-full bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] hover:from-[#6D28D9] hover:to-[#7C3AED] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all">
+          <Button className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all">
             Купить занятия
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>

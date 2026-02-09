@@ -96,7 +96,7 @@ export default function StudentsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-purple-100 text-purple-600 font-medium">
+                      <AvatarFallback className="bg-[#CCFBF1] text-[#3BCEAC] font-medium">
                         {student.firstName[0]}{student.lastName?.[0] || ''}
                       </AvatarFallback>
                     </Avatar>
@@ -109,7 +109,7 @@ export default function StudentsPage() {
 
                     <div className="text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <Wallet size={14} className="text-purple-600" />
+                        <Wallet size={14} className="text-[#3BCEAC]" />
                         <span className={`font-semibold ${student.balance < 3 ? "text-red-500" : "text-gray-900"}`}>
                           {student.balance}
                         </span>

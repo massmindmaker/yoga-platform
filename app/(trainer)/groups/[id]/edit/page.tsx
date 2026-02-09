@@ -136,7 +136,7 @@ export default function EditGroupPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
       </div>
     );
   }
@@ -147,7 +147,7 @@ export default function EditGroupPage() {
         <div className="text-center">
           <p className="text-red-500">{error || "Группа не найдена"}</p>
           <Link href="/groups">
-            <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+            <Button className="mt-4 bg-[#3BCEAC] hover:bg-[#14B8A6]">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Назад к группам
             </Button>
@@ -181,7 +181,7 @@ export default function EditGroupPage() {
             <div
               key={s}
               className={`h-2 flex-1 rounded-full ${
-                s <= step ? "bg-purple-600" : "bg-gray-200"
+                s <= step ? "bg-[#3BCEAC]" : "bg-gray-200"
               }`}
             />
           ))}
@@ -237,7 +237,7 @@ export default function EditGroupPage() {
             </Card>
 
             <Button 
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-[#3BCEAC] hover:bg-[#14B8A6]"
               onClick={() => setStep(2)}
               disabled={!formData.name}
             >
@@ -257,7 +257,7 @@ export default function EditGroupPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="w-5 h-5 text-purple-600" />
+                  <CreditCard className="w-5 h-5 text-[#3BCEAC]" />
                   <span className="font-medium">Ценообразование</span>
                 </div>
 
@@ -267,7 +267,7 @@ export default function EditGroupPage() {
                     onClick={() => setFormData({ ...formData, pricingType: "FIXED" })}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       formData.pricingType === "FIXED"
-                        ? "border-purple-600 bg-purple-50"
+                        ? "border-[#3BCEAC] bg-[#F0FDF9]"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -279,7 +279,7 @@ export default function EditGroupPage() {
                     onClick={() => setFormData({ ...formData, pricingType: "DYNAMIC" })}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       formData.pricingType === "DYNAMIC"
-                        ? "border-purple-600 bg-purple-50"
+                        ? "border-[#3BCEAC] bg-[#F0FDF9]"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -343,7 +343,7 @@ export default function EditGroupPage() {
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-4 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-5 h-5 text-purple-600" />
+                    <Calendar className="w-5 h-5 text-[#3BCEAC]" />
                     <span className="font-medium">Расписание</span>
                   </div>
 
@@ -359,7 +359,7 @@ export default function EditGroupPage() {
                             onClick={() => handleDayToggle(day.dayOfWeek)}
                             className={`w-12 h-12 rounded-lg font-medium transition-colors ${
                               isSelected
-                                ? "bg-purple-600 text-white"
+                                ? "bg-[#3BCEAC] text-white"
                                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                           >
@@ -408,7 +408,7 @@ export default function EditGroupPage() {
                 Назад
               </Button>
               <Button 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6]"
                 onClick={() => setStep(3)}
                 disabled={
                   formData.groupType === "REGULAR" && formData.daySchedules.length === 0
@@ -515,7 +515,7 @@ export default function EditGroupPage() {
                 Назад
               </Button>
               <Button 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 bg-[#3BCEAC] hover:bg-[#14B8A6]"
                 onClick={handleSave}
                 disabled={isSaving}
               >

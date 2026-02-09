@@ -53,7 +53,7 @@ export default function VotingPage() {
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Голосования" />
         <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
         </div>
       </div>
     );
@@ -67,7 +67,7 @@ export default function VotingPage() {
           <p className="text-red-500">{error}</p>
           <Button 
             onClick={refetch} 
-            className="mt-4 bg-purple-600 hover:bg-purple-700"
+            className="mt-4 bg-[#3BCEAC] hover:bg-[#14B8A6]"
           >
             Повторить
           </Button>
