@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { TelegramProvider } from "@/components/providers/telegram-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ModeProvider } from "@/src/hooks/use-mode";
-
-const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
 export const metadata: Metadata = {
   title: "Yoga Platform",
@@ -30,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={`${inter.className} antialiased`}>
+      <body className="antialiased font-sans">
         <TelegramProvider>
           <ModeProvider>
             <div className="min-h-screen bg-background">

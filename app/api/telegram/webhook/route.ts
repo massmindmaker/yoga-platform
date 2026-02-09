@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendTelegramMessage, sendMainMenu, notifyGroupAboutClass } from "@/lib/bot-messages";
+import { createTelegramInvoice, sendPaymentRequestAfterVote } from "@/lib/telegram";
 
 // POST /api/telegram/webhook - webhook для сообщений от бота
 export async function POST(req: NextRequest) {
   try {
     const update = await req.json();
+
+    // Обработка pre-checkout query (проверка перед оплатой)
+    if (update.pre_checkout_query) {
+      await handlePreCheckoutQuery(update.pre_checkout_query);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Обработка успешного платежа
+    if (update.message?.successful_payment) {
+      await handleSuccessfulPayment(update.message);
+      return NextResponse.json({ ok: true });
+    }
 
     // Обработка callback queries (кнопки)
     if (update.callback_query) {
@@ -285,11 +298,170 @@ async function handleVote(chatId: number, user: any) {
   }
 }
 
+// Обработка pre-checkout query (проверка перед оплатой)
+async function handlePreCheckoutQuery(preCheckoutQuery: any) {
+  const payload = preCheckoutQuery.invoice_payload;
+  
+  // Проверяем, что голосование и пользователь существуют
+  if (payload.startsWith("voting_")) {
+    const parts = payload.split("_");
+    const votingId = parts[1];
+    const userId = parts[2];
+    
+    const voting = await prisma.voting.findUnique({
+      where: { id: votingId },
+      include: { group: true }
+    });
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (voting && user) {
+      // Подтверждаем оплату
+      await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pre_checkout_query_id: preCheckoutQuery.id,
+            ok: true
+          }),
+        }
+      );
+      return;
+    }
+  }
+  
+  // Отклоняем оплату
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pre_checkout_query_id: preCheckoutQuery.id,
+        ok: false,
+        error_message: "Ошибка: голосование или пользователь не найдены"
+      }),
+    }
+  );
+}
+
+// Обработка успешного платежа
+async function handleSuccessfulPayment(message: any) {
+  const chatId = message.chat.id;
+  const payment = message.successful_payment;
+  const payload = payment.invoice_payload;
+  const telegramUserId = message.from.id.toString();
+  
+  if (payload.startsWith("voting_")) {
+    const parts = payload.split("_");
+    const votingId = parts[1];
+    const userId = parts[2];
+    
+    try {
+      // Находим пользователя
+      const user = await prisma.user.findFirst({
+        where: { telegramId: telegramUserId }
+      });
+      
+      if (!user) {
+        await sendTelegramMessage(chatId, "❌ Ошибка: пользователь не найден");
+        return;
+      }
+      
+      // Находим голосование
+      const voting = await prisma.voting.findUnique({
+        where: { id: votingId },
+        include: { group: true }
+      });
+      
+      if (!voting) {
+        await sendTelegramMessage(chatId, "❌ Ошибка: голосование не найдено");
+        return;
+      }
+      
+      // Создаем запись о платеже
+      await prisma.$transaction(async (tx) => {
+        // Создаем платеж
+        await tx.payment.create({
+          data: {
+            userId: user.id,
+            amount: payment.total_amount / 100,
+            status: "COMPLETED",
+            provider: "telegram_stars",
+            classesCount: 1,
+          }
+        });
+        
+        // Увеличиваем баланс пользователя
+        await tx.user.update({
+          where: { id: user.id },
+          data: { balance: { increment: 1 } }
+        });
+        
+        // Создаем запись о транзакции баланса
+        await tx.balanceTransaction.create({
+          data: {
+            userId: user.id,
+            amount: 1,
+            type: "PAYMENT_CREDIT",
+            description: `Оплата через Telegram за голосование: ${voting.title}`
+          }
+        });
+      });
+      
+      // Отправляем подтверждение
+      await sendTelegramMessage(
+        chatId,
+        `✅ *Оплата успешна!*\n\n💰 Сумма: ${payment.total_amount / 100} ${payment.currency}\n🎫 Ваш баланс пополнен на 1 занятие\n\nТеперь вы участвуете в голосовании "${voting.title}"`,
+        {
+          inline_keyboard: [
+            [{
+              text: "🗳️ Перейти к голосованию",
+              web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/voting` }
+            }]
+          ]
+        }
+      );
+      
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      await sendTelegramMessage(
+        chatId,
+        "❌ Произошла ошибка при обработке платежа. Пожалуйста, обратитесь в поддержку."
+      );
+    }
+  }
+}
+
 // Обработка callback queries
 async function handleCallbackQuery(callbackQuery: any) {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
   const user = callbackQuery.from;
+  
+  // Обработка голосования
+  if (data.startsWith("vote_")) {
+    const parts = data.split("_");
+    const votingId = parts[1];
+    const optionId = parts[2];
+    
+    await handleVoteFromCallback(callbackQuery, votingId, optionId);
+    return;
+  }
+  
+  // Обработка запроса на оплату
+  if (data.startsWith("pay_voting_")) {
+    const parts = data.split("_");
+    const votingId = parts[2];
+    const userId = parts[3];
+    
+    await handlePaymentRequest(callbackQuery, votingId, userId);
+    return;
+  }
 
   if (data === "show_balance") {
     await handleBalance(chatId, user);
@@ -304,6 +476,186 @@ async function handleCallbackQuery(callbackQuery: any) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ callback_query_id: callbackQuery.id }),
+    }
+  );
+}
+
+// Обработка голосования из callback
+async function handleVoteFromCallback(callbackQuery: any, votingId: string, optionId: string) {
+  const chatId = callbackQuery.message.chat.id;
+  const telegramUserId = callbackQuery.from.id.toString();
+  
+  try {
+    // Находим пользователя
+    const user = await prisma.user.findFirst({
+      where: { telegramId: telegramUserId }
+    });
+    
+    if (!user) {
+      await sendTelegramMessage(
+        chatId,
+        "❌ Вы не зарегистрированы. Отправьте /start для регистрации."
+      );
+      await answerCallback(callbackQuery.id);
+      return;
+    }
+    
+    // Проверяем, не голосовал ли уже
+    const existingVote = await prisma.vote.findFirst({
+      where: { votingId, userId: user.id }
+    });
+    
+    if (existingVote) {
+      await sendTelegramMessage(
+        chatId,
+        "⚠️ Вы уже проголосовали в этом голосовании."
+      );
+      await answerCallback(callbackQuery.id);
+      return;
+    }
+    
+    // Находим голосование
+    const voting = await prisma.voting.findUnique({
+      where: { id: votingId },
+      include: { 
+        group: true,
+        options: true
+      }
+    });
+    
+    if (!voting || voting.status !== "ACTIVE") {
+      await sendTelegramMessage(
+        chatId,
+        "❌ Голосование не найдено или уже завершено."
+      );
+      await answerCallback(callbackQuery.id);
+      return;
+    }
+    
+    // Создаем голос
+    await prisma.vote.create({
+      data: {
+        votingId,
+        optionId,
+        userId: user.id
+      }
+    });
+    
+    // Находим выбранную опцию
+    const option = voting.options.find(o => o.id === optionId);
+    const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+    
+    // Отправляем подтверждение голосования
+    await sendTelegramMessage(
+      chatId,
+      `✅ Вы проголосовали!\n\n📅 ${DAYS_SHORT[option?.dayOfWeek || 0]} ${option?.time}\n🗳️ ${voting.title}`,
+      {
+        inline_keyboard: [
+          [{
+            text: "🗳️ Посмотреть результаты",
+            web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/voting` }
+          }]
+        ]
+      }
+    );
+    
+    // Если нужна оплата - отправляем запрос на оплату
+    if (voting.chargeOnVote) {
+      const price = voting.group?.fixedPrice || 1000;
+      
+      // Проверяем баланс
+      if (user.balance < 1) {
+        // Создаем invoice для оплаты
+        await createTelegramInvoice(chatId.toString(), {
+          title: `Оплата голосования: ${voting.title}`,
+          description: `Оплата 1 занятия для участия в голосовании`,
+          payload: `voting_${votingId}_${user.id}`,
+          amount: price * 100, // в копейках
+          currency: "RUB"
+        });
+      } else {
+        // У пользователя есть баланс - списываем автоматически
+        await prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: user.id },
+            data: { balance: { decrement: 1 } }
+          });
+          
+          await tx.balanceTransaction.create({
+            data: {
+              userId: user.id,
+              amount: -1,
+              type: "VOTE_DEDUCTION",
+              description: `Списание за голосование: ${voting.title}`
+            }
+          });
+        });
+        
+        await sendTelegramMessage(
+          chatId,
+          `💰 С вашего баланса списано 1 занятие.\nОсталось занятий: ${user.balance - 1}`
+        );
+      }
+    }
+    
+    await answerCallback(callbackQuery.id, "✅ Голос принят!");
+    
+  } catch (error) {
+    console.error("Error processing vote:", error);
+    await sendTelegramMessage(
+      chatId,
+      "❌ Произошла ошибка при обработке голоса."
+    );
+    await answerCallback(callbackQuery.id);
+  }
+}
+
+// Обработка запроса на оплату
+async function handlePaymentRequest(callbackQuery: any, votingId: string, userId: string) {
+  const chatId = callbackQuery.message.chat.id;
+  
+  try {
+    const voting = await prisma.voting.findUnique({
+      where: { id: votingId },
+      include: { group: true }
+    });
+    
+    if (!voting) {
+      await answerCallback(callbackQuery.id, "❌ Голосование не найдено");
+      return;
+    }
+    
+    const price = voting.group?.fixedPrice || 1000;
+    
+    // Создаем invoice
+    await createTelegramInvoice(chatId.toString(), {
+      title: `Оплата: ${voting.title}`,
+      description: `Оплата 1 занятия для участия в голосовании`,
+      payload: `voting_${votingId}_${userId}`,
+      amount: price * 100,
+      currency: "RUB"
+    });
+    
+    await answerCallback(callbackQuery.id, "💳 Открываю оплату...");
+    
+  } catch (error) {
+    console.error("Error creating invoice:", error);
+    await answerCallback(callbackQuery.id, "❌ Ошибка создания счета");
+  }
+}
+
+// Вспомогательная функция для ответа на callback
+async function answerCallback(callbackQueryId: string, text?: string) {
+  const body: any = { callback_query_id: callbackQueryId };
+  if (text) body.text = text;
+  if (text) body.show_alert = true;
+  
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     }
   );
 }

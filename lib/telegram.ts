@@ -149,6 +149,126 @@ export async function sendVotingToChat(
   }
 }
 
+// Отправить сообщение с кнопкой оплаты после голосования
+export async function sendPaymentRequestAfterVote(
+  chatId: string,
+  userId: string,
+  voting: {
+    id: string;
+    title: string;
+    group: {
+      fixedPrice?: number;
+    };
+  }
+) {
+  if (!BOT_TOKEN) {
+    console.error("TELEGRAM_BOT_TOKEN not set");
+    return { success: false, error: "Bot token not configured" };
+  }
+
+  const price = voting.group.fixedPrice || 1000;
+  
+  const message = `✅ Вы проголосовали в "${voting.title}"
+
+💰 Для подтверждения участия необходимо оплатить 1 занятие (${price}₽)
+
+Нажмите кнопку ниже для оплаты:`;
+
+  const keyboard = {
+    inline_keyboard: [
+      [{
+        text: `💳 Оплатить ${price}₽`,
+        callback_data: `pay_voting_${voting.id}_${userId}`
+      }],
+      [{
+        text: "🧘‍♀️ Открыть в приложении",
+        web_app: { 
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/voting?pay=${voting.id}` 
+        }
+      }]
+    ]
+  };
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "Markdown",
+        reply_markup: keyboard,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (data.ok) {
+      return { success: true, messageId: data.result.message_id };
+    } else {
+      console.error("Telegram API error:", data);
+      return { success: false, error: data.description };
+    }
+  } catch (error) {
+    console.error("Error sending payment request:", error);
+    return { success: false, error: "Network error" };
+  }
+}
+
+// Создать invoice для оплаты через Telegram
+export async function createTelegramInvoice(
+  chatId: string,
+  paymentData: {
+    title: string;
+    description: string;
+    payload: string;
+    amount: number; // в копейках/центах
+    currency?: string;
+  }
+) {
+  if (!BOT_TOKEN) {
+    console.error("TELEGRAM_BOT_TOKEN not set");
+    return { success: false, error: "Bot token not configured" };
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendInvoice`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        title: paymentData.title,
+        description: paymentData.description,
+        payload: paymentData.payload,
+        provider_token: process.env.TELEGRAM_PAYMENT_PROVIDER_TOKEN || "",
+        currency: paymentData.currency || "RUB",
+        prices: [{
+          label: "Занятие",
+          amount: paymentData.amount
+        }],
+        start_parameter: "pay_voting",
+        need_name: false,
+        need_phone_number: false,
+        need_email: false,
+        need_shipping_address: false,
+        is_flexible: false,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (data.ok) {
+      return { success: true, messageId: data.result.message_id };
+    } else {
+      console.error("Telegram API error:", data);
+      return { success: false, error: data.description };
+    }
+  } catch (error) {
+    console.error("Error creating invoice:", error);
+    return { success: false, error: "Network error" };
+  }
+}
+
 // Отправить уведомление об оплате
 export async function sendPaymentMessage(
   chatId: string,

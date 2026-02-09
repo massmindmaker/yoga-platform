@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { voteSchema, idParamSchema } from '@/lib/validation';
+import { sendPaymentRequestAfterVote, createTelegramInvoice } from '@/lib/telegram';
+import { sendTelegramMessage } from '@/lib/bot-messages';
 
 // POST /api/votings/[id]/vote - проголосовать (множественный выбор)
 export async function POST(
@@ -27,7 +29,7 @@ export async function POST(
       );
     }
 
-    const { optionIds, userId } = validationResult.data;
+    const { optionIds, userId, telegramChatId } = validationResult.data as { optionIds: string[]; userId: string; telegramChatId?: string };
 
     // Get voting with group info
     const voting = await prisma.voting.findUnique({
@@ -90,6 +92,32 @@ export async function POST(
       const totalCharge = newOptionIds.length * chargePerVote;
 
       if (user.balance < totalCharge) {
+        // Если есть telegramChatId - отправляем запрос на оплату в Telegram
+        if (telegramChatId) {
+          await sendPaymentRequestAfterVote(telegramChatId, userId, {
+            id: votingId,
+            title: voting.title,
+            group: {
+              fixedPrice: voting.group.fixedPrice || undefined,
+            },
+          });
+          
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Insufficient balance',
+              code: 'INSUFFICIENT_BALANCE',
+              message: 'Отправлен запрос на оплату в Telegram',
+              details: {
+                currentBalance: user.balance,
+                required: totalCharge,
+                shortage: totalCharge - user.balance,
+              },
+            },
+            { status: 402 }
+          );
+        }
+
         return NextResponse.json(
           {
             success: false,
@@ -157,6 +185,31 @@ export async function POST(
 
       return createdVotes;
     });
+
+    // Отправляем подтверждение в Telegram, если указан telegramChatId
+    if (telegramChatId && result.length > 0) {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { balance: true },
+        });
+
+        await sendTelegramMessage(
+          parseInt(telegramChatId),
+          `✅ *Голос принят!*\n\n🗳️ ${voting.title}\n✅ Вы проголосовали за ${result.length} вариант(ов)${shouldCharge ? '\n💰 Списано: ' + (result.length * chargePerVote) + ' занятий' : ''}\n💳 Остаток: ${user?.balance || 0} занятий`,
+          {
+            inline_keyboard: [
+              [{
+                text: "🗳️ Посмотреть результаты",
+                web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/voting` }
+              }]
+            ]
+          }
+        );
+      } catch (telegramError) {
+        console.error('Error sending Telegram confirmation:', telegramError);
+      }
+    }
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
