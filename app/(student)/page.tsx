@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Clock, MapPin, ChevronRight, Sparkles, Calendar } from "lucide-react";
+import { Clock, MapPin, ChevronRight, Sparkles, Calendar, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
@@ -173,14 +173,17 @@ export default function MainPage() {
               </Card>
             </motion.div>
           ) : error ? (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mt-4">
               <CardContent className="p-6 text-center">
-                <p className="text-red-500 mb-4">{error}</p>
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <p className="text-red-600 font-medium mb-4">{error}</p>
                 <Button 
                   onClick={() => window.location.reload()}
-                   className="bg-gradient-to-r from-gray-900 to-black"
+                  className="bg-gray-900 hover:bg-black text-white"
                 >
-                   Попробовать снова
+                  Попробовать снова
                 </Button>
               </CardContent>
             </Card>

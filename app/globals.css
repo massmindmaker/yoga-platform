@@ -275,3 +275,249 @@ body {
   outline: none;
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
+
+/* ============================================
+   CYBERPUNK GLITCH & NEON EFFECTS
+   ============================================ */
+
+/* Glitch Animation */
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+@keyframes glitch-skew {
+  0% {
+    transform: skew(0deg);
+  }
+  20% {
+    transform: skew(-2deg);
+  }
+  40% {
+    transform: skew(2deg);
+  }
+  60% {
+    transform: skew(-1deg);
+  }
+  80% {
+    transform: skew(1deg);
+  }
+  100% {
+    transform: skew(0deg);
+  }
+}
+
+.animate-glitch {
+  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite,
+             glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  animation-iteration-count: 3;
+}
+
+/* RGB Split Animations */
+@keyframes rgb-shift-cyan {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(-3px, 1px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(2px, -1px);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translate(-1px, 2px);
+    opacity: 0.4;
+  }
+}
+
+@keyframes rgb-shift-magenta {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(3px, -1px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-2px, 1px);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translate(1px, -2px);
+    opacity: 0.4;
+  }
+}
+
+.animate-rgb-shift-cyan {
+  animation: rgb-shift-cyan 0.4s ease-in-out infinite;
+  animation-iteration-count: 5;
+}
+
+.animate-rgb-shift-magenta {
+  animation: rgb-shift-magenta 0.4s ease-in-out infinite;
+  animation-iteration-count: 5;
+}
+
+/* Neon Pulse Animation */
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(30px) brightness(1);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(40px) brightness(1.3);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Border Pulse */
+@keyframes border-pulse {
+  0%, 100% {
+    border-color: rgba(0, 255, 255, 0.3);
+    box-shadow: inset 0 0 60px rgba(0, 255, 255, 0.2), 0 0 60px rgba(255, 0, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(255, 0, 255, 0.5);
+    box-shadow: inset 0 0 80px rgba(0, 255, 255, 0.4), 0 0 80px rgba(255, 0, 255, 0.4);
+  }
+}
+
+.animate-border-pulse {
+  animation: border-pulse 3s ease-in-out infinite;
+}
+
+/* Noise Animation */
+@keyframes noise {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-2%, -2%);
+  }
+  20% {
+    transform: translate(2%, 2%);
+  }
+  30% {
+    transform: translate(-1%, 1%);
+  }
+  40% {
+    transform: translate(1%, -1%);
+  }
+  50% {
+    transform: translate(-2%, 2%);
+  }
+  60% {
+    transform: translate(2%, -2%);
+  }
+  70% {
+    transform: translate(-1%, -1%);
+  }
+  80% {
+    transform: translate(1%, 1%);
+  }
+  90% {
+    transform: translate(-2%, -1%);
+  }
+}
+
+.animate-noise {
+  animation: noise 0.5s steps(10) infinite;
+}
+
+/* Chromatic Aberration */
+.chromatic-aberration {
+  position: relative;
+}
+
+.chromatic-aberration::before,
+.chromatic-aberration::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  mix-blend-mode: screen;
+}
+
+.chromatic-aberration::before {
+  transform: translate(-2px, 0);
+  filter: hue-rotate(-60deg);
+  opacity: 0.5;
+}
+
+.chromatic-aberration::after {
+  transform: translate(2px, 0);
+  filter: hue-rotate(60deg);
+  opacity: 0.5;
+}
+
+/* Scanline Effect */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* CRT Flicker */
+@keyframes crt-flicker {
+  0% {
+    opacity: 0.97;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  20% {
+    opacity: 0.99;
+  }
+  50% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.97;
+  }
+}
+
+.animate-crt {
+  animation: crt-flicker 0.15s infinite;
+}
