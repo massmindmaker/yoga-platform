@@ -58,7 +58,7 @@ export default function TrainerPaymentsPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
-                <Wallet className="w-4 h-4 text-[#3BCEAC]" />
+                <Wallet className="w-4 h-4 text-gray-900" />
                 <span className="text-sm text-gray-500">Всего</span>
               </div>
               <p className="text-2xl font-bold text-gray-900">
@@ -101,7 +101,7 @@ export default function TrainerPaymentsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-10 h-10">
-                            <AvatarFallback className="bg-[#CCFBF1] text-[#3BCEAC] text-sm">
+                            <AvatarFallback className="bg-gray-100 text-gray-900 text-sm">
                               {payment.user?.firstName?.[0] || '?'}
                             </AvatarFallback>
                           </Avatar>

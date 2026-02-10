@@ -116,7 +116,7 @@ export default function TrainerVotingPage() {
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Голосования" />
         <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
+          <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
         </div>
       </div>
     );
@@ -131,7 +131,7 @@ export default function TrainerVotingPage() {
           <p className="text-red-500">{error}</p>
           <Button
             onClick={() => { refetchActive(); refetchPast(); }}
-            className="mt-4 bg-[#3BCEAC] hover:bg-[#2A9D8F]"
+            className="mt-4 bg-gray-800 hover:bg-black"
           >
             Повторить
           </Button>
@@ -152,7 +152,7 @@ export default function TrainerVotingPage() {
         >
           <button
             onClick={handleCreateClick}
-            className="w-full py-4 border-2 border-dashed border-[#3BCEAC]/40 rounded-2xl text-[#3BCEAC] font-medium hover:border-[#3BCEAC] hover:bg-[#F0FDF9] transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 border-2 border-dashed border-gray-900/40 rounded-2xl text-gray-900 font-medium hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Создать голосование
@@ -168,14 +168,14 @@ export default function TrainerVotingPage() {
             </DialogHeader>
             {isLoadingGroups ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-[#3BCEAC]" />
+                <Loader2 className="w-6 h-6 animate-spin text-gray-900" />
               </div>
             ) : groups.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
                 <p>Нет доступных групп</p>
                 <Button
                   onClick={() => { setShowGroupPicker(false); router.push("/groups/create"); }}
-                  className="mt-3 bg-[#3BCEAC] hover:bg-[#14B8A6]"
+                  className="mt-3 bg-gray-800 hover:bg-black"
                   size="sm"
                 >
                   Создать группу
@@ -187,10 +187,10 @@ export default function TrainerVotingPage() {
                   <button
                     key={g.id}
                     onClick={() => handleGroupSelect(g.id)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F0FDF9] transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
                   >
-                    <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center flex-shrink-0">
-                      <Users className="w-5 h-5 text-[#3BCEAC]" />
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5 text-gray-900" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{g.name}</p>
@@ -220,7 +220,7 @@ export default function TrainerVotingPage() {
           <TabsContent value="active" className="space-y-3 mt-4">
             {isLoadingActive ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-[#3BCEAC]" />
+                <Loader2 className="w-6 h-6 animate-spin text-gray-900" />
               </div>
             ) : activeVotings.length > 0 ? (
               activeVotings.map((voting, index) => (
@@ -259,7 +259,7 @@ export default function TrainerVotingPage() {
           <TabsContent value="past" className="space-y-3 mt-4">
             {isLoadingPast ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-[#3BCEAC]" />
+                <Loader2 className="w-6 h-6 animate-spin text-gray-900" />
               </div>
             ) : pastVotings.length > 0 ? (
               pastVotings.map((voting, index) => (

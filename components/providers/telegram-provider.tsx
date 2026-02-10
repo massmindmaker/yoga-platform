@@ -105,7 +105,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setIsInTelegram(true);
         
         // Set header and background colors to match app
-        tg.setHeaderColor("#3BCEAC");
+        tg.setHeaderColor("#111827");
         tg.setBackgroundColor("#FFFFFF");
         
         // Notify Telegram that the app is ready

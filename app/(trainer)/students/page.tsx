@@ -78,7 +78,7 @@ export default function StudentsPage() {
       <div className="space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-[#3BCEAC]" />
+            <Loader2 className="w-6 h-6 animate-spin text-gray-900" />
           </div>
         ) : error ? (
           <div className="text-center py-8">
@@ -96,7 +96,7 @@ export default function StudentsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-[#CCFBF1] text-[#3BCEAC] font-medium">
+                      <AvatarFallback className="bg-gray-100 text-gray-900 font-medium">
                         {student.firstName[0]}{student.lastName?.[0] || ''}
                       </AvatarFallback>
                     </Avatar>
@@ -109,7 +109,7 @@ export default function StudentsPage() {
 
                     <div className="text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <Wallet size={14} className="text-[#3BCEAC]" />
+                        <Wallet size={14} className="text-gray-900" />
                         <span className={`font-semibold ${student.balance < 3 ? "text-red-500" : "text-gray-900"}`}>
                           {student.balance}
                         </span>

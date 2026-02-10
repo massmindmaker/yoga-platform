@@ -137,7 +137,7 @@ export default function DashboardPage() {
       label: "Занятий сегодня", 
       value: isLoading ? "..." : stats.todayClasses.toString(), 
       icon: Clock, 
-      color: "bg-[#3BCEAC]" 
+      color: "bg-gray-800" 
     },
   ];
 
@@ -183,7 +183,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Занятия сегодня</h2>
           <Link href="/groups">
-            <Button variant="ghost" size="sm" className="text-[#3BCEAC]">
+            <Button variant="ghost" size="sm" className="text-gray-900">
               Все группы →
             </Button>
           </Link>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
               <p className="text-red-500 mb-4">{error}</p>
               <Button 
                 onClick={() => window.location.reload()}
-                className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6]"
+                className="bg-gradient-to-r from-gray-900 to-black"
               >
                 Попробовать снова
               </Button>
@@ -229,7 +229,7 @@ export default function DashboardPage() {
                 <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-[#3BCEAC] to-[#14B8A6] flex flex-col items-center justify-center text-white">
+                      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center text-white">
                         <span className="text-lg font-bold">{formatTime(cls.schedule.time)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -299,8 +299,8 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#CCFBF1] flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-[#3BCEAC]" />
+                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-gray-900" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">Голосования</p>

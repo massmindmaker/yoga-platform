@@ -23,7 +23,7 @@ function ScreenPreview({
       className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow"
       whileHover={{ y: -5 }}
     >
-      <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-2 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 py-2 flex items-center justify-between">
         <span className="text-white font-medium text-sm">{title}</span>
         <div className="flex gap-1">
           <div className="w-2 h-2 rounded-full bg-white/30" />
@@ -36,7 +36,7 @@ function ScreenPreview({
       </div>
       {href && (
         <Link href={href}>
-          <div className="px-4 py-2 bg-gray-50 text-purple-600 text-sm font-medium hover:bg-purple-50 transition-colors flex items-center justify-center gap-1">
+          <div className="px-4 py-2 bg-gray-50 text-gray-900 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
             Перейти <ChevronRight className="w-4 h-4" />
           </div>
         </Link>
@@ -50,15 +50,15 @@ function StudentDashboardMini() {
   return (
     <div className="p-4 space-y-3 scale-75 origin-top">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-500 rounded-xl p-3 text-white">
-        <p className="text-xs text-purple-100">Добро пожаловать</p>
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 text-white">
+        <p className="text-xs text-gray-100">Добро пожаловать</p>
         <p className="font-bold text-sm">Анна 👋</p>
       </div>
       
       {/* Balance Card */}
-      <div className="bg-white rounded-xl p-3 shadow-sm border border-purple-100">
+      <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
         <p className="text-xs text-gray-500">Баланс</p>
-        <p className="text-xl font-bold text-purple-600">5 занятий</p>
+        <p className="text-xl font-bold text-gray-900">5 занятий</p>
       </div>
       
       {/* Class Card */}
@@ -68,7 +68,7 @@ function StudentDashboardMini() {
             <p className="font-semibold text-sm">Хатха-йога</p>
             <p className="text-xs text-gray-500">10:00 • Зал А</p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-600">
+          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-900">
             М
           </div>
         </div>
@@ -85,7 +85,7 @@ function ScheduleMini() {
       {/* Calendar */}
       <div className="flex gap-2 mb-3">
         {days.map((day, i) => (
-          <div key={day} className={`flex-1 text-center py-2 rounded-lg text-xs ${i === 0 ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>
+          <div key={day} className={`flex-1 text-center py-2 rounded-lg text-xs ${i === 0 ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}>
             {day}
           </div>
         ))}
@@ -93,22 +93,22 @@ function ScheduleMini() {
       
       {/* Classes */}
       <div className="space-y-2">
-        <div className="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-500">
+        <div className="bg-white rounded-xl p-3 shadow-sm border-l-4 border-gray-500">
           <div className="flex justify-between">
             <div>
               <p className="font-semibold text-sm">Утренняя йога</p>
               <p className="text-xs text-gray-500">08:00 • Хатха</p>
             </div>
-            <span className="text-purple-600 font-bold text-sm">1,500₽</span>
+            <span className="text-gray-900 font-bold text-sm">1,500₽</span>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm border-l-4 border-pink-500">
+        <div className="bg-white rounded-xl p-3 shadow-sm border-l-4 border-gray-500">
           <div className="flex justify-between">
             <div>
               <p className="font-semibold text-sm">Виньяса</p>
               <p className="text-xs text-gray-500">18:00 • Средний</p>
             </div>
-            <span className="text-purple-600 font-bold text-sm">1,800₽</span>
+            <span className="text-gray-900 font-bold text-sm">1,800₽</span>
           </div>
         </div>
       </div>
@@ -144,7 +144,7 @@ function GroupsMini() {
           </div>
         </div>
       </div>
-      <button className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 text-sm hover:border-purple-400 hover:text-purple-500 transition-colors">
+      <button className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 text-sm hover:border-purple-400 hover:text-gray-500 transition-colors">
         + Создать группу
       </button>
     </div>
@@ -155,10 +155,10 @@ function GroupsMini() {
 function PaymentsMini() {
   return (
     <div className="p-3 space-y-3 scale-75 origin-top">
-      <div className="bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl p-4 text-white">
-        <p className="text-xs text-purple-100">Всего потрачено</p>
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-4 text-white">
+        <p className="text-xs text-gray-100">Всего потрачено</p>
         <p className="text-2xl font-bold">26,500 ₽</p>
-        <p className="text-xs text-purple-100 mt-1">25 занятий</p>
+        <p className="text-xs text-gray-100 mt-1">25 занятий</p>
       </div>
       
       <div className="space-y-2">
@@ -185,18 +185,18 @@ function PaymentsMini() {
 function VotingMini() {
   return (
     <div className="p-3 space-y-3 scale-75 origin-top">
-      <div className="bg-white rounded-xl p-4 shadow-md border border-purple-100">
+      <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-bold text-sm">Йога в пятницу?</h3>
           <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Активно</span>
         </div>
         <div className="h-2 bg-gray-100 rounded-full mb-3">
-          <div className="h-full w-4/5 bg-purple-500 rounded-full" />
+          <div className="h-full w-4/5 bg-gray-500 rounded-full" />
         </div>
         <p className="text-xs text-gray-500 mb-3">8 из 10 голосов</p>
         <div className="flex gap-2">
-          <button className="flex-1 py-2 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">07:30</button>
-          <button className="flex-1 py-2 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">18:00</button>
+          <button className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-xs font-medium">07:30</button>
+          <button className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-xs font-medium">18:00</button>
         </div>
       </div>
     </div>
@@ -207,23 +207,23 @@ function VotingMini() {
 function TrainerDashboardMini() {
   return (
     <div className="p-3 space-y-3 scale-75 origin-top">
-      <div className="bg-gradient-to-r from-purple-600 to-pink-500 rounded-xl p-3 text-white">
-        <p className="text-xs text-purple-100">Здравствуйте</p>
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 text-white">
+        <p className="text-xs text-gray-100">Здравствуйте</p>
         <p className="font-bold text-sm">Мария 👋</p>
       </div>
       
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-white rounded-xl p-2 text-center shadow-sm">
-          <p className="text-lg font-bold text-purple-600">3</p>
+          <p className="text-lg font-bold text-gray-900">3</p>
           <p className="text-xs text-gray-500">Сегодня</p>
         </div>
         <div className="bg-white rounded-xl p-2 text-center shadow-sm">
-          <p className="text-lg font-bold text-purple-600">45</p>
+          <p className="text-lg font-bold text-gray-900">45</p>
           <p className="text-xs text-gray-500">Учеников</p>
         </div>
         <div className="bg-white rounded-xl p-2 text-center shadow-sm">
-          <p className="text-lg font-bold text-purple-600">85k</p>
+          <p className="text-lg font-bold text-gray-900">85k</p>
           <p className="text-xs text-gray-500">Доход</p>
         </div>
       </div>
@@ -231,7 +231,7 @@ function TrainerDashboardMini() {
       {/* Chart Placeholder */}
       <div className="bg-white rounded-xl p-3 shadow-sm h-20 flex items-end justify-around">
         {[40, 60, 45, 80, 55, 70, 65].map((h, i) => (
-          <div key={i} className="w-4 bg-purple-200 rounded-t" style={{ height: `${h}%` }} />
+          <div key={i} className="w-4 bg-gray-200 rounded-t" style={{ height: `${h}%` }} />
         ))}
       </div>
     </div>
@@ -249,12 +249,12 @@ const navItems = [
 
 export default function UIKitPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 p-4 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4 pb-24">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8">
           <motion.div 
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-medium mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
@@ -270,8 +270,8 @@ export default function UIKitPage() {
         {/* Student Screens */}
         <div className="mb-12">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Users className="w-4 h-4 text-purple-600" />
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+              <Users className="w-4 h-4 text-gray-900" />
             </div>
             Экраны ученика
           </h2>
@@ -302,8 +302,8 @@ export default function UIKitPage() {
         {/* Trainer Screens */}
         <div className="mb-12">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center">
-              <Settings className="w-4 h-4 text-pink-600" />
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+              <Settings className="w-4 h-4 text-gray-900" />
             </div>
             Экраны тренера
           </h2>
@@ -330,21 +330,21 @@ export default function UIKitPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href="/purchase">
               <motion.div 
-                className="p-4 bg-purple-50 rounded-xl text-center hover:bg-purple-100 transition-colors cursor-pointer"
+                className="p-4 bg-gray-50 rounded-xl text-center hover:bg-gray-100 transition-colors cursor-pointer"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <CreditCard className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                <CreditCard className="w-6 h-6 text-gray-900 mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-700">Купить занятия</p>
               </motion.div>
             </Link>
             <Link href="/groups/create">
               <motion.div 
-                className="p-4 bg-pink-50 rounded-xl text-center hover:bg-pink-100 transition-colors cursor-pointer"
+                className="p-4 bg-gray-50 rounded-xl text-center hover:bg-gray-100 transition-colors cursor-pointer"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Plus className="w-6 h-6 text-pink-600 mx-auto mb-2" />
+                <Plus className="w-6 h-6 text-gray-900 mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-700">Создать группу</p>
               </motion.div>
             </Link>
@@ -378,7 +378,7 @@ export default function UIKitPage() {
               return (
                 <Link key={item.href} href={item.href}>
                   <motion.div 
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-100 hover:text-gray-800 transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >

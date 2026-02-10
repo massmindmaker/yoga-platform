@@ -108,7 +108,7 @@ export default function MainPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F0FDF9] via-white to-[#F8FAFC]">
+    <div className="min-h-screen bg-gray-50">
       <PageHeader title="Yoga Studio" />
 
       <motion.div
@@ -120,7 +120,7 @@ export default function MainPage() {
         {/* Welcome Banner */}
         <motion.div 
           variants={itemVariants}
-          className="bg-gradient-to-r from-[#3BCEAC] via-[#2DD4BF] to-[#14B8A6] rounded-2xl p-6 text-white shadow-xl shadow-[#3BCEAC]/20"
+          className="bg-gradient-to-r from-gray-800 via-gray-900 to-black rounded-2xl p-6 text-white shadow-xl shadow-black/10"
         >
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="w-5 h-5 text-yellow-300" />
@@ -150,7 +150,7 @@ export default function MainPage() {
             </h2>
             <Link
               href="/schedule"
-              className="text-sm text-[#3BCEAC] flex items-center hover:text-[#14B8A6] font-medium"
+              className="text-sm text-gray-900 flex items-center hover:text-black font-medium"
             >
               Все
               <ChevronRight className="w-4 h-4" />
@@ -160,8 +160,8 @@ export default function MainPage() {
           {isLoadingBookings ? (
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#F0FDF9] flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Calendar className="w-8 h-8 text-[#2DD4BF]" />
+                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                   <Calendar className="w-8 h-8 text-gray-700" />
                 </div>
                 <p className="text-gray-600 font-medium">Загрузка занятий...</p>
               </CardContent>
@@ -172,9 +172,9 @@ export default function MainPage() {
                 <p className="text-red-500 mb-4">{error}</p>
                 <Button 
                   onClick={() => window.location.reload()}
-                  className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6]"
+                   className="bg-gradient-to-r from-gray-900 to-black"
                 >
-                  Попробовать снова
+                   Попробовать снова
                 </Button>
               </CardContent>
             </Card>
@@ -190,7 +190,7 @@ export default function MainPage() {
                   <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
-                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#3BCEAC] to-[#14B8A6] flex flex-col items-center justify-center text-white">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center text-white">
                           <span className="text-xs font-medium opacity-80">
                             {getDayName(booking.class.schedule.dayOfWeek)}
                           </span>
@@ -231,12 +231,12 @@ export default function MainPage() {
           ) : (
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#F0FDF9] flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-[#2DD4BF]" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4">
+                   <Sparkles className="w-8 h-8 text-gray-700" />
                 </div>
                 <p className="text-gray-600 mb-4 font-medium">У вас нет предстоящих занятий</p>
                 <Link href="/schedule">
-                  <Button className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] shadow-lg shadow-[#3BCEAC]/20">
+                   <Button className="bg-gray-900 hover:bg-black shadow-lg shadow-black/10">
                     Записаться
                   </Button>
                 </Link>

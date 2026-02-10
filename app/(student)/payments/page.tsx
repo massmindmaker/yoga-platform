@@ -114,7 +114,7 @@ export default function StudentPaymentsPage() {
         <motion.div variants={itemVariants}>
           <Card className="border-0 shadow-lg overflow-hidden">
             <CardContent className="p-0">
-              <div className="bg-gradient-to-br from-[#3BCEAC] via-[#2DD4BF] to-[#14B8A6] p-6 text-white">
+              <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -148,7 +148,7 @@ export default function StudentPaymentsPage() {
                 </div>
                 <div className="text-center border-x border-gray-100">
                   <div className="flex items-center justify-center gap-1 mb-1">
-                    <Calendar className="w-4 h-4 text-[#3BCEAC]" />
+                     <Calendar className="w-4 h-4 text-gray-900" />
                     <span className="text-xs text-gray-500">Куплено</span>
                   </div>
                   <p className="font-bold text-gray-900">{isLoading ? "..." : totalClasses} занятий</p>
@@ -191,9 +191,9 @@ export default function StudentPaymentsPage() {
                 <p className="text-red-500 mb-4">{error}</p>
                 <Button 
                   onClick={() => window.location.reload()}
-                  className="bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6]"
+                   className="bg-gradient-to-r from-gray-900 to-black"
                 >
-                  Попробовать снова
+                   Попробовать снова
                 </Button>
               </CardContent>
             </Card>
@@ -254,7 +254,7 @@ export default function StudentPaymentsPage() {
         className="fixed bottom-20 left-4 right-4 z-40"
       >
         <Link href="/purchase">
-          <Button className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#14B8A6] hover:from-[#2DD4BF] hover:to-[#3BCEAC] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"
+           <Button className="w-full bg-gray-900 hover:bg-black text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"
           >
             Купить занятия
             <ArrowRight className="w-5 h-5 ml-2" />

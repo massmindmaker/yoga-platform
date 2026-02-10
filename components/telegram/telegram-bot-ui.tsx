@@ -32,7 +32,7 @@ export function TelegramMessage({
         {/* Avatar for bot */}
         {isBot && (
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#8B5CF6] flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-800 to-gray-600 flex items-center justify-center">
               <span className="text-white text-xs font-bold">Y</span>
             </div>
             <span className="text-xs text-gray-500 font-medium">Yoga Studio Bot</span>
@@ -44,7 +44,7 @@ export function TelegramMessage({
           className={`rounded-2xl px-4 py-2.5 shadow-sm ${
             isBot
               ? "bg-white border border-gray-100 rounded-tl-sm"
-              : "bg-gradient-to-br from-[#7C3AED] to-[#8B5CF6] text-white rounded-tr-sm"
+               : "bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-tr-sm"
           }`}
         >
           <p className="text-sm whitespace-pre-wrap leading-relaxed">{text}</p>
@@ -62,7 +62,7 @@ export function TelegramMessage({
             {buttons.map((button, index) => (
               <motion.button
                 key={index}
-                className="bg-white border border-gray-200 text-[#7C3AED] px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm hover:bg-gray-50 transition-colors"
+                className="bg-white border border-gray-200 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm hover:bg-gray-50 transition-colors"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => button.url && window.open(button.url, "_blank")}
@@ -107,7 +107,7 @@ export function TelegramCommandCard({ command, description, example }: TelegramC
             </span>
             <motion.button
               onClick={handleCopy}
-              className="text-gray-400 hover:text-[#7C3AED] transition-colors"
+              className="text-gray-400 hover:text-gray-900 transition-colors"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -193,7 +193,7 @@ export function TelegramGroupPreview({
         
         <motion.button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 bg-[#7C3AED] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#6D28D9] transition-colors"
+          className="flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-black transition-colors"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

@@ -33,12 +33,12 @@ export function UserAvatar({
   
   // Градиент на основе имени
   const gradients = [
-    "from-[#3BCEAC] to-[#2DD4BF]",
-    "from-blue-500 to-cyan-500",
-    "from-green-500 to-emerald-500",
-    "from-orange-500 to-amber-500",
-    "from-rose-500 to-red-500",
-    "from-indigo-500 to-violet-500",
+    "from-gray-800 to-gray-600",
+    "from-gray-700 to-gray-500",
+    "from-gray-900 to-gray-700",
+    "from-gray-600 to-gray-400",
+    "from-black to-gray-700",
+    "from-gray-500 to-gray-300",
   ];
   const gradientIndex = firstName.charCodeAt(0) % gradients.length;
   const gradient = gradients[gradientIndex];

@@ -44,7 +44,7 @@ function TimeUnit({ value, label, delay = 0 }: { value: number; label: string; d
     >
       <motion.div
         key={displayValue}
-        className="relative bg-gradient-to-br from-[#3BCEAC] to-[#14B8A6] text-white rounded-xl w-12 h-12 flex items-center justify-center shadow-lg shadow-[#3BCEAC]/20"
+        className="relative bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-xl w-12 h-12 flex items-center justify-center shadow-lg shadow-black/20"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -90,7 +90,7 @@ export function CountdownTimer({ targetDate, title = "До занятия ост
           {isStarted ? (
             <Clock className="w-5 h-5 text-green-500" />
           ) : (
-            <Timer className={`w-5 h-5 ${isUrgent ? "text-orange-500" : "text-[#3BCEAC]"}`} />
+            <Timer className={`w-5 h-5 ${isUrgent ? "text-orange-500" : "text-gray-700"}`} />
           )}
         </motion.div>
         <span className={`text-sm font-medium ${isUrgent ? "text-orange-600" : "text-gray-700"}`}>
@@ -132,7 +132,7 @@ export function CountdownTimer({ targetDate, title = "До занятия ост
               className={`h-full rounded-full ${
                 isUrgent 
                   ? "bg-gradient-to-r from-orange-400 to-red-400" 
-                  : "bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF]"
+                   : "bg-gradient-to-r from-gray-700 to-gray-500"
               }`}
               initial={{ width: "100%" }}
               animate={{ 

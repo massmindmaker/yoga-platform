@@ -82,7 +82,7 @@ export default function PurchasePage() {
 
               <motion.button
                 onClick={() => setCount(count + 1)}
-                className="w-14 h-14 rounded-2xl bg-[#F0FDF9] flex items-center justify-center text-[#3BCEAC] hover:bg-[#CCFBF1] transition-colors"
+                className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-gray-100 transition-colors"
                 whileTap={{ scale: 0.9 }}
               >
                 <Plus className="w-6 h-6" />
@@ -97,8 +97,8 @@ export default function PurchasePage() {
                 key={num}
                 onClick={() => setCount(num)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                  count === num
-                    ? "bg-[#3BCEAC] text-white"
+                   count === num
+                     ? "bg-gray-900 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
                 whileTap={{ scale: 0.95 }}
@@ -116,7 +116,7 @@ export default function PurchasePage() {
             </div>
             <div className="flex justify-between items-center text-xl">
               <span className="font-semibold text-gray-900">Итого</span>
-              <span className="font-bold text-[#3BCEAC]">{total.toLocaleString()} ₽</span>
+               <span className="font-bold text-gray-900">{total.toLocaleString()} ₽</span>
             </div>
           </div>
         </motion.div>
@@ -126,15 +126,15 @@ export default function PurchasePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#F0FDF9] rounded-2xl p-4 mb-6"
+           className="bg-gray-50 rounded-2xl p-4 mb-6"
         >
           <div className="flex items-start gap-3">
-            <Wallet className="w-5 h-5 text-[#3BCEAC] mt-0.5" />
+             <Wallet className="w-5 h-5 text-gray-900 mt-0.5" />
             <div>
-              <p className="text-sm text-[#0F766E] font-medium mb-1">
+               <p className="text-sm text-gray-800 font-medium mb-1">
                 Как это работает:
               </p>
-              <ul className="text-sm text-[#0D9488] space-y-1">
+               <ul className="text-sm text-gray-700 space-y-1">
                 <li>• Занятия не сгорают</li>
                 <li>• Можно заморозить на 2 недели</li>
                 <li>• Безопасная оплата через T-Bank</li>
@@ -153,7 +153,7 @@ export default function PurchasePage() {
           <Button
             onClick={handlePurchase}
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#3BCEAC] to-[#2DD4BF] text-white h-14 rounded-2xl font-semibold text-lg shadow-xl disabled:opacity-50"
+             className="w-full bg-gradient-to-r from-gray-800 to-gray-700 text-white h-14 rounded-2xl font-semibold text-lg shadow-xl disabled:opacity-50"
             size="lg"
           >
             {isLoading ? (

@@ -71,7 +71,7 @@ function ScheduleClassCard({ classData }: { classData: ScheduleClass }) {
     <Card className="border-0 shadow-sm">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
-          <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-[#F0FDF9] to-white border border-gray-100">
+          <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gray-50 border border-gray-100">
             <span className="text-sm font-bold text-gray-900">{classData.schedule.time}</span>
           </div>
 

@@ -167,7 +167,7 @@ export default function StudentJournalPage() {
               <p className="text-red-500 mb-4">{error}</p>
               <button 
                 onClick={() => window.location.reload()}
-                className="text-[#3BCEAC] hover:underline"
+                 className="text-gray-900 hover:underline"
               >
                 Попробовать снова
               </button>
