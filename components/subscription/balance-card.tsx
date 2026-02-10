@@ -70,7 +70,7 @@ export function BalanceCard({
 
   return (
     <motion.div
-      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${getGradient()} p-6 text-white shadow-lg`}
+      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${getGradient()} p-6 text-white shadow-xl`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -236,7 +236,7 @@ export function BalanceCard({
         >
           <Link href="/purchase" className="flex-1">
             <motion.button
-              className="w-full bg-white text-gray-900 py-3 px-4 rounded-xl font-semibold text-sm shadow-lg"
+              className="w-full bg-white text-gray-900 py-3 px-4 rounded-xl font-semibold text-sm shadow-xl"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >

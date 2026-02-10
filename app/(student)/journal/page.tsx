@@ -195,7 +195,7 @@ export default function StudentJournalPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-bold text-gray-900 text-lg leading-snug">
                           {record.booking.class.schedule.group.name}
                         </h3>
                         <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full ${getStatusColor(record.status)}`}>
@@ -203,7 +203,7 @@ export default function StudentJournalPage() {
                         </span>
                       </div>
                       
-                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                      <div className="flex items-center gap-3 mt-2 text-base text-gray-500 leading-relaxed">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           {formatDate(record.booking.class.date)}
@@ -218,7 +218,7 @@ export default function StudentJournalPage() {
                         <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-gray-600">{record.notes}</p>
+                            <p className="text-base text-gray-600 leading-relaxed">{record.notes}</p>
                           </div>
                         </div>
                       )}

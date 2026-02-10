@@ -172,7 +172,7 @@ export default function TrainerVotingPage() {
               </div>
             ) : groups.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                <p>Нет доступных групп</p>
+                <p className="text-base leading-relaxed">Нет доступных групп</p>
                 <Button
                   onClick={() => { setShowGroupPicker(false); router.push("/groups/create"); }}
                   className="mt-3 bg-gray-800 hover:bg-black"
@@ -193,8 +193,8 @@ export default function TrainerVotingPage() {
                       <Users className="w-5 h-5 text-gray-900" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{g.name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-bold text-gray-900 truncate text-base leading-snug">{g.name}</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">
                         {g.groupType === "INTENSIVE" ? "Интенсив" : "Регулярная"}
                         {g._count?.students ? ` · ${g._count.students} уч.` : ""}
                       </p>
@@ -250,8 +250,8 @@ export default function TrainerVotingPage() {
                 animate={{ opacity: 1 }}
                 className="text-center py-8 text-gray-500"
               >
-                <p>Нет активных голосований</p>
-                <p className="text-sm mt-1">Создайте новое голосование для группы</p>
+                <p className="text-base leading-relaxed">Нет активных голосований</p>
+                <p className="text-sm mt-1 leading-relaxed">Создайте новое голосование для группы</p>
               </motion.div>
             )}
           </TabsContent>
@@ -284,7 +284,7 @@ export default function TrainerVotingPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-8 text-gray-500"
+                className="text-center py-8 text-gray-500 text-base leading-relaxed"
               >
                 История пуста
               </motion.div>

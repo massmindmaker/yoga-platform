@@ -44,9 +44,9 @@ export function PageHeader({
             </Link>
           )}
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">{title}</h1>
             {description && (
-              <p className="text-sm text-gray-500">{description}</p>
+              <p className="text-base text-gray-500 leading-relaxed">{description}</p>
             )}
           </div>
         </div>

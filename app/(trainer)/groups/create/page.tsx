@@ -126,7 +126,7 @@ export default function CreateGroupPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Название группы *</label>
+                  <label className="block text-base font-bold mb-2">Название группы *</label>
                   <Input
                     placeholder="Например: Утренняя йога"
                     value={formData.name}
@@ -135,7 +135,7 @@ export default function CreateGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Описание</label>
+                  <label className="block text-base font-bold mb-2">Описание</label>
                   <Textarea
                     placeholder="Описание группы, особенности занятий..."
                     value={formData.description}
@@ -145,7 +145,7 @@ export default function CreateGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Тип группы *</label>
+                  <label className="block text-base font-bold mb-2">Тип группы *</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -177,14 +177,14 @@ export default function CreateGroupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Минимум учеников *</label>
+                  <label className="block text-base font-bold mb-2">Минимум учеников *</label>
                   <Input
                     type="number"
                     placeholder="3"
                     value={formData.minStudents}
                     onChange={(e) => setFormData({ ...formData, minStudents: parseInt(e.target.value) || 3 })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Минимальное количество для старта группы</p>
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">Минимальное количество для старта группы</p>
                 </div>
               </CardContent>
             </Card>
@@ -212,7 +212,7 @@ export default function CreateGroupPage() {
                 <CardContent className="p-4 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <CreditCard className="w-5 h-5 text-gray-900" />
-                    <span className="font-medium">Ценообразование</span>
+                    <span className="font-bold text-lg">Ценообразование</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -267,7 +267,7 @@ export default function CreateGroupPage() {
                 <CardContent className="p-4 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <CreditCard className="w-5 h-5 text-orange-600" />
-                    <span className="font-medium">Стоимость интенсива</span>
+                    <span className="font-bold text-lg">Стоимость интенсива</span>
                   </div>
 
                   <div>
@@ -294,7 +294,7 @@ export default function CreateGroupPage() {
                 <CardContent className="p-4 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="w-5 h-5 text-gray-900" />
-                    <span className="font-medium">Расписание</span>
+                    <span className="font-bold text-lg">Расписание</span>
                   </div>
 
                   <div>
@@ -350,7 +350,7 @@ export default function CreateGroupPage() {
                 <CardContent className="p-4 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="w-5 h-5 text-orange-600" />
-                    <span className="font-medium">Даты интенсива</span>
+                    <span className="font-bold text-lg">Даты интенсива</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -412,13 +412,13 @@ export default function CreateGroupPage() {
                     <MessageCircle className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium">Telegram чат</p>
-                    <p className="text-sm text-gray-500">Опционально</p>
+                    <p className="font-bold text-base">Telegram чат</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">Опционально</p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Ссылка на чат группы</label>
+                  <label className="block text-base font-bold mb-2">Ссылка на чат группы</label>
                   <Input
                     placeholder="https://t.me/+xxxxxxxxxxxx"
                     value={formData.telegramChat}
@@ -427,8 +427,8 @@ export default function CreateGroupPage() {
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <p className="text-sm font-medium">Как привязать чат:</p>
-                  <ol className="text-sm text-gray-600 list-decimal list-inside space-y-1">
+                  <p className="text-base font-bold">Как привязать чат:</p>
+                  <ol className="text-base text-gray-600 list-decimal list-inside space-y-1 leading-relaxed">
                     <li>Создайте группу в Telegram</li>
                     <li>Добавьте бота @Yom23_bot</li>
                     <li>Сделайте бота администратором</li>
@@ -440,8 +440,8 @@ export default function CreateGroupPage() {
 
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
-                <p className="font-medium mb-3">Итоговая информация:</p>
-                <div className="space-y-2 text-sm">
+                <p className="font-bold text-lg mb-3 leading-tight">Итоговая информация:</p>
+                <div className="space-y-2 text-base leading-relaxed">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Название:</span>
                     <span className="font-medium">{formData.name}</span>

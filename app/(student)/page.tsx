@@ -126,10 +126,10 @@ export default function MainPage() {
             <Sparkles className="w-5 h-5 text-yellow-300" />
             <span className="text-white/80 text-sm font-medium">Добро пожаловать</span>
           </div>
-          <h1 className="text-2xl font-bold mb-1">
+          <h1 className="text-3xl font-bold mb-2 leading-tight">
             {isUserLoading ? "Загрузка..." : user?.firstName || "Студент"} 👋
           </h1>
-          <p className="text-white/80">Готовы к практике сегодня?</p>
+          <p className="text-white/80 text-base leading-relaxed">Готовы к практике сегодня?</p>
         </motion.div>
 
         {/* Balance Card */}
@@ -145,7 +145,7 @@ export default function MainPage() {
         {/* Upcoming Classes */}
         <motion.div variants={itemVariants}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 leading-tight">
               Ближайшие занятия
             </h2>
             <Link
@@ -158,14 +158,20 @@ export default function MainPage() {
           </div>
 
           {isLoadingBookings ? (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-6 text-center">
-                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                   <Calendar className="w-8 h-8 text-gray-700" />
-                </div>
-                <p className="text-gray-600 font-medium">Загрузка занятий...</p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Calendar className="w-8 h-8 text-gray-700" />
+                  </div>
+                  <p className="text-gray-600 font-medium">Загрузка занятий...</p>
+                </CardContent>
+              </Card>
+            </motion.div>
           ) : error ? (
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6 text-center">
@@ -183,11 +189,12 @@ export default function MainPage() {
               {upcomingBookings.map((booking, index) => (
                 <motion.div
                   key={booking.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
                 >
-                  <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+                  <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
                         <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center text-white">
@@ -199,10 +206,10 @@ export default function MainPage() {
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">
+                          <h3 className="font-bold text-gray-900 truncate text-base leading-snug">
                             {booking.class.schedule.group.name}
                           </h3>
-                          <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                          <div className="flex items-center gap-3 mt-1 text-base text-gray-500 leading-relaxed">
                             <span className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
                               {formatTime(booking.class.schedule.time)}
@@ -234,7 +241,7 @@ export default function MainPage() {
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4">
                    <Sparkles className="w-8 h-8 text-gray-700" />
                 </div>
-                <p className="text-gray-600 mb-4 font-medium">У вас нет предстоящих занятий</p>
+                <p className="text-gray-600 mb-4 font-semibold text-base leading-relaxed">У вас нет предстоящих занятий</p>
                 <Link href="/schedule">
                    <Button className="bg-gray-900 hover:bg-black shadow-lg shadow-black/10">
                     Записаться

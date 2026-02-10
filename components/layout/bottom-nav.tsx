@@ -38,7 +38,7 @@ export function BottomNav() {
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => haptics.light()}
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-full relative transition-all duration-200 rounded-xl mx-1",
+                  "flex flex-col items-center justify-center w-full h-full relative transition-all duration-300 rounded-xl mx-1 hover:scale-105 active:scale-95",
                   isActive 
                     ? "bg-gray-100 text-gray-900" 
                     : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"

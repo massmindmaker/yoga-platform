@@ -113,22 +113,22 @@ export default function TrainerJournalPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-3 text-center">
               <Calendar className="w-5 h-5 text-gray-900 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-gray-900">{pastClasses.length}</p>
-              <p className="text-xs text-gray-500">Проведено</p>
+            <p className="text-3xl font-bold text-gray-900">{pastClasses.length}</p>
+            <p className="text-sm text-gray-500 leading-relaxed">Проведено</p>
             </CardContent>
           </Card>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-3 text-center">
               <Users className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-gray-900">{totalBooked}</p>
-              <p className="text-xs text-gray-500">Записей</p>
+            <p className="text-3xl font-bold text-gray-900">{totalBooked}</p>
+            <p className="text-sm text-gray-500 leading-relaxed">Записей</p>
             </CardContent>
           </Card>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-3 text-center">
               <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-gray-900">{totalAttended}</p>
-              <p className="text-xs text-gray-500">Посещений</p>
+            <p className="text-3xl font-bold text-gray-900">{totalAttended}</p>
+            <p className="text-sm text-gray-500 leading-relaxed">Посещений</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -206,10 +206,10 @@ function ClassJournalCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-bold text-gray-900 text-lg leading-snug">
               {classRecord.schedule.group.name}
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-base text-gray-500 leading-relaxed">
               {format(date, "d MMMM, EEEE", { locale: ru })} в{" "}
               {classRecord.schedule.time}
             </p>
@@ -236,7 +236,7 @@ function ClassJournalCard({
         {/* Список учеников */}
         {classRecord.bookings.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-sm text-gray-500 font-bold leading-relaxed">
               Записаны: {total} / {classRecord.maxStudents}
               {!isUpcoming && ` • Пришли: ${attended}`}
             </p>

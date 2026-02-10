@@ -91,7 +91,7 @@ export default function VotingPage() {
             variants={itemVariants}
             className="text-center py-12"
           >
-            <p className="text-gray-500">Нет активных голосований</p>
+            <p className="text-gray-500 text-base leading-relaxed">Нет активных голосований</p>
           </motion.div>
         )}
 

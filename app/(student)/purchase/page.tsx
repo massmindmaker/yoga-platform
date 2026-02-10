@@ -61,7 +61,7 @@ export default function PurchasePage() {
           className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-6"
         >
           <div className="text-center mb-8">
-            <p className="text-gray-500 mb-2">Количество занятий</p>
+            <p className="text-gray-500 mb-2 text-lg leading-relaxed">Количество занятий</p>
             <div className="flex items-center justify-center gap-6">
               <motion.button
                 onClick={() => setCount(Math.max(1, count - 1))}
@@ -131,10 +131,10 @@ export default function PurchasePage() {
           <div className="flex items-start gap-3">
              <Wallet className="w-5 h-5 text-gray-900 mt-0.5" />
             <div>
-               <p className="text-sm text-gray-800 font-medium mb-1">
+               <p className="text-base text-gray-800 font-bold mb-2 leading-relaxed">
                 Как это работает:
               </p>
-               <ul className="text-sm text-gray-700 space-y-1">
+               <ul className="text-base text-gray-700 space-y-1 leading-relaxed">
                 <li>• Занятия не сгорают</li>
                 <li>• Можно заморозить на 2 недели</li>
                 <li>• Безопасная оплата через T-Bank</li>

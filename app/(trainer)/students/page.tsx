@@ -54,8 +54,8 @@ export default function StudentsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Ученики</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1 leading-tight">Ученики</h1>
+        <p className="text-base text-gray-500 leading-relaxed">
           {isLoading ? "Загрузка..." : `Всего: ${students.length} человек`}
         </p>
       </motion.div>
@@ -102,7 +102,7 @@ export default function StudentsPage() {
                     </Avatar>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className="font-bold text-gray-900 truncate text-base leading-snug">
                         {student.firstName} {student.lastName || ''}
                       </p>
                     </div>

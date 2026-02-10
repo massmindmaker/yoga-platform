@@ -107,8 +107,8 @@ export default function GroupDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{group.name}</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-gray-900 leading-tight">{group.name}</h1>
+            <p className="text-base text-gray-500 leading-relaxed">
               {group._count.students} учеников
             </p>
           </div>
@@ -138,8 +138,8 @@ export default function GroupDetailPage() {
       >
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4 space-y-4">
-            {group.description && (
-              <p className="text-gray-600">{group.description}</p>
+              {group.description && (
+              <p className="text-gray-600 text-base leading-relaxed">{group.description}</p>
             )}
 
             <div className="grid grid-cols-2 gap-4">
@@ -148,8 +148,8 @@ export default function GroupDetailPage() {
                   <Users className="w-5 h-5 text-gray-900" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Мин. для старта</p>
-                  <p className="font-semibold">
+                  <p className="text-base text-gray-500 leading-relaxed">Мин. для старта</p>
+                  <p className="font-bold">
                     {group.maxStudents} учеников
                   </p>
                 </div>
@@ -161,10 +161,10 @@ export default function GroupDetailPage() {
                     <MessageCircle className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Telegram чат</p>
-                    <p className="font-semibold text-sm truncate max-w-[120px]">
-                      {group.telegramChat}
-                    </p>
+                  <p className="text-base text-gray-500 leading-relaxed">Telegram чат</p>
+                  <p className="font-bold text-base truncate max-w-[120px]">
+                    {group.telegramChat}
+                  </p>
                   </div>
                 </div>
               )}
@@ -182,14 +182,14 @@ export default function GroupDetailPage() {
         >
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
                 Расписание
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               {group.schedules.length === 0 ? (
-                <p className="text-gray-500 text-sm">Расписание не задано</p>
+                <p className="text-gray-500 text-base leading-relaxed">Расписание не задано</p>
               ) : (
                 <div className="space-y-2">
                   {group.schedules.map((schedule) => (
@@ -199,19 +199,19 @@ export default function GroupDetailPage() {
                     >
                       <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-base font-bold text-gray-900">
                             {DAYS_SHORT[schedule.dayOfWeek]}
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium">
+                          <p className="font-bold text-base">
                             {DAYS_OF_WEEK[schedule.dayOfWeek]}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-gray-600">
                         <Clock className="w-4 h-4" />
-                        <span className="font-medium">{schedule.time}</span>
+                        <span className="font-bold text-base">{schedule.time}</span>
                       </div>
                     </div>
                   ))}
@@ -231,8 +231,8 @@ export default function GroupDetailPage() {
         >
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Vote className="w-4 h-4" />
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Vote className="w-5 h-5" />
                 Активные голосования
               </CardTitle>
             </CardHeader>
@@ -264,7 +264,7 @@ export default function GroupDetailPage() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-gray-900">{voting.title}</h4>
+                            <h4 className="font-bold text-gray-900 text-base leading-snug">{voting.title}</h4>
                             {isExpanded && isActive && (
                               <div className="flex items-center gap-1">
                                 <Button 
@@ -293,7 +293,7 @@ export default function GroupDetailPage() {
                               </div>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-sm text-gray-500 mt-1 leading-relaxed">
                             До {new Date(voting.deadline).toLocaleDateString("ru-RU", { 
                               day: "numeric", 
                               month: "short",
@@ -318,11 +318,11 @@ export default function GroupDetailPage() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3 text-sm">
+                       <div className="flex items-center gap-3 text-base">
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-gray-600">Проголосовало</span>
-                            <span className="text-xs font-medium text-gray-900">
+                            <span className="text-sm text-gray-600 leading-relaxed">Проголосовало</span>
+                            <span className="text-sm font-bold text-gray-900">
                               {totalVotes}/{voting.minParticipants} ({progress}%)
                             </span>
                           </div>
@@ -419,11 +419,11 @@ export default function GroupDetailPage() {
         transition={{ delay: 0.3 }}
       >
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Ученики ({group._count.students})
-            </CardTitle>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Ученики ({group._count.students})
+              </CardTitle>
             {group.telegramChat && (
               <Button 
                 variant="outline" 
@@ -453,13 +453,13 @@ export default function GroupDetailPage() {
           <CardContent className="p-4 pt-0">
             {group._count.students === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">В группе пока нет учеников</p>
+                <p className="text-gray-500 mb-4 text-base leading-relaxed">В группе пока нет учеников</p>
                 {group.telegramChat ? (
-                  <p className="text-sm text-gray-400">
+                  <p className="text-base text-gray-400 leading-relaxed">
                     Нажмите "Синхронизировать" для загрузки учеников из Telegram чата
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-400">
+                  <p className="text-base text-gray-400 leading-relaxed">
                     Привяжите Telegram чат к группе для автоматической загрузки учеников
                   </p>
                 )}
@@ -480,10 +480,10 @@ export default function GroupDetailPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">
+                      <p className="font-bold text-gray-900 text-base">
                         {student.user?.firstName} {student.user?.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-base text-gray-500 leading-relaxed">
                         Баланс: {student.user?.balance || 0} занятий
                       </p>
                     </div>

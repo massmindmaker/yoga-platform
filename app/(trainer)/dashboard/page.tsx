@@ -149,7 +149,7 @@ export default function DashboardPage() {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Панель тренера 👋</h1>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Панель тренера 👋</h1>
         </div>
       </motion.div>
 
@@ -157,17 +157,19 @@ export default function DashboardPage() {
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <Card className="border-0 shadow-sm">
+            <Card className="border-0 shadow-sm cursor-pointer">
               <CardContent className="p-3">
                 <div className={`${stat.color} p-2 rounded-lg w-fit`}>
                   <stat.icon size={16} className="text-white" />
                 </div>
-                <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.label}</p>
+                <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                <p className="text-sm text-gray-500 leading-relaxed">{stat.label}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -181,7 +183,7 @@ export default function DashboardPage() {
         transition={{ delay: 0.3 }}
       >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Занятия сегодня</h2>
+          <h2 className="text-xl font-bold text-gray-900 leading-tight">Занятия сегодня</h2>
           <Link href="/groups">
             <Button variant="ghost" size="sm" className="text-gray-900">
               Все группы →
@@ -192,17 +194,24 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <Card key={i} className="border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
-                      <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" />
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         ) : error ? (
@@ -222,21 +231,23 @@ export default function DashboardPage() {
             {todayClasses.map((cls, index) => (
               <motion.div
                 key={cls.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
+                initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="border-0 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
                       <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center text-white">
                         <span className="text-lg font-bold">{formatTime(cls.schedule.time)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-bold text-gray-900 truncate text-base leading-snug">
                           {cls.schedule.group.name}
                         </h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                        <div className="flex items-center gap-3 mt-1 text-base text-gray-500 leading-relaxed">
                           <span className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
                             {cls.bookings?.length || 0} записей
@@ -279,36 +290,45 @@ export default function DashboardPage() {
         className="grid grid-cols-2 gap-3"
       >
         <Link href="/groups">
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-600" />
+          <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Card className="border-0 shadow-sm cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center transition-transform duration-300">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">Группы</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">Управление группами</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">Группы</p>
-                  <p className="text-xs text-gray-500">Управление группами</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         </Link>
 
         <Link href="/trainer-voting">
-
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-gray-900" />
+          <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Card className="border-0 shadow-sm cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center transition-transform duration-300">
+                    <TrendingUp className="w-5 h-5 text-gray-900" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">Голосования</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">Создать опрос</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">Голосования</p>
-                  <p className="text-xs text-gray-500">Создать опрос</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         </Link>
       </motion.div>
 

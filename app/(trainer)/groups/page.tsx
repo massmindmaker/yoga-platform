@@ -59,8 +59,8 @@ export default function GroupsPage() {
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Мои группы</h1>
-              <p className="text-sm text-gray-500 mt-0.5">{groups.length} {groups.length === 1 ? "группа" : "групп"}</p>
+              <h1 className="text-3xl font-bold text-gray-900 leading-tight">Мои группы</h1>
+              <p className="text-base text-gray-500 mt-1 leading-relaxed">{groups.length} {groups.length === 1 ? "группа" : "групп"}</p>
             </div>
             <Link href="/groups/create">
               <Button size="default" className="bg-gradient-to-r from-gray-800 to-gray-700 hover:bg-black">
@@ -94,7 +94,7 @@ export default function GroupsPage() {
                       {/* Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate">{group.name}</h3>
+                          <h3 className="font-bold text-xl text-gray-900 mb-2 truncate leading-snug">{group.name}</h3>
                           <div className="flex flex-wrap gap-2">
                             <Badge 
                               variant="secondary" 
@@ -114,7 +114,7 @@ export default function GroupsPage() {
 
                       {/* Schedule */}
                       {!isIntensive && schedule && schedule.length > 0 && (
-                        <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 mb-2 text-base text-gray-600 leading-relaxed">
                           <Clock className="w-4 h-4 flex-shrink-0" />
                           <span className="truncate">
                             {schedule.map((s, i) => (
@@ -129,7 +129,7 @@ export default function GroupsPage() {
 
                       {/* Intensive dates */}
                       {isIntensive && group.startsAt && (
-                        <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 mb-2 text-base text-gray-600 leading-relaxed">
                           <Calendar className="w-4 h-4 flex-shrink-0" />
                           <span>
                             {new Date(group.startsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
@@ -139,7 +139,7 @@ export default function GroupsPage() {
                       )}
 
                       {/* Stats */}
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-4 text-base leading-relaxed">
                         <div className="flex items-center gap-1.5 text-gray-500">
                           <Users className="w-4 h-4" />
                           <span>мин. {group.maxStudents}</span>
@@ -177,8 +177,8 @@ export default function GroupsPage() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-gray-900" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">У вас пока нет групп</h3>
-            <p className="text-sm text-gray-500 mb-6">Создайте первую группу для занятий</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">У вас пока нет групп</h3>
+            <p className="text-base text-gray-500 mb-6 leading-relaxed">Создайте первую группу для занятий</p>
             <Link href="/groups/create">
               <Button className="bg-gradient-to-r from-gray-800 to-gray-700 hover:bg-black">
                 <Plus className="w-4 h-4 mr-2" />

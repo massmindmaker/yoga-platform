@@ -207,15 +207,15 @@ export function VotingCard({
         transition={{ type: "spring", stiffness: 200 }}
       >
         <Card className={cn(
-          "border-0 shadow-lg overflow-hidden transition-shadow",
-          isExpanded && "shadow-xl ring-2 ring-gray-400"
+          "border-0 shadow-xl overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:-translate-y-0.5 hover:shadow-2xl",
+          isExpanded && "shadow-2xl ring-2 ring-gray-400 scale-100 translate-y-0"
         )}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-gray-900 to-black p-4 text-white">
+          <div className="bg-gradient-to-r from-gray-900 to-black p-5 text-white">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-lg truncate">{voting.title}</h3>
-                <div className="flex items-center gap-3 mt-2 text-sm text-white/80 flex-wrap">
+                <h3 className="font-bold text-xl truncate leading-tight">{voting.title}</h3>
+                <div className="flex items-center gap-3 mt-2 text-base text-white/80 flex-wrap leading-relaxed">
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     До {new Date(voting.deadline).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
@@ -249,7 +249,7 @@ export function VotingCard({
                       max={4} 
                       size="xs" 
                     />
-                    <span className="text-sm text-white/80">
+                    <span className="text-base text-white/80 leading-relaxed">
                       {uniqueVoters.length} {pluralize(uniqueVoters.length, "человек", "человека", "человек")}
                     </span>
                   </>
@@ -263,13 +263,13 @@ export function VotingCard({
             </div>
           </div>
 
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-5 space-y-4">
             {/* Progress */}
             <div>
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-gray-600">Минимум участников</span>
+              <div className="flex items-center justify-between text-base mb-2">
+                <span className="text-gray-600 leading-relaxed">Минимум участников</span>
                 <span className={cn(
-                  "font-bold",
+                  "font-bold text-lg",
                     isSuccessful ? "text-gray-900" : "text-gray-400"
                 )}>
                   {totalVotes}/{voting.minParticipants}
@@ -288,7 +288,7 @@ export function VotingCard({
                   transition={{ duration: 0.8, ease: "easeOut" }}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
                 {isSuccessful 
                   ? "✅ Занятие состоится!" 
                   : `Нужно еще ${voting.minParticipants - totalVotes} ${pluralize(voting.minParticipants - totalVotes, "человек", "человека", "человек")}`
@@ -309,7 +309,7 @@ export function VotingCard({
                   <div className="pt-4 border-t border-gray-100 space-y-4">
                     {/* Варианты голосования */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-700">
+                      <p className="text-base font-bold text-gray-700 leading-relaxed">
                         {hasVoted ? "Вы проголосовали за:" : "Выберите вариант:"}
                       </p>
                       
@@ -329,7 +329,7 @@ export function VotingCard({
                             onClick={() => !hasVoted && setSelectedOption(option.id)}
                             disabled={hasVoted || voting.status !== "ACTIVE"}
                             className={cn(
-                              "w-full p-3 rounded-xl border-2 text-left transition-all",
+                              "w-full p-4 rounded-xl border-2 text-left transition-all",
                               isSelected || selectedOption === option.id
                                 ? "border-gray-900 bg-gray-50"
                                 : hasVoted
@@ -351,11 +351,11 @@ export function VotingCard({
                                   )}
                                 </div>
                                 <div>
-                                  <span className="font-medium text-gray-900">
+                                  <span className="font-bold text-gray-900 text-base leading-snug">
                                     {weekDays[option.dayOfWeek]}, {option.time}
                                   </span>
                                   {option.description && (
-                                    <p className="text-xs text-gray-500">{option.description}</p>
+                                    <p className="text-sm text-gray-500 leading-relaxed">{option.description}</p>
                                   )}
                                 </div>
                               </div>
@@ -378,14 +378,14 @@ export function VotingCard({
                       <Button
                         onClick={() => selectedOption && handleVote(selectedOption)}
                         disabled={!selectedOption || isVoting}
-                        className="w-full bg-gray-900 hover:bg-black text-white h-12 rounded-xl font-semibold shadow-lg disabled:opacity-50"
+                        className="w-full bg-gray-900 hover:bg-black text-white h-12 rounded-xl font-semibold shadow-xl disabled:opacity-50"
                       >
                         {isVoting ? "Голосование..." : "Проголосовать"}
                       </Button>
                     )}
 
                     {hasVoted && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
                         <div className="flex items-center justify-center gap-2 text-green-700">
                           <CheckCircle2 className="w-5 h-5" />
                           <span className="font-medium">Вы проголосовали</span>
@@ -461,7 +461,7 @@ export function VotingCard({
       <Sheet open={showDetails} onOpenChange={setShowDetails}>
         <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl">
           <SheetHeader className="pb-4">
-            <SheetTitle className="text-left">{voting.title}</SheetTitle>
+            <SheetTitle className="text-left text-xl font-bold leading-tight">{voting.title}</SheetTitle>
           </SheetHeader>
           
           <div className="space-y-6 overflow-y-auto pb-20">
@@ -475,12 +475,12 @@ export function VotingCard({
 
             {/* Информация о голосовании */}
             <Card>
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-5 space-y-3">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-gray-700" />
                   <div>
-                    <p className="text-sm font-medium">Дедлайн</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-base font-bold">Дедлайн</p>
+                    <p className="text-base text-gray-500 leading-relaxed">
                       {new Date(voting.deadline).toLocaleString("ru-RU")}
                     </p>
                   </div>
@@ -489,8 +489,8 @@ export function VotingCard({
                 <div className="flex items-center gap-3">
                   <Users className="w-5 h-5 text-gray-700" />
                   <div>
-                    <p className="text-sm font-medium">Минимум участников</p>
-                    <p className="text-sm text-gray-500">{voting.minParticipants} человек</p>
+                    <p className="text-base font-bold">Минимум участников</p>
+                    <p className="text-base text-gray-500 leading-relaxed">{voting.minParticipants} человек</p>
                   </div>
                 </div>
 
@@ -498,8 +498,8 @@ export function VotingCard({
                   <div className="flex items-center gap-3">
                     <Wallet className="w-5 h-5 text-gray-700" />
                     <div>
-                      <p className="text-sm font-medium">Списание с баланса</p>
-                      <p className="text-sm text-gray-500">При голосовании списывается 1 занятие</p>
+                      <p className="text-base font-bold">Списание с баланса</p>
+                      <p className="text-base text-gray-500 leading-relaxed">При голосовании списывается 1 занятие</p>
                     </div>
                   </div>
                 )}
@@ -508,7 +508,7 @@ export function VotingCard({
 
             {/* Список всех проголосовавших */}
             <div>
-              <h4 className="font-semibold mb-3">Проголосовавшие ({uniqueVoters.length})</h4>
+              <h4 className="font-bold text-lg mb-3 leading-tight">Проголосовавшие ({uniqueVoters.length})</h4>
               
               {uniqueVoters.length > 0 ? (
                 <div className="space-y-2">
@@ -524,10 +524,10 @@ export function VotingCard({
                         size="sm"
                       />
                       <div className="flex-1">
-                        <p className="font-medium">
+                        <p className="font-bold text-base leading-snug">
                           {voter.firstName} {voter.lastName || ""}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm text-gray-500 leading-relaxed">
                           {voting.options
                             .filter(opt => (opt.votes || []).some(v => v.user.id === voter.id))
                             .map(opt => `${weekDays[opt.dayOfWeek]}, ${opt.time}`)

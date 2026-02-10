@@ -19,7 +19,7 @@ export function IntensiveCard({ intensive, onRegister }: IntensiveCardProps) {
   const spotsLeft = intensive.maxParticipants - intensive.enrolledParticipants;
 
   return (
-    <Card className="border-0 shadow-md overflow-hidden">
+    <Card className="border-0 shadow-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-2xl">
       <div className="h-24 bg-gradient-to-r from-gray-800 via-gray-900 to-black relative">
         <div className="absolute inset-0 bg-black/10" />
         <div className="absolute top-3 right-3">
@@ -37,7 +37,7 @@ export function IntensiveCard({ intensive, onRegister }: IntensiveCardProps) {
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-5">
         <p className="text-sm text-gray-600 line-clamp-2 mb-3">
           {intensive.description}
         </p>
@@ -64,7 +64,7 @@ export function IntensiveCard({ intensive, onRegister }: IntensiveCardProps) {
           <Button
             onClick={onRegister}
             disabled={isFull}
-            className={isFull ? undefined : "bg-gray-900 hover:bg-black text-white"}
+            className={isFull ? undefined : "bg-gray-900 hover:bg-black text-white transition-all duration-300 active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5"}
           >
             {isFull ? "Мест нет" : "Записаться"}
             {!isFull && <ArrowRight className="w-4 h-4 ml-1" />}

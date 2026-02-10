@@ -76,15 +76,15 @@ function ScheduleClassCard({ classData }: { classData: ScheduleClass }) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-bold text-gray-900 text-lg leading-snug">
               {classData.schedule.group.name}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-base text-gray-500 mt-1 leading-relaxed">
               {classData.trainer.firstName} {classData.trainer.lastName || ""}
             </p>
 
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex items-center gap-1 text-sm text-gray-500">
+            <div className="flex items-center gap-3 mt-3">
+              <div className="flex items-center gap-1 text-base text-gray-500 leading-relaxed">
                 <Users className="w-4 h-4" />
                 <span>{booked}/{classData.maxStudents}</span>
               </div>
