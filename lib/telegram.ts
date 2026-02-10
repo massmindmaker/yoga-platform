@@ -14,29 +14,81 @@ interface TelegramUser {
   username?: string;
 }
 
-// Упрощенная проверка - только извлечение userId и username
+// Криптографическая верификация Telegram initData (HMAC-SHA256)
+// https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 export function validateTelegramData(initData: string): TelegramUser | null {
   try {
     const params = new URLSearchParams(initData);
-    const userStr = params.get("user");
-    
-    if (!userStr) {
-      console.error("No user in initData");
+    const hash = params.get("hash");
+
+    if (!hash) {
+      console.error("No hash in initData");
       return null;
     }
-    
-    const user = JSON.parse(userStr);
-    
-    if (!user.id) {
-      console.error("No user id in initData");
+
+    // В dev-режиме разрешаем без верификации (нет реального Telegram)
+    const token = getBotToken();
+    if (!token) {
+      console.warn("[AUTH] No bot token, skipping HMAC verification");
+      return parseTelegramUser(params);
+    }
+
+    // Собираем data-check-string: все параметры кроме hash, отсортированные, через \n
+    params.delete("hash");
+    const dataCheckString = [...params.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n");
+
+    // secret_key = HMAC-SHA256("WebAppData", bot_token)
+    const secretKey = crypto
+      .createHmac("sha256", "WebAppData")
+      .update(token)
+      .digest();
+
+    // computed_hash = HMAC-SHA256(secret_key, data_check_string)
+    const computedHash = crypto
+      .createHmac("sha256", secretKey)
+      .update(dataCheckString)
+      .digest("hex");
+
+    if (computedHash !== hash) {
+      console.error("[AUTH] HMAC verification failed");
       return null;
     }
-    
-    return user;
+
+    // Проверяем auth_date — не старше 5 минут
+    const authDate = params.get("auth_date");
+    if (authDate) {
+      const authTimestamp = parseInt(authDate, 10);
+      const now = Math.floor(Date.now() / 1000);
+      const MAX_AGE_SECONDS = 300; // 5 минут
+      if (now - authTimestamp > MAX_AGE_SECONDS) {
+        console.error("[AUTH] initData expired:", now - authTimestamp, "seconds old");
+        return null;
+      }
+    }
+
+    return parseTelegramUser(params);
   } catch (error) {
-    console.error("Error parsing Telegram data:", error);
+    console.error("Error validating Telegram data:", error);
     return null;
   }
+}
+
+// Извлечение user из params (вспомогательная)
+function parseTelegramUser(params: URLSearchParams): TelegramUser | null {
+  const userStr = params.get("user");
+  if (!userStr) {
+    console.error("No user in initData");
+    return null;
+  }
+  const user = JSON.parse(userStr);
+  if (!user.id) {
+    console.error("No user id in initData");
+    return null;
+  }
+  return user;
 }
 
 // Получить или создать пользователя

@@ -690,6 +690,16 @@ async function handleSuccessfulPayment(message: any) {
 // POST /api/telegram/webhook - webhook для сообщений от бота
 export async function POST(req: NextRequest) {
   try {
+    // Верификация webhook secret (если настроен)
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const headerSecret = req.headers.get("x-telegram-bot-api-secret-token");
+      if (headerSecret !== webhookSecret) {
+        console.error("[WEBHOOK] Invalid secret token");
+        return NextResponse.json({ ok: false }, { status: 403 });
+      }
+    }
+
     const update = await req.json();
     console.log("[WEBHOOK] Update received:", JSON.stringify(update).slice(0, 500));
 
@@ -761,7 +771,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[WEBHOOK] Error in Telegram webhook:", error);
-    return NextResponse.json({ ok: false, error: String(error) });
+    return NextResponse.json({ ok: false, error: "Internal webhook error" });
   }
 }
 
@@ -778,8 +788,14 @@ export async function GET() {
   }
 
   try {
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    const params = new URLSearchParams({ url: webhookUrl });
+    if (webhookSecret) {
+      params.set("secret_token", webhookSecret);
+    }
+
     const response = await fetch(
-      `https://api.telegram.org/bot${token}/setWebhook?url=${webhookUrl}`
+      `https://api.telegram.org/bot${token}/setWebhook?${params.toString()}`
     );
     const data = await response.json();
 

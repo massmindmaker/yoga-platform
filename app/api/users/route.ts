@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createUserSchema } from '@/lib/validation';
+import type { Role } from '@prisma/client';
 
 // POST /api/users - создать пользователя
 export async function POST(req: NextRequest) {
@@ -23,13 +24,12 @@ export async function POST(req: NextRequest) {
     const { telegramId, firstName, lastName, role } = validationResult.data;
 
     // Проверяем существует ли пользователь
+    const orConditions = [];
+    if (telegramId) orConditions.push({ telegramId });
+    orConditions.push({ firstName, lastName: lastName || null });
+
     const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          telegramId ? { telegramId } : {},
-          { firstName, lastName }
-        ]
-      }
+      where: { OR: orConditions }
     });
 
     if (existingUser) {
@@ -63,13 +63,13 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get("role");
     const limit = searchParams.get("limit");
 
-    const where: any = {};
-    if (role) where.role = role;
+    const where: { role?: Role } = {};
+    if (role) where.role = role as Role;
 
     const users = await prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      ...(limit ? { take: parseInt(limit) } : {}),
+      ...(limit && !isNaN(parseInt(limit, 10)) ? { take: Math.min(parseInt(limit, 10), 100) } : {}),
     });
 
     return NextResponse.json({ success: true, data: users });

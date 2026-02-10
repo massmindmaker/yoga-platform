@@ -8,16 +8,6 @@ const RATE_LIMIT_MAX = 100; // максимум запросов за окно
 // Хранилище для rate limiting (в production использовать Redis)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-// Очистка устаревших записей
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (value.resetTime < now) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
-
 // Получить IP адрес
 function getClientIP(req: NextRequest): string {
   const forwarded = req.headers.get("x-forwarded-for");
@@ -34,6 +24,14 @@ function rateLimit(identifier: string): {
   resetTime: number;
 } {
   const now = Date.now();
+
+  // Очистка устаревших записей (inline, без setInterval для edge runtime)
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (value.resetTime < now) {
+      rateLimitStore.delete(key);
+    }
+  }
+
   const record = rateLimitStore.get(identifier);
 
   if (!record || record.resetTime < now) {
@@ -65,26 +63,25 @@ function rateLimit(identifier: string): {
 }
 
 // Security headers
-const securityHeaders = {
+const securityHeaders: Record<string, string> = {
   "X-DNS-Prefetch-Control": "on",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
-  "X-Frame-Options": "SAMEORIGIN",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 };
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Добавляем security headers ко всем ответам
-  Object.entries(securityHeaders).forEach(([key, value]) => {
+  for (const [key, value] of Object.entries(securityHeaders)) {
     response.headers.set(key, value);
-  });
+  }
 
   // Rate limiting для API routes
   if (request.nextUrl.pathname.startsWith("/api/")) {
-    // Исключаем webhook endpoints от rate limiting (они имеют свою проверку)
+    // Исключаем webhook endpoints от rate limiting
     if (
       request.nextUrl.pathname === "/api/payments/webhook" ||
       request.nextUrl.pathname === "/api/telegram/webhook"
@@ -128,17 +125,19 @@ export function proxy(request: NextRequest) {
         "http://localhost:3001",
       ].filter(Boolean);
 
-      // Allow all Vercel preview deployments
-      const isVercelPreview = origin && origin.includes("vercel.app");
-
-      // Проверяем origin (разрешаем запросы без origin для мобильных)
+      // Проверяем origin (разрешаем запросы без origin для Telegram WebApp)
       if (origin) {
         const isAllowedOrigin = allowedOrigins.some((allowedOrigin) =>
           allowedOrigin ? origin.startsWith(allowedOrigin) : false
         );
+        // Разрешаем Vercel preview deployments (*.vercel.app текущего проекта)
+        const isVercelPreview =
+          origin.endsWith(".vercel.app") &&
+          origin.includes("massmindmakers");
+
         if (!isAllowedOrigin && !isVercelPreview) {
           return NextResponse.json(
-            { success: false, error: `Invalid origin: ${origin}` },
+            { success: false, error: "Forbidden" },
             { status: 403 }
           );
         }
@@ -151,13 +150,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

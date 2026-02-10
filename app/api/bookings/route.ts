@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const where: any = { userId };
+    const where: Record<string, unknown> = { userId };
     
     if (status) {
       where.status = status;
@@ -72,21 +72,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Проверяем баланс пользователя
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { balance: true }
-    });
-
-    if (!user || user.balance < 1) {
-      return NextResponse.json(
-        { success: false, error: "Insufficient balance", code: "NO_BALANCE" },
-        { status: 402 }
-      );
-    }
-
-    // Создаем бронирование и списываем баланс
+    // Создаем бронирование и списываем баланс атомарно
     const result = await prisma.$transaction(async (tx) => {
+      // Проверяем баланс ВНУТРИ транзакции (предотвращает race condition)
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { balance: true }
+      });
+
+      if (!user || user.balance < 1) {
+        throw new Error("INSUFFICIENT_BALANCE");
+      }
+
       // Создаем бронирование
       const booking = await tx.booking.create({
         data: {
@@ -113,7 +110,7 @@ export async function POST(req: NextRequest) {
         data: { balance: { decrement: 1 } }
       });
 
-      // Создаем транзакцию
+      // Создаем транзакцию баланса
       await tx.balanceTransaction.create({
         data: {
           userId,
@@ -125,7 +122,19 @@ export async function POST(req: NextRequest) {
       });
 
       return booking;
+    }).catch((err) => {
+      if (err.message === "INSUFFICIENT_BALANCE") {
+        return null;
+      }
+      throw err;
     });
+
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: "Insufficient balance", code: "NO_BALANCE" },
+        { status: 402 }
+      );
+    }
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {

@@ -305,8 +305,8 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 rounded-lg bg-[#CCFBF1] flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#3BCEAC]" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">Голосования</p>

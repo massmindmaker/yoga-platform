@@ -42,18 +42,16 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Add hasVoted flag for each voting if userId provided
-    const votingsWithHasVoted = await Promise.all(
-      votings.map(async (voting) => {
-        if (!userId) return { ...voting, hasVoted: false };
+    // Вычисляем hasVoted из уже загруженных данных (без N+1 запросов)
+    const votingsWithHasVoted = votings.map((voting) => {
+      if (!userId) return { ...voting, hasVoted: false };
 
-        const userVote = await prisma.vote.findFirst({
-          where: { votingId: voting.id, userId },
-        });
+      const hasVoted = voting.options.some((opt) =>
+        opt.votes.some((v) => v.user.id === userId)
+      );
 
-        return { ...voting, hasVoted: !!userVote };
-      })
-    );
+      return { ...voting, hasVoted };
+    });
 
     return NextResponse.json({ success: true, data: votingsWithHasVoted });
   } catch (error) {

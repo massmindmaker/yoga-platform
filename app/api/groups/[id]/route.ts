@@ -152,26 +152,28 @@ export async function PATCH(
     if (startsAt !== undefined) updateData.startsAt = startsAt ? new Date(startsAt) : null;
     if (endsAt !== undefined) updateData.endsAt = endsAt ? new Date(endsAt) : null;
 
-    // Если есть новое расписание, удаляем старое и создаем новое
-    if (schedules) {
-      await prisma.schedule.deleteMany({
-        where: { groupId: id }
-      });
+    // Атомарное обновление: удаление старого расписания + создание нового в одной транзакции
+    const group = await prisma.$transaction(async (tx) => {
+      if (schedules) {
+        await tx.schedule.deleteMany({
+          where: { groupId: id }
+        });
 
-      updateData.schedules = {
-        create: schedules.map((s) => ({
-          dayOfWeek: s.dayOfWeek,
-          time: s.time,
-        }))
-      };
-    }
-
-    const group = await prisma.group.update({
-      where: { id },
-      data: updateData as any,
-      include: {
-        schedules: true
+        updateData.schedules = {
+          create: schedules.map((s: { dayOfWeek: number; time: string }) => ({
+            dayOfWeek: s.dayOfWeek,
+            time: s.time,
+          }))
+        };
       }
+
+      return tx.group.update({
+        where: { id },
+        data: updateData as Record<string, unknown>,
+        include: {
+          schedules: true
+        }
+      });
     });
 
     return NextResponse.json({ success: true, data: group });

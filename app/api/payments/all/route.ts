@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
-    const where: any = {};
+    const where: { createdAt?: { gte?: Date; lte?: Date } } = {};
     
     if (from || to) {
       where.createdAt = {};

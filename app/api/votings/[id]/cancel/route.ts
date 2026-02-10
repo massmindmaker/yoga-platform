@@ -27,9 +27,9 @@ export async function POST(
       );
     }
 
-    if (voting.status === 'CANCELLED') {
+    if (voting.status !== 'ACTIVE') {
       return NextResponse.json(
-        { success: false, error: 'Voting is already cancelled' },
+        { success: false, error: `Cannot cancel voting with status ${voting.status}` },
         { status: 400 }
       );
     }

@@ -322,7 +322,7 @@ export default function CreateVotingPage() {
 
                 {formData.selectedDays.length > 0 && (
                   <div className="bg-[#F0FDF9] p-3 rounded-lg">
-                    <p className="text-sm text-purple-800">
+                    <p className="text-sm text-[#0D9488]">
                       <strong>Выбрано:</strong>{" "}
                       {formData.selectedDays
                         .sort((a, b) => a - b)

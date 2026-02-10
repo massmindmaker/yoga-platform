@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import type { Prisma, ClassStatus } from "@prisma/client";
 
 // GET /api/classes - получить занятия
 export async function GET(req: NextRequest) {
@@ -10,24 +11,20 @@ export async function GET(req: NextRequest) {
     const to = searchParams.get("to");
     const status = searchParams.get("status");
 
-    const where: any = {};
+    const where: Prisma.ClassWhereInput = {};
     
     if (groupId) {
-      where.schedule = {
-        groupId
-      };
+      where.schedule = { groupId };
     }
 
     if (from || to) {
       where.date = {};
       if (from) {
-        // Start of the day
         const fromDate = new Date(from);
         fromDate.setUTCHours(0, 0, 0, 0);
         where.date.gte = fromDate;
       }
       if (to) {
-        // End of the day
         const toDate = new Date(to);
         toDate.setUTCHours(23, 59, 59, 999);
         where.date.lte = toDate;
@@ -35,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as ClassStatus;
     }
 
     const classes = await prisma.class.findMany({
