@@ -35,6 +35,8 @@ export async function GET(
                 id: true,
                 firstName: true,
                 lastName: true,
+                username: true,
+                photoUrl: true,
                 balance: true,
                 telegramId: true
               }

@@ -90,6 +90,38 @@ export async function POST(
     // Добавляем или обновляем пользователей
     for (const member of members) {
       const telegramUser = member.user;
+
+      // Получаем фото профиля
+      let photoUrl: string | null = null;
+      try {
+        const photosRes = await fetch(
+          `https://api.telegram.org/bot${BOT_TOKEN}/getUserProfilePhotos`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: telegramUser.id, limit: 1 }),
+          }
+        );
+        const photosData = await photosRes.json();
+        if (photosData.ok && photosData.result.total_count > 0) {
+          // Берём самый маленький файл (достаточно для аватарки)
+          const fileId = photosData.result.photos[0][0].file_id;
+          const fileRes = await fetch(
+            `https://api.telegram.org/bot${BOT_TOKEN}/getFile`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ file_id: fileId }),
+            }
+          );
+          const fileData = await fileRes.json();
+          if (fileData.ok) {
+            photoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileData.result.file_path}`;
+          }
+        }
+      } catch {
+        // Фото не критично — продолжаем
+      }
       
       // Проверяем, существует ли пользователь
       let user = await prisma.user.findFirst({
@@ -103,35 +135,41 @@ export async function POST(
             telegramId: telegramUser.id.toString(),
             firstName: telegramUser.first_name || "Unknown",
             lastName: telegramUser.last_name || null,
+            username: telegramUser.username || null,
+            photoUrl,
             role: "STUDENT",
             balance: 0,
           },
         });
         addedCount++;
       } else {
+        // Обновляем имя, фото и username
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            firstName: telegramUser.first_name || user.firstName,
+            lastName: telegramUser.last_name || user.lastName,
+            username: telegramUser.username || user.username,
+            ...(photoUrl ? { photoUrl } : {}),
+          },
+        });
         existingCount++;
       }
 
-      // Проверяем, связан ли пользователь с группой
-      const existingLink = await prisma.groupStudent.findUnique({
+      // Создаём связь с группой (upsert чтобы не дублировать)
+      await prisma.groupStudent.upsert({
         where: {
           groupId_userId: {
             groupId: groupId,
             userId: user.id,
           },
         },
+        update: {},
+        create: {
+          groupId: groupId,
+          userId: user.id,
+        },
       });
-
-      // Если нет - создаем связь
-      if (!existingLink) {
-        await prisma.groupStudent.create({
-          data: {
-            groupId: groupId,
-            userId: user.id,
-          },
-        });
-        if (existingCount > 0) addedCount++;
-      }
     }
 
     return NextResponse.json({

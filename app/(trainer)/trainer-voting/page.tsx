@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -151,6 +152,7 @@ export default function TrainerVotingPage() {
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>Выберите группу</DialogTitle>
+              <DialogDescription>Для какой группы создать голосование?</DialogDescription>
             </DialogHeader>
             {isLoadingGroups ? (
               <div className="flex items-center justify-center py-8">

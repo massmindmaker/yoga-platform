@@ -472,6 +472,9 @@ export default function GroupDetailPage() {
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                   >
                     <Avatar className="w-10 h-10">
+                      {student.user?.photoUrl && (
+                        <img src={student.user.photoUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                      )}
                       <AvatarFallback className="bg-[#CCFBF1] text-[#3BCEAC]">
                         {student.user?.firstName?.[0]}{student.user?.lastName?.[0]}
                       </AvatarFallback>

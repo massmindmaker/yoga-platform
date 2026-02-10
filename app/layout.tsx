@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { TelegramProvider } from "@/components/providers/telegram-provider";
+import { OnboardingScreen } from "@/components/onboarding/onboarding-screen";
 import { Toaster } from "@/components/ui/sonner";
 import { ModeProvider } from "@/src/hooks/use-mode";
 
@@ -30,9 +31,11 @@ export default function RootLayout({
       <body className="antialiased font-sans">
         <TelegramProvider>
           <ModeProvider>
-            <div className="min-h-screen bg-background">
-              {children}
-            </div>
+            <OnboardingScreen>
+              <div className="min-h-screen bg-background">
+                {children}
+              </div>
+            </OnboardingScreen>
           </ModeProvider>
           <Toaster 
             position="top-center"

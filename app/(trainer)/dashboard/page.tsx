@@ -182,9 +182,9 @@ export default function DashboardPage() {
       >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Занятия сегодня</h2>
-          <Link href="/trainer-schedule">
+          <Link href="/groups">
             <Button variant="ghost" size="sm" className="text-[#3BCEAC]">
-              Расписание →
+              Все группы →
             </Button>
           </Link>
         </div>
