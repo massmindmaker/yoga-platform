@@ -789,13 +789,18 @@ export async function GET() {
 
   try {
     const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-    const params = new URLSearchParams({ url: webhookUrl });
+    const body: Record<string, string> = { url: webhookUrl };
     if (webhookSecret) {
-      params.set("secret_token", webhookSecret);
+      body.secret_token = webhookSecret;
     }
 
     const response = await fetch(
-      `https://api.telegram.org/bot${token}/setWebhook?${params.toString()}`
+      `https://api.telegram.org/bot${token}/setWebhook`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
     );
     const data = await response.json();
 
