@@ -6,11 +6,24 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Loader2, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Loader2, AlertCircle, Users, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import { VotingCard } from "@/components/voting/voting-card-new";
 import { useVotings } from "@/src/hooks/use-votings";
 import { useTelegramUser } from "@/src/hooks/use-telegram-user";
+
+interface GroupItem {
+  id: string;
+  name: string;
+  groupType: string;
+  _count?: { students: number };
+}
 
 export default function TrainerVotingPage() {
   const router = useRouter();
@@ -36,11 +49,29 @@ export default function TrainerVotingPage() {
   } = useVotings({ status: "CLOSED,CANCELLED,FINALIZED" });
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [groups, setGroups] = useState<GroupItem[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
 
   const error = activeError || pastError;
 
   const handleCreateClick = () => {
-    router.push("/groups");
+    setShowGroupPicker(true);
+    if (groups.length === 0) {
+      setIsLoadingGroups(true);
+      fetch("/api/groups")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success) setGroups(data.data);
+        })
+        .catch(() => toast.error("Не удалось загрузить группы"))
+        .finally(() => setIsLoadingGroups(false));
+    }
+  };
+
+  const handleGroupSelect = (groupId: string) => {
+    setShowGroupPicker(false);
+    router.push(`/groups/${groupId}/voting/create`);
   };
 
   const handleFinalize = async (votingId: string) => {
@@ -114,6 +145,53 @@ export default function TrainerVotingPage() {
             Создать голосование
           </button>
         </motion.div>
+
+        {/* Group Picker Dialog */}
+        <Dialog open={showGroupPicker} onOpenChange={setShowGroupPicker}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Выберите группу</DialogTitle>
+            </DialogHeader>
+            {isLoadingGroups ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-[#3BCEAC]" />
+              </div>
+            ) : groups.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <p>Нет доступных групп</p>
+                <Button
+                  onClick={() => { setShowGroupPicker(false); router.push("/groups/create"); }}
+                  className="mt-3 bg-[#3BCEAC] hover:bg-[#14B8A6]"
+                  size="sm"
+                >
+                  Создать группу
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {groups.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => handleGroupSelect(g.id)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F0FDF9] transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5 text-[#3BCEAC]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{g.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {g.groupType === "INTENSIVE" ? "Интенсив" : "Регулярная"}
+                        {g._count?.students ? ` · ${g._count.students} уч.` : ""}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="grid w-full grid-cols-2">

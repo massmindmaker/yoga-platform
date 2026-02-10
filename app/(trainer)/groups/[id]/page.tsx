@@ -173,52 +173,54 @@ export default function GroupDetailPage() {
         </Card>
       </motion.div>
 
-      {/* Schedule */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Расписание
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            {group.schedules.length === 0 ? (
-              <p className="text-gray-500 text-sm">Расписание не задано</p>
-            ) : (
-              <div className="space-y-2">
-                {group.schedules.map((schedule) => (
-                  <div
-                    key={schedule.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center">
-                      <span className="text-sm font-medium text-[#3BCEAC]">
-                          {DAYS_SHORT[schedule.dayOfWeek]}
-                        </span>
+      {/* Schedule — только для REGULAR групп */}
+      {(group as any).groupType !== "INTENSIVE" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Расписание
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              {group.schedules.length === 0 ? (
+                <p className="text-gray-500 text-sm">Расписание не задано</p>
+              ) : (
+                <div className="space-y-2">
+                  {group.schedules.map((schedule) => (
+                    <div
+                      key={schedule.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#CCFBF1] flex items-center justify-center">
+                        <span className="text-sm font-medium text-[#3BCEAC]">
+                            {DAYS_SHORT[schedule.dayOfWeek]}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {DAYS_OF_WEEK[schedule.dayOfWeek]}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">
-                          {DAYS_OF_WEEK[schedule.dayOfWeek]}
-                        </p>
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-medium">{schedule.time}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">{schedule.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Active Votings */}
       {(group as any).votings && (group as any).votings.length > 0 && (

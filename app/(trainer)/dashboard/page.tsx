@@ -150,12 +150,6 @@ export default function DashboardPage() {
       >
         <div>
           <h1 className="text-xl font-bold text-gray-900">Панель тренера 👋</h1>
-          <p className="text-sm text-gray-500">
-            {isLoading 
-              ? "Загрузка..." 
-              : `${stats.totalGroups} групп · ${stats.totalStudents} учеников`
-            }
-          </p>
         </div>
       </motion.div>
 
