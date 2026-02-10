@@ -38,6 +38,7 @@ export default function TrainerVotingPage() {
     finalize,
     cancel,
     remind,
+    publishToChat,
     refetch: refetchActive,
   } = useVotings({ status: "ACTIVE" });
 
@@ -96,6 +97,17 @@ export default function TrainerVotingPage() {
       refetchPast();
     } else {
       toast.error("Ошибка", { description: result.error || "Не удалось отменить голосование" });
+    }
+  };
+
+  const handlePublishToChat = async (votingId: string) => {
+    const result = await publishToChat(votingId);
+    if (result.success) {
+      toast.success("Отправлено в чат", {
+        description: "Голосование опубликовано в Telegram",
+      });
+    } else {
+      toast.error("Ошибка", { description: result.error || "Не удалось отправить в чат" });
     }
   };
 
@@ -224,6 +236,7 @@ export default function TrainerVotingPage() {
                     isTrainer={true}
                     onFinalize={handleFinalize}
                     onCancel={handleCancel}
+                    onPublishToChat={handlePublishToChat}
                     expanded={expandedId === voting.id}
                     onExpandChange={(expanded) =>
                       setExpandedId(expanded ? voting.id : null)

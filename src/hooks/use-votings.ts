@@ -197,6 +197,26 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
     }
   };
 
+  const publishToChat = async (votingId: string) => {
+    try {
+      const response = await fetch(`/api/votings/${votingId}/publish`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchVotings();
+        return { success: true, data: data.data };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      console.error("Error publishing to chat:", err);
+      return { success: false, error: "Ошибка сети" };
+    }
+  };
+
   useEffect(() => {
     fetchVotings();
   }, [fetchVotings]);
@@ -210,6 +230,7 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
     finalize,
     cancel,
     remind,
+    publishToChat,
     refetch: fetchVotings,
   };
 }

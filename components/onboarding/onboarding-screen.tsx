@@ -13,13 +13,8 @@ export function OnboardingScreen({ children }: { children: React.ReactNode }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // Показываем только один раз
-    if (typeof window !== "undefined") {
-      const seen = localStorage.getItem(ONBOARDING_KEY);
-      if (!seen) {
-        setShow(true);
-      }
-    }
+    // Показываем всегда при загрузке
+    setShow(true);
   }, []);
 
   const startFadeOut = useCallback(() => {

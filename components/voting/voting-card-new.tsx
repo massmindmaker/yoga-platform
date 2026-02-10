@@ -13,7 +13,8 @@ import {
   Wallet,
   MessageSquare,
   Users,
-  X
+  X,
+  Send
 } from "lucide-react";
 
 // Russian pluralization helper
@@ -88,6 +89,7 @@ interface VotingCardProps {
   onDelete?: (votingId: string) => void;
   onFinalize?: (votingId: string) => void;
   onCancel?: (votingId: string) => void;
+  onPublishToChat?: (votingId: string) => void;
   expanded?: boolean;
   onExpandChange?: (expanded: boolean) => void;
 }
@@ -103,6 +105,7 @@ export function VotingCard({
   onDelete,
   onFinalize,
   onCancel,
+  onPublishToChat,
   expanded: controlledExpanded,
   onExpandChange,
 }: VotingCardProps) {
@@ -110,6 +113,7 @@ export function VotingCard({
   const [showDetails, setShowDetails] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isVoting, setIsVoting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const isExpanded = controlledExpanded ?? internalExpanded;
   const setIsExpanded = onExpandChange ?? setInternalExpanded;
@@ -181,6 +185,16 @@ export function VotingCard({
       await onVote(optionId);
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  const handlePublishToChat = async () => {
+    if (!onPublishToChat || isPublishing) return;
+    setIsPublishing(true);
+    try {
+      await onPublishToChat(voting.id);
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -528,14 +542,31 @@ export function VotingCard({
               )}
             </div>
 
-            {/* Telegram сообщение */}
+            {/* Telegram — статус и кнопка отправки */}
             {voting.telegramPollId && (
               <div className="bg-blue-50 p-4 rounded-xl">
                 <p className="text-sm text-blue-800">
                   <MessageSquare className="w-4 h-4 inline mr-1" />
-                  Опубликовано в Telegram (ID: {voting.telegramPollId})
+                  Опубликовано в Telegram
                 </p>
               </div>
+            )}
+
+            {isTrainer && voting.status === "ACTIVE" && onPublishToChat && (
+              <Button
+                onClick={handlePublishToChat}
+                disabled={isPublishing}
+                variant="outline"
+                className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {isPublishing 
+                  ? "Отправка..." 
+                  : voting.telegramPollId 
+                    ? "Отправить повторно в чат" 
+                    : "Отправить в чат"
+                }
+              </Button>
             )}
           </div>
         </SheetContent>
