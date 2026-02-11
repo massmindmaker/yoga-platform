@@ -6,14 +6,21 @@ import { ru } from "date-fns/locale";
 import { PageHeader } from "@/components/layout/page-header";
 import { Calendar } from "@/components/schedule/calendar";
 import { useSchedule, type ScheduleClass } from "@/src/hooks/use-schedule";
+import { useBooking } from "@/src/hooks/use-booking";
+import { useUser } from "@/src/hooks/use-user-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarX, Users, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarX, Users, CheckCircle, XCircle } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SchedulePage() {
-  const { classes, selectedDate, setSelectedDate, isLoading } = useSchedule();
+  const { classes, selectedDate, setSelectedDate, isLoading, refetch } = useSchedule();
+  const { user } = useUser();
+  const { bookings, bookClass, cancelBooking, refetch: refetchBookings } = useBooking(user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -49,7 +56,14 @@ export default function SchedulePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <ScheduleClassCard classData={cls} />
+              <ScheduleClassCard 
+                classData={cls} 
+                userId={user?.id}
+                bookings={bookings}
+                onBook={bookClass}
+                onCancel={cancelBooking}
+                onUpdate={refetchBookings}
+              />
             </motion.div>
           ))
         ) : (
@@ -64,9 +78,55 @@ export default function SchedulePage() {
   );
 }
 
-function ScheduleClassCard({ classData }: { classData: ScheduleClass }) {
+interface ScheduleClassCardProps {
+  classData: ScheduleClass;
+  userId?: string;
+  bookings: Array<{ id: string; classId: string; status: string }>;
+  onBook: (classId: string, userId: string) => Promise<void>;
+  onCancel: (bookingId: string) => Promise<void>;
+  onUpdate: () => void;
+}
+
+function ScheduleClassCard({ 
+  classData, 
+  userId, 
+  bookings, 
+  onBook, 
+  onCancel,
+  onUpdate 
+}: ScheduleClassCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const booked = classData._count?.bookings || 0;
   const spotsLeft = classData.maxStudents - booked;
+  
+  // Проверяем, записан ли пользователь на это занятие
+  const userBooking = bookings.find(b => b.classId === classData.id && b.status === 'CONFIRMED');
+  const isBooked = !!userBooking;
+  
+  const handleBook = async () => {
+    if (!userId) {
+      toast.error('Необходима авторизация');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await onBook(classData.id, userId);
+      onUpdate();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleCancel = async () => {
+    if (!userBooking) return;
+    setIsLoading(true);
+    try {
+      await onCancel(userBooking.id);
+      onUpdate();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card className="border-0 shadow-sm">
@@ -99,8 +159,45 @@ function ScheduleClassCard({ classData }: { classData: ScheduleClass }) {
                   Мест нет
                 </Badge>
               )}
+              {isBooked && (
+                <Badge className="bg-green-100 text-green-700 text-xs">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Вы записаны
+                </Badge>
+              )}
             </div>
           </div>
+        </div>
+        
+        {/* Кнопки записи */}
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          {isBooked ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="w-full border-red-300 text-red-600 hover:bg-red-50"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              {isLoading ? 'Отмена...' : 'Отменить запись'}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleBook}
+              disabled={isLoading || spotsLeft === 0}
+              className="w-full bg-gray-900 hover:bg-black text-white"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              {isLoading 
+                ? 'Запись...' 
+                : spotsLeft === 0 
+                  ? 'Мест нет' 
+                  : 'Записаться'
+              }
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
