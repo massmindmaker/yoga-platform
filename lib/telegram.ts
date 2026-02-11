@@ -12,6 +12,7 @@ interface TelegramUser {
   first_name: string;
   last_name?: string;
   username?: string;
+  photo_url?: string;
 }
 
 // Криптографическая верификация Telegram initData (HMAC-SHA256)
@@ -104,6 +105,8 @@ export async function getOrCreateUser(telegramUser: TelegramUser) {
       telegramId: telegramUser.id.toString(),
       firstName: telegramUser.first_name,
       lastName: telegramUser.last_name || null,
+      username: telegramUser.username || null,
+      photoUrl: telegramUser.photo_url || null,
       role: "STUDENT",
       balance: 0,
     },

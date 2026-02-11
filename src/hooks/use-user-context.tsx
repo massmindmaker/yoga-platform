@@ -54,6 +54,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           telegramId: "student_8",
           firstName: "Ирина",
           lastName: "Михайлова",
+          photoUrl: "https://api.telegram.org/file/bot8342725080:AAH3ldtlOmZDv3bcZLRpNtcZxhgzfTP1olE/photos/file_1.jpg",
           role: "STUDENT",
           balance: 46,
           phone: null,

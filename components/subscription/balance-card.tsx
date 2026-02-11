@@ -156,7 +156,7 @@ export function BalanceCard({
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
-            className="w-14 h-14 rounded-2xl overflow-hidden bg-white/20 flex items-center justify-center"
+            className="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center border-2 border-white/30"
           >
             {photoUrl ? (
               <img 
@@ -165,9 +165,16 @@ export function BalanceCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-xl font-bold text-white">
-                {userName?.[0]?.toUpperCase() || '?'}
-              </span>
+              <img 
+                src="/images/penguin-avatar.png" 
+                alt="Default avatar" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to letter if image fails to load
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-xl font-bold text-white">${userName?.[0]?.toUpperCase() || '?'}</span>`;
+                }}
+              />
             )}
           </motion.div>
         </div>
