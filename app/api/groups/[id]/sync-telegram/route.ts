@@ -54,9 +54,20 @@ export async function POST(
     const memberCountData = await response.json();
     
     if (!memberCountData.ok) {
+      // More specific error messages based on Telegram error
+      let errorMessage = "Failed to fetch Telegram chat info";
+      if (memberCountData.error_code === 400) {
+        if (memberCountData.description?.includes("chat not found")) {
+          errorMessage = "Чат не найден. Проверьте ID чата и убедитесь, что бот добавлен в чат";
+        } else if (memberCountData.description?.includes("bot is not a member")) {
+          errorMessage = "Бот не является членом чата. Добавьте бота @Yom23_bot в группу";
+        } else {
+          errorMessage = "Ошибка доступа к чату: " + memberCountData.description;
+        }
+      }
       return NextResponse.json(
-        { success: false, error: "Failed to fetch Telegram chat info" },
-        { status: 500 }
+        { success: false, error: errorMessage },
+        { status: 400 }
       );
     }
 
