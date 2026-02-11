@@ -53,7 +53,15 @@ export async function GET(req: NextRequest) {
       return { ...voting, hasVoted };
     });
 
-    return NextResponse.json({ success: true, data: votingsWithHasVoted });
+    // Cache for 10 seconds (votings change frequently)
+    return NextResponse.json(
+      { success: true, data: votingsWithHasVoted },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     console.error('[VOTINGS_GET]', error);
     return NextResponse.json(

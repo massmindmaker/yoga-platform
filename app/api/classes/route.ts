@@ -70,7 +70,15 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({ success: true, data: classes });
+    // Cache for 30 seconds (stale-while-revalidate pattern)
+    return NextResponse.json(
+      { success: true, data: classes },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error) {
     console.error("[CLASSES_GET]", error);
     return NextResponse.json(
