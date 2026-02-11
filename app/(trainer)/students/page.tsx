@@ -5,9 +5,9 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Search, Wallet, Loader2 } from "lucide-react";
+import { Search, Wallet, Loader2, UserX } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Users } from "lucide-react";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 
 interface StudentData {
   id: string;
@@ -81,9 +81,7 @@ export default function StudentsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-gray-900" />
           </div>
         ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-red-500">{error}</p>
-          </div>
+          <ErrorFallbackInline error={error} onRetry={() => window.location.reload()} />
         ) : filtered.length > 0 ? (
           filtered.map((student, index) => (
             <motion.div
@@ -122,7 +120,7 @@ export default function StudentsPage() {
           ))
         ) : (
           <EmptyState
-            icon={Users}
+            icon={UserX}
             title="Нет учеников"
             description="Ученики появятся после регистрации"
           />

@@ -57,6 +57,27 @@ interface UseVotingsOptions {
   status?: string;
 }
 
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 3
+): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) {
   const [votings, setVotings] = useState<Voting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,17 +93,20 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
       if (groupId) params.set("groupId", groupId);
       if (status) params.set("status", status);
 
-      const response = await fetch(`/api/votings?${params.toString()}`);
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: Voting[]; error?: string }>(
+        `/api/votings?${params.toString()}`,
+        undefined,
+        3
+      );
 
       if (data.success) {
-        setVotings(data.data);
+        setVotings(data.data || []);
       } else {
         setError(data.error || "Ошибка загрузки");
       }
     } catch (err) {
-      setError("Ошибка сети");
-      console.error("Error fetching votings:", err);
+      setError("Ошибка сети после 3 попыток");
+      console.error("Error fetching votings after retries:", err);
     } finally {
       setIsLoading(false);
     }
@@ -92,13 +116,15 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
     if (!userId) return { success: false, error: "Пользователь не авторизован" };
 
     try {
-      const response = await fetch(`/api/votings/${votingId}/vote`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optionIds, userId }),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string; code?: string; details?: unknown }>(
+        `/api/votings/${votingId}/vote`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ optionIds, userId }),
+        },
+        3
+      );
 
       if (data.success) {
         await fetchVotings();
@@ -107,8 +133,8 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
         return { success: false, error: data.error, code: data.code, details: data.details };
       }
     } catch (err) {
-      console.error("Error voting:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error voting after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
@@ -116,13 +142,15 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
     if (!userId) return { success: false, error: "Пользователь не авторизован" };
 
     try {
-      const response = await fetch(`/api/votings/${votingId}/vote`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, optionIds }),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
+        `/api/votings/${votingId}/vote`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, optionIds }),
+        },
+        3
+      );
 
       if (data.success) {
         await fetchVotings();
@@ -131,20 +159,22 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error cancelling vote:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error cancelling vote after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
   const finalize = async (votingId: string, prices?: Array<{ optionId: string; price: number }>) => {
     try {
-      const response = await fetch(`/api/votings/${votingId}/finalize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(prices ? { prices } : {}),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
+        `/api/votings/${votingId}/finalize`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(prices ? { prices } : {}),
+        },
+        3
+      );
 
       if (data.success) {
         await fetchVotings();
@@ -153,18 +183,18 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error finalizing:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error finalizing after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
   const cancel = async (votingId: string) => {
     try {
-      const response = await fetch(`/api/votings/${votingId}/cancel`, {
-        method: "POST",
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
+        `/api/votings/${votingId}/cancel`,
+        { method: "POST" },
+        3
+      );
 
       if (data.success) {
         await fetchVotings();
@@ -173,18 +203,18 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error cancelling:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error cancelling after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
   const remind = async (votingId: string) => {
     try {
-      const response = await fetch(`/api/votings/${votingId}/remind`, {
-        method: "POST",
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: unknown; error?: string }>(
+        `/api/votings/${votingId}/remind`,
+        { method: "POST" },
+        3
+      );
 
       if (data.success) {
         return { success: true, data: data.data };
@@ -192,18 +222,18 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error sending reminder:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error sending reminder after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
   const publishToChat = async (votingId: string) => {
     try {
-      const response = await fetch(`/api/votings/${votingId}/publish`, {
-        method: "POST",
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: unknown; error?: string }>(
+        `/api/votings/${votingId}/publish`,
+        { method: "POST" },
+        3
+      );
 
       if (data.success) {
         await fetchVotings();
@@ -212,8 +242,8 @@ export function useVotings({ userId, groupId, status }: UseVotingsOptions = {}) 
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error publishing to chat:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error publishing to chat after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 

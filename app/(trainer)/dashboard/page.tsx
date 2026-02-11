@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Calendar, Clock, TrendingUp, BookOpen } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -203,29 +205,23 @@ export default function DashboardPage() {
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" />
+                      <Skeleton className="w-16 h-16 rounded-xl" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-5 w-1/2 rounded-xl" />
+                        <Skeleton className="h-4 w-1/3 rounded-xl" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
+            <p className="text-center text-gray-500 text-sm mt-4">Загрузка занятий...</p>
           </div>
         ) : error ? (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6 text-center">
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button 
-                onClick={() => window.location.reload()}
-                className="bg-gradient-to-r from-gray-900 to-black"
-              >
-                Попробовать снова
-              </Button>
-            </CardContent>
-          </Card>
+          <ErrorFallbackInline 
+            error={error} 
+            onRetry={() => window.location.reload()} 
+          />
         ) : todayClasses.length > 0 ? (
           <div className="space-y-3">
             {todayClasses.map((cls, index) => (

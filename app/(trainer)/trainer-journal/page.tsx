@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Loader2, BookOpen, Users, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, BookX, Users, Calendar, CheckCircle2, XCircle, CalendarX } from "lucide-react";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 
 interface ClassRecord {
   id: string;
@@ -99,6 +100,17 @@ export default function TrainerJournalPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader title="Журнал" />
+        <div className="p-4">
+          <ErrorFallbackInline error={error} onRetry={() => window.location.reload()} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <PageHeader title="Журнал" />
@@ -157,7 +169,7 @@ export default function TrainerJournalPage() {
               ))
             ) : (
               <EmptyState
-                icon={BookOpen}
+                icon={BookX}
                 title="Нет данных"
                 description="Статистика появится после проведённых занятий"
               />
@@ -178,7 +190,7 @@ export default function TrainerJournalPage() {
               ))
             ) : (
               <EmptyState
-                icon={Calendar}
+                icon={CalendarX}
                 title="Нет занятий"
                 description="Предстоящих занятий пока нет"
               />

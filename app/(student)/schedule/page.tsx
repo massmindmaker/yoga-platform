@@ -30,14 +30,15 @@ export default function SchedulePage() {
         {isLoading ? (
           [1, 2, 3].map((i) => (
             <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex gap-4">
-                <Skeleton className="w-16 h-16 rounded-lg" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/3" />
+              <div className="flex gap-4 items-center">
+                <Skeleton className="w-20 h-20 rounded-xl" />
+                <div className="flex-1 space-y-3">
+                  <Skeleton className="h-6 w-3/4 rounded-xl" />
+                  <Skeleton className="h-5 w-1/2 rounded-xl" />
+                  <Skeleton className="h-5 w-1/3 rounded-xl" />
                 </div>
               </div>
+              <p className="text-center text-gray-500 text-sm mt-3">Загрузка...</p>
             </div>
           ))
         ) : classes.length > 0 ? (

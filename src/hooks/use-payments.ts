@@ -11,6 +11,27 @@ interface Payment {
   createdAt: string;
 }
 
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 3
+): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export function usePayments() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,21 +46,27 @@ export function usePayments() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          amount,
-          classesCount,
-          telegramId,
-        }),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{
+        success: boolean;
+        paymentUrl?: string;
+        paymentId?: string;
+        error?: string;
+      }>(
+        "/api/payments",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            amount,
+            classesCount,
+            telegramId,
+          }),
+        },
+        3
+      );
 
       if (data.success) {
-        // Перенаправляем на страницу оплаты
         if (data.paymentUrl) {
           window.location.href = data.paymentUrl;
         }
@@ -49,9 +76,9 @@ export function usePayments() {
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error creating payment:", err);
-      setError("Network error");
-      return { success: false, error: "Network error" };
+      console.error("Error creating payment after retries:", err);
+      setError("Network error after 3 retries");
+      return { success: false, error: "Network error after 3 retries" };
     } finally {
       setIsLoading(false);
     }
@@ -59,16 +86,19 @@ export function usePayments() {
 
   const getPayments = async (userId: string): Promise<Payment[]> => {
     try {
-      const response = await fetch(`/api/payments?userId=${userId}`);
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: Payment[] }>(
+        `/api/payments?userId=${userId}`,
+        undefined,
+        3
+      );
 
       if (data.success) {
-        return data.data;
+        return data.data || [];
       } else {
         return [];
       }
     } catch (err) {
-      console.error("Error fetching payments:", err);
+      console.error("Error fetching payments after retries:", err);
       return [];
     }
   };

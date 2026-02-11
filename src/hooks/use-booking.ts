@@ -11,29 +11,57 @@ interface BookingData {
   createdAt: string;
 }
 
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 3
+): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export function useBooking(userId?: string) {
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchBookings = useCallback(async () => {
     if (!userId) return;
     setIsLoading(true);
     setError(null);
+    setRetryCount(0);
 
     try {
-      const response = await fetch(`/api/bookings?userId=${userId}`);
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: BookingData[]; error?: string }>(
+        `/api/bookings?userId=${userId}`,
+        undefined,
+        3
+      );
+      
       if (data.success) {
         setBookings(data.data || []);
       } else {
         setError(data.error || "Ошибка загрузки");
       }
     } catch (err) {
-      setError("Ошибка сети");
-      console.error("Error fetching bookings:", err);
+      setError("Ошибка сети после 3 попыток");
+      console.error("Error fetching bookings after retries:", err);
     } finally {
       setIsLoading(false);
+      setRetryCount(0);
     }
   }, [userId]);
 
@@ -46,13 +74,15 @@ export function useBooking(userId?: string) {
     setError(null);
 
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, userId: bookUserId }),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
+        '/api/bookings',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ classId, userId: bookUserId }),
+        },
+        3
+      );
 
       if (data.success) {
         toast.success('Запись подтверждена!', {
@@ -63,8 +93,8 @@ export function useBooking(userId?: string) {
         toast.error('Ошибка записи', { description: data.error });
       }
     } catch (err) {
-      toast.error('Ошибка сети');
-      console.error("Error booking class:", err);
+      toast.error('Ошибка сети после 3 попыток');
+      console.error("Error booking class after retries:", err);
     } finally {
       setIsLoading(false);
     }
@@ -75,11 +105,11 @@ export function useBooking(userId?: string) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/bookings?id=${bookingId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
+        `/api/bookings?id=${bookingId}`,
+        { method: 'DELETE' },
+        3
+      );
 
       if (data.success) {
         toast.success('Запись отменена');
@@ -88,8 +118,8 @@ export function useBooking(userId?: string) {
         toast.error('Ошибка отмены', { description: data.error });
       }
     } catch (err) {
-      toast.error('Ошибка сети');
-      console.error("Error cancelling booking:", err);
+      toast.error('Ошибка сети после 3 попыток');
+      console.error("Error cancelling booking after retries:", err);
     } finally {
       setIsLoading(false);
     }

@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { BookOpen, Calendar, Clock, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { BookX, Calendar, Clock, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { useUser } from "@/src/hooks/use-user-context";
 
 interface AttendanceRecord {
@@ -162,17 +163,10 @@ export default function StudentJournalPage() {
 
       <div className="p-4 space-y-3">
         {error ? (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6 text-center">
-              <p className="text-red-500 mb-4">{error}</p>
-              <button 
-                onClick={() => window.location.reload()}
-                 className="text-gray-900 hover:underline"
-              >
-                Попробовать снова
-              </button>
-            </CardContent>
-          </Card>
+          <ErrorFallbackInline 
+            error={error} 
+            onRetry={() => window.location.reload()} 
+          />
         ) : attendanceRecords.length > 0 ? (
           attendanceRecords.map((record, index) => (
             <motion.div
@@ -230,7 +224,7 @@ export default function StudentJournalPage() {
           ))
         ) : (
           <EmptyState
-            icon={BookOpen}
+            icon={BookX}
             title="Нет записей"
             description="История посещений появится после первого занятия"
           />

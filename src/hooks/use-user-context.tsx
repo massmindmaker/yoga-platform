@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useTelegram } from "./use-telegram";
-import type { User, ApiResponse } from "../types";
+import type { User } from "../types";
 
 interface UserContextType {
   user: User | null;
@@ -13,22 +13,41 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 3
+): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const telegram = useTelegram();
 
-  const authenticate = async () => {
+  const authenticate = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Получаем initData из Telegram WebApp
       const initData = telegram.initData || "";
 
       if (!initData) {
-        // Для разработки - используем реального студента из базы
         console.log("No Telegram data, using dev mode with real student");
         setUser({
           id: "0ed1ec7c-fd36-4b32-a437-a42eace04409",
@@ -46,24 +65,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Отправляем на сервер для авторизации
-      const response = await fetch("/api/auth/telegram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData }),
-      });
+      const data = await fetchWithRetry<{ success: boolean; data?: { user: User }; error?: string }>(
+        "/api/auth/telegram",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initData }),
+        },
+        3
+      );
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (data.success && data.data) {
         setUser(data.data.user);
       } else {
         setError(data.error || "Authentication failed");
       }
     } catch (err) {
-      console.error("Auth error:", err);
-      setError("Failed to authenticate");
-      // Для разработки - используем реального студента
+      console.error("Auth error after retries:", err);
+      setError("Failed to authenticate after 3 retries");
       setUser({
         id: "0ed1ec7c-fd36-4b32-a437-a42eace04409",
         telegramId: "student_8",
@@ -79,11 +98,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [telegram.initData]);
 
   useEffect(() => {
     authenticate();
-  }, [telegram.initData]);
+  }, [authenticate]);
 
   return (
     <UserContext.Provider

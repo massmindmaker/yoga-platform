@@ -48,6 +48,27 @@ interface UseScheduleReturn {
   refetch: () => void;
 }
 
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 3
+): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export function useSchedule(): UseScheduleReturn {
   const [classes, setClasses] = useState<ScheduleClass[]>([]);
   const [weekDays, setWeekDays] = useState<Date[]>([]);
@@ -67,8 +88,11 @@ export function useSchedule(): UseScheduleReturn {
 
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const response = await fetch(`/api/classes?from=${dateStr}&to=${dateStr}`);
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: ScheduleClass[]; error?: string }>(
+        `/api/classes?from=${dateStr}&to=${dateStr}`,
+        undefined,
+        3
+      );
 
       if (data.success) {
         setClasses(data.data || []);
@@ -76,8 +100,8 @@ export function useSchedule(): UseScheduleReturn {
         setError(data.error || 'Failed to fetch schedule');
       }
     } catch (err) {
-      console.error('Error fetching schedule:', err);
-      setError('Ошибка загрузки расписания');
+      console.error('Error fetching schedule after retries:', err);
+      setError('Ошибка загрузки расписания после 3 попыток');
     } finally {
       setIsLoading(false);
     }

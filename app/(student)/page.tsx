@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Clock, MapPin, ChevronRight, Sparkles, Calendar, AlertCircle } from "lucide-react";
+import { Clock, MapPin, ChevronRight, Sparkles, Calendar, AlertCircle, CalendarX } from "lucide-react";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { BalanceCard } from "@/components/subscription/balance-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useUser } from "@/src/hooks/use-user-context";
 import Link from "next/link";
 
@@ -173,20 +175,10 @@ export default function MainPage() {
               </Card>
             </motion.div>
           ) : error ? (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mt-4">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-red-500" />
-                </div>
-                <p className="text-red-600 font-medium mb-4">{error}</p>
-                <Button 
-                  onClick={() => window.location.reload()}
-                  className="bg-gray-900 hover:bg-black text-white"
-                >
-                  Попробовать снова
-                </Button>
-              </CardContent>
-            </Card>
+            <ErrorFallbackInline 
+              error={error} 
+              onRetry={() => window.location.reload()} 
+            />
           ) : upcomingBookings.length > 0 ? (
             <div className="space-y-3">
               {upcomingBookings.map((booking, index) => (
@@ -239,19 +231,13 @@ export default function MainPage() {
               ))}
             </div>
           ) : (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4">
-                   <Sparkles className="w-8 h-8 text-gray-700" />
-                </div>
-                <p className="text-gray-600 mb-4 font-semibold text-base leading-relaxed">У вас нет предстоящих занятий</p>
-                <Link href="/schedule">
-                   <Button className="bg-gray-900 hover:bg-black shadow-lg shadow-black/10">
-                    Записаться
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={CalendarX}
+              title="Нет предстоящих занятий"
+              description="Запишитесь на занятие в расписании"
+              action={() => window.location.href = '/schedule'}
+              actionLabel="К расписанию"
+            />
           )}
         </motion.div>
       </motion.div>

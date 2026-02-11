@@ -13,9 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Loader2, AlertCircle, Users, ChevronRight } from "lucide-react";
+import { Plus, Loader2, AlertCircle, Users, ChevronRight, Vote } from "lucide-react";
 import { useState, useEffect } from "react";
 import { VotingCard } from "@/components/voting/voting-card-new";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorFallback } from "@/components/ui/error-fallback";
 import { useVotings } from "@/src/hooks/use-votings";
 import { useTelegramUser } from "@/src/hooks/use-telegram-user";
 
@@ -126,16 +128,10 @@ export default function TrainerVotingPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Голосования" />
-        <div className="p-4 text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-500">{error}</p>
-          <Button
-            onClick={() => { refetchActive(); refetchPast(); }}
-            className="mt-4 bg-gray-800 hover:bg-black"
-          >
-            Повторить
-          </Button>
-        </div>
+        <ErrorFallback 
+          error={error} 
+          onRetry={() => { refetchActive(); refetchPast(); }} 
+        />
       </div>
     );
   }
@@ -245,14 +241,11 @@ export default function TrainerVotingPage() {
                 </motion.div>
               ))
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-8 text-gray-500"
-              >
-                <p className="text-base leading-relaxed">Нет активных голосований</p>
-                <p className="text-sm mt-1 leading-relaxed">Создайте новое голосование для группы</p>
-              </motion.div>
+              <EmptyState
+                icon={Vote}
+                title="Нет активных голосований"
+                description="Создайте новое голосование для группы"
+              />
             )}
           </TabsContent>
 
@@ -281,13 +274,11 @@ export default function TrainerVotingPage() {
                 </motion.div>
               ))
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-8 text-gray-500 text-base leading-relaxed"
-              >
-                История пуста
-              </motion.div>
+              <EmptyState
+                icon={Vote}
+                title="История пуста"
+                description="Завершённые голосования будут отображаться здесь"
+              />
             )}
           </TabsContent>
         </Tabs>

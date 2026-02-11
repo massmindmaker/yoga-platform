@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Wallet, CreditCard } from "lucide-react";
+import { Wallet, CreditCard, Receipt } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 
 interface PaymentRecord {
   id: string;
@@ -24,18 +25,23 @@ interface PaymentRecord {
 export default function TrainerPaymentsPage() {
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPayments() {
       try {
         setIsLoading(true);
+        setError(null);
         const response = await fetch('/api/payments/all');
         const data = await response.json();
         if (data.success) {
           setPayments(data.data);
+        } else {
+          setError(data.error || "Ошибка загрузки платежей");
         }
-      } catch (error) {
-        console.error("Error fetching payments:", error);
+      } catch (err) {
+        console.error("Error fetching payments:", err);
+        setError("Ошибка сети");
       } finally {
         setIsLoading(false);
       }
@@ -87,7 +93,9 @@ export default function TrainerPaymentsPage() {
         >
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Последние платежи</h2>
 
-          {payments.length > 0 ? (
+          {error ? (
+            <ErrorFallbackInline error={error} onRetry={() => window.location.reload()} />
+          ) : payments.length > 0 ? (
             <div className="space-y-3">
               {payments.map((payment, index) => (
                 <motion.div
@@ -125,7 +133,7 @@ export default function TrainerPaymentsPage() {
             </div>
           ) : (
             <EmptyState
-              icon={CreditCard}
+              icon={Receipt}
               title="Нет платежей"
               description="Платежи появятся когда ученики оплатят занятия"
             />

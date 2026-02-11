@@ -27,6 +27,27 @@ interface Group {
   };
 }
 
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 3
+): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export function useGroups() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,17 +56,22 @@ export function useGroups() {
   const fetchGroups = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/groups");
-      const data = await response.json();
+      setError(null);
+      
+      const data = await fetchWithRetry<{ success: boolean; data?: Group[]; error?: string }>(
+        "/api/groups",
+        undefined,
+        3
+      );
 
       if (data.success) {
-        setGroups(data.data);
+        setGroups(data.data || []);
       } else {
         setError(data.error || "Ошибка загрузки");
       }
     } catch (err) {
-      setError("Ошибка сети");
-      console.error("Error fetching groups:", err);
+      setError("Ошибка сети после 3 попыток");
+      console.error("Error fetching groups after retries:", err);
     } finally {
       setIsLoading(false);
     }
@@ -65,13 +91,15 @@ export function useGroups() {
     schedules?: { dayOfWeek: number; time: string }[];
   }) => {
     try {
-      const response = await fetch("/api/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupData),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: Group; error?: string }>(
+        "/api/groups",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(groupData),
+        },
+        3
+      );
 
       if (data.success) {
         await fetchGroups();
@@ -80,8 +108,8 @@ export function useGroups() {
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error creating group:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error creating group after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
@@ -102,17 +130,22 @@ export function useGroup(id: string) {
     
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/groups/${id}`);
-      const data = await response.json();
+      setError(null);
+      
+      const data = await fetchWithRetry<{ success: boolean; data?: Group; error?: string }>(
+        `/api/groups/${id}`,
+        undefined,
+        3
+      );
 
       if (data.success) {
-        setGroup(data.data);
+        setGroup(data.data || null);
       } else {
         setError(data.error || "Ошибка загрузки");
       }
     } catch (err) {
-      setError("Ошибка сети");
-      console.error("Error fetching group:", err);
+      setError("Ошибка сети после 3 попыток");
+      console.error("Error fetching group after retries:", err);
     } finally {
       setIsLoading(false);
     }
@@ -131,33 +164,35 @@ export function useGroup(id: string) {
     schedules?: { dayOfWeek: number; time: string }[];
   }) => {
     try {
-      const response = await fetch(`/api/groups/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupData),
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: Group; error?: string }>(
+        `/api/groups/${id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(groupData),
+        },
+        3
+      );
 
       if (data.success) {
-        setGroup(data.data);
+        setGroup(data.data || null);
         return { success: true, data: data.data };
       } else {
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error updating group:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error updating group after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 
   const deleteGroup = async () => {
     try {
-      const response = await fetch(`/api/groups/${id}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
+        `/api/groups/${id}`,
+        { method: "DELETE" },
+        3
+      );
 
       if (data.success) {
         return { success: true };
@@ -165,8 +200,8 @@ export function useGroup(id: string) {
         return { success: false, error: data.error };
       }
     } catch (err) {
-      console.error("Error deleting group:", err);
-      return { success: false, error: "Ошибка сети" };
+      console.error("Error deleting group after retries:", err);
+      return { success: false, error: "Ошибка сети после 3 попыток" };
     }
   };
 

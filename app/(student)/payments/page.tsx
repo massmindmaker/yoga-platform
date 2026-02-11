@@ -5,9 +5,11 @@ import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, ArrowRight, CreditCard, TrendingUp, Calendar, CheckCircle2 } from "lucide-react";
+import { Wallet, ArrowRight, CreditCard, TrendingUp, Calendar, CheckCircle2, Receipt } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/src/hooks/use-user-context";
 
 interface PaymentRecord {
@@ -175,28 +177,22 @@ export default function StudentPaymentsPage() {
                 <Card key={i} className="border-0 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-gray-200 animate-pulse" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                      <Skeleton className="w-14 h-14 rounded-xl" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-5 w-1/3 rounded-xl" />
+                        <Skeleton className="h-4 w-1/2 rounded-xl" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
+              <p className="text-center text-gray-500 text-sm mt-4">Загрузка платежей...</p>
             </div>
           ) : error ? (
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6 text-center">
-                <p className="text-red-500 mb-4">{error}</p>
-                <Button 
-                  onClick={() => window.location.reload()}
-                   className="bg-gradient-to-r from-gray-900 to-black"
-                >
-                   Попробовать снова
-                </Button>
-              </CardContent>
-            </Card>
+            <ErrorFallbackInline 
+              error={error} 
+              onRetry={() => window.location.reload()} 
+            />
           ) : payments.length > 0 ? (
             <div className="space-y-3">
               {payments.map((payment, index) => (
@@ -238,9 +234,9 @@ export default function StudentPaymentsPage() {
             </div>
           ) : (
             <EmptyState
-              icon={CreditCard}
+              icon={Receipt}
               title="Нет платежей"
-              description="Вы ещё не совершали покупок"
+              description="История платежей появится после первой покупки"
             />
           )}
         </motion.div>

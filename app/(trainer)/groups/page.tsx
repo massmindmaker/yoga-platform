@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, ChevronRight, Plus, Loader2, Calendar, CreditCard } from "lucide-react";
+import { Clock, Users, ChevronRight, Plus, Calendar, CreditCard, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { useGroups } from "@/src/hooks/use-groups";
 
 const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
@@ -32,22 +35,33 @@ export default function GroupsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b sticky top-0 z-10">
+          <div className="p-4">
+            <Skeleton className="h-10 w-48 rounded-xl mb-2" />
+            <Skeleton className="h-5 w-24 rounded-xl" />
+          </div>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+              <Skeleton className="h-1 w-full rounded-xl mb-4" />
+              <Skeleton className="h-7 w-3/4 rounded-xl mb-3" />
+              <Skeleton className="h-5 w-1/2 rounded-xl mb-2" />
+              <Skeleton className="h-5 w-1/3 rounded-xl" />
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-gray-500 text-sm mt-4">Загрузка групп...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-red-500">{error}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          className="mt-4 bg-gray-800 hover:bg-black"
-        >
-          Повторить
-        </Button>
+      <div className="p-4">
+        <ErrorFallbackInline error={error} onRetry={() => window.location.reload()} />
       </div>
     );
   }
@@ -168,25 +182,13 @@ export default function GroupsPage() {
 
       {/* Empty state */}
       {groups.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="p-4"
-        >
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-gray-900" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">У вас пока нет групп</h3>
-            <p className="text-base text-gray-500 mb-6 leading-relaxed">Создайте первую группу для занятий</p>
-            <Link href="/groups/create">
-              <Button className="bg-gradient-to-r from-gray-800 to-gray-700 hover:bg-black">
-                <Plus className="w-4 h-4 mr-2" />
-                Создать первую группу
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
+        <EmptyState
+          icon={UsersRound}
+          title="У вас пока нет групп"
+          description="Создайте первую группу для занятий"
+          action={() => window.location.href = '/groups/create'}
+          actionLabel="Создать группу"
+        />
       )}
 
     </div>
