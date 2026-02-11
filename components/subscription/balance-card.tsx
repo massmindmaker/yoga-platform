@@ -123,16 +123,6 @@ export function BalanceCard({
       )}
 
       <div className="relative z-10">
-        {/* Приветствие */}
-        <motion.div 
-          className="flex items-center gap-2 mb-3"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <span className="text-lg">Привет, {userName}! 👋</span>
-        </motion.div>
-
         {/* Баланс */}
         <div className="flex items-center justify-between mb-4">
           <div>
