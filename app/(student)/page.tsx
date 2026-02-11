@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Clock, MapPin, ChevronRight, Sparkles, Calendar, AlertCircle, CalendarX } from "lucide-react";
+import { Clock, MapPin, ChevronRight, Calendar, AlertCircle, CalendarX } from "lucide-react";
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,21 +119,6 @@ export default function MainPage() {
         animate="visible"
         className="p-4 space-y-6"
       >
-        {/* Welcome Banner */}
-        <motion.div 
-          variants={itemVariants}
-          className="bg-gradient-to-r from-gray-800 via-gray-900 to-black rounded-2xl p-6 text-white shadow-xl shadow-black/10"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="w-5 h-5 text-yellow-300" />
-            <span className="text-white/80 text-sm font-medium">Добро пожаловать</span>
-          </div>
-          <h1 className="text-3xl font-bold mb-2 leading-tight">
-            {isUserLoading ? "Загрузка..." : user?.firstName || "Студент"} 👋
-          </h1>
-          <p className="text-white/80 text-base leading-relaxed">Готовы к практике сегодня?</p>
-        </motion.div>
-
         {/* Balance Card */}
         <motion.div variants={itemVariants}>
           <BalanceCard
@@ -141,6 +126,7 @@ export default function MainPage() {
             totalClasses={0}
             usedClasses={0}
             userName={user?.firstName}
+            photoUrl={user?.photoUrl}
           />
         </motion.div>
 

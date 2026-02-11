@@ -32,6 +32,8 @@ import {
   Calendar,
   Vote,
   RefreshCw,
+  Send,
+  MoreVertical,
 } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -57,6 +59,30 @@ export default function GroupDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [expandedVoting, setExpandedVoting] = useState<string | null>(null);
+  const [publishingVotingId, setPublishingVotingId] = useState<string | null>(null);
+
+  const handlePublishToChat = async (votingId: string) => {
+    setPublishingVotingId(votingId);
+    try {
+      const res = await fetch(`/api/votings/${votingId}/publish`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Отправлено в чат", {
+          description: "Голосование опубликовано в Telegram",
+        });
+      } else {
+        toast.error(data.error || "Не удалось отправить в чат");
+      }
+    } catch {
+      toast.error("Ошибка отправки");
+    } finally {
+      setPublishingVotingId(null);
+    }
+  };
+
+  const handleEditVoting = (votingId: string) => {
+    router.push(`/groups/${groupId}/voting/${votingId}/edit`);
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -267,6 +293,33 @@ export default function GroupDetailPage() {
                             <h4 className="font-bold text-gray-900 text-base leading-snug">{voting.title}</h4>
                             {isExpanded && isActive && (
                               <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditVoting(voting.id);
+                                  }}
+                                >
+                                  <Edit className="w-3 h-3 text-blue-500" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePublishToChat(voting.id);
+                                  }}
+                                  disabled={publishingVotingId === voting.id}
+                                >
+                                  {publishingVotingId === voting.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Send className="w-3 h-3 text-green-500" />
+                                  )}
+                                </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 

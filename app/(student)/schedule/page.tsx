@@ -13,9 +13,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarX, Users, CheckCircle, XCircle } from "lucide-react";
+import { CalendarX, Users, CheckCircle, XCircle, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function SchedulePage() {
   const { classes, selectedDate, setSelectedDate, isLoading, refetch } = useSchedule();
@@ -82,7 +83,7 @@ interface ScheduleClassCardProps {
   classData: ScheduleClass;
   userId?: string;
   bookings: Array<{ id: string; classId: string; status: string }>;
-  onBook: (classId: string, userId: string) => Promise<void>;
+  onBook: (classId: string, userId: string) => Promise<{ success: boolean; error?: string; code?: string }>;
   onCancel: (bookingId: string) => Promise<void>;
   onUpdate: () => void;
 }
@@ -96,6 +97,8 @@ function ScheduleClassCard({
   onUpdate 
 }: ScheduleClassCardProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const booked = classData._count?.bookings || 0;
   const spotsLeft = classData.maxStudents - booked;
   
@@ -109,9 +112,17 @@ function ScheduleClassCard({
       return;
     }
     setIsLoading(true);
+    setBookingError(null);
+    setShowPaymentOptions(false);
+    
     try {
-      await onBook(classData.id, userId);
-      onUpdate();
+      const result = await onBook(classData.id, userId);
+      if (result.success) {
+        onUpdate();
+      } else if (result.code === 'NO_BALANCE') {
+        setBookingError('Недостаточно занятий на балансе');
+        setShowPaymentOptions(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -170,8 +181,31 @@ function ScheduleClassCard({
         </div>
         
         {/* Кнопки записи */}
-        <div className="mt-4 pt-3 border-t border-gray-100">
-          {isBooked ? (
+        <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
+          {showPaymentOptions ? (
+            <>
+              <div className="text-sm text-orange-600 mb-2">{bookingError}</div>
+              <div className="flex gap-2">
+                <Link href="/purchase" className="flex-1">
+                  <Button
+                    size="sm"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Купить занятия
+                  </Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPaymentOptions(false)}
+                  className="flex-1"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </>
+          ) : isBooked ? (
             <Button
               variant="outline"
               size="sm"

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Ticket, Calendar, TrendingUp, AlertCircle } from "lucide-react";
+import { Ticket, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -11,6 +11,7 @@ interface BalanceCardProps {
   totalClasses?: number;
   usedClasses?: number;
   userName?: string;
+  photoUrl?: string | null;
 }
 
 // Анимированный счётчик
@@ -48,7 +49,8 @@ export function BalanceCard({
   expiryDate, 
   totalClasses = 0, 
   usedClasses = 0,
-  userName = "Анна"
+  userName = "Анна",
+  photoUrl
 }: BalanceCardProps) {
   const progress = totalClasses > 0 ? (usedClasses / totalClasses) * 100 : 0;
   const isLowBalance = balance <= 2;
@@ -149,21 +151,23 @@ export function BalanceCard({
             </motion.div>
           </div>
 
-          {/* Иконка статуса */}
+          {/* Аватар пользователя */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-              isLowBalance 
-                ? "bg-orange-400/30" 
-                : "bg-white/20"
-            }`}
+            className="w-14 h-14 rounded-2xl overflow-hidden bg-white/20 flex items-center justify-center"
           >
-            {isLowBalance ? (
-              <AlertCircle className="w-7 h-7 text-orange-200" />
+            {photoUrl ? (
+              <img 
+                src={photoUrl} 
+                alt={userName} 
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <TrendingUp className="w-7 h-7 text-white" />
+              <span className="text-xl font-bold text-white">
+                {userName?.[0]?.toUpperCase() || '?'}
+              </span>
             )}
           </motion.div>
         </div>

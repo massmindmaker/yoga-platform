@@ -69,32 +69,37 @@ export function useBooking(userId?: string) {
     fetchBookings();
   }, [fetchBookings]);
 
-  const bookClass = useCallback(async (classId: string, bookUserId: string): Promise<void> => {
+  const bookClass = useCallback(async (classId: string, bookUserId: string): Promise<{ success: boolean; error?: string; code?: string }> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await fetchWithRetry<{ success: boolean; error?: string }>(
-        '/api/bookings',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ classId, userId: bookUserId }),
-        },
-        3
-      );
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId, userId: bookUserId }),
+      });
+      
+      const data = await response.json();
 
       if (data.success) {
         toast.success('Запись подтверждена!', {
           description: 'Вы успешно записались на занятие',
         });
         await fetchBookings();
+        return { success: true };
       } else {
+        // Не показываем toast здесь, позволим компоненту обработать ошибку
+        if (response.status === 402) {
+          return { success: false, error: data.error, code: 'NO_BALANCE' };
+        }
         toast.error('Ошибка записи', { description: data.error });
+        return { success: false, error: data.error };
       }
     } catch (err) {
       toast.error('Ошибка сети после 3 попыток');
       console.error("Error booking class after retries:", err);
+      return { success: false, error: 'Ошибка сети' };
     } finally {
       setIsLoading(false);
     }
