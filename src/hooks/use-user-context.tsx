@@ -76,7 +76,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         3
       );
 
+      console.log("[AUTH] Telegram auth response:", data);
+
       if (data.success && data.data) {
+        console.log("[AUTH] User from API:", data.data.user);
+        console.log("[AUTH] User photoUrl:", data.data.user.photoUrl);
         setUser(data.data.user);
       } else {
         setError(data.error || "Authentication failed");

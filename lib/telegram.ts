@@ -94,12 +94,24 @@ function parseTelegramUser(params: URLSearchParams): TelegramUser | null {
 
 // Получить или создать пользователя
 export async function getOrCreateUser(telegramUser: TelegramUser) {
-  const user = await prisma.user.findFirst({
+  const existingUser = await prisma.user.findFirst({
     where: { telegramId: telegramUser.id.toString() },
   });
 
-  if (user) return user;
+  // Если пользователь существует - обновляем его данные (включая photoUrl)
+  if (existingUser) {
+    return prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        firstName: telegramUser.first_name,
+        lastName: telegramUser.last_name || null,
+        username: telegramUser.username || null,
+        photoUrl: telegramUser.photo_url || existingUser.photoUrl,
+      },
+    });
+  }
 
+  // Создаём нового пользователя
   return prisma.user.create({
     data: {
       telegramId: telegramUser.id.toString(),

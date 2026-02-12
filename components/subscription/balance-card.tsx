@@ -163,6 +163,10 @@ export function BalanceCard({
                 src={photoUrl} 
                 alt={userName} 
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Если фото из Telegram не загрузилось - показываем пингвина
+                  (e.target as HTMLImageElement).src = '/images/penguin-avatar.png';
+                }}
               />
             ) : (
               <img 
