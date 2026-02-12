@@ -46,22 +46,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       const initData = telegram.initData || "";
+      
+      console.log("[AUTH] initData present:", !!initData);
+      console.log("[AUTH] initData length:", initData.length);
+      console.log("[AUTH] telegram object:", telegram);
 
       if (!initData) {
-        console.log("No Telegram data, using dev mode with real student");
-        setUser({
-          id: "0ed1ec7c-fd36-4b32-a437-a42eace04409",
-          telegramId: "student_8",
-          firstName: "Ирина",
-          lastName: "Михайлова",
-          photoUrl: "https://api.telegram.org/file/bot8342725080:AAH3ldtlOmZDv3bcZLRpNtcZxhgzfTP1olE/photos/file_1.jpg",
-          role: "STUDENT",
-          balance: 46,
-          phone: null,
-          email: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+        console.error("[AUTH] No Telegram initData - app must be opened via Telegram WebApp");
+        setError("Откройте приложение через Telegram бота @Yom23_bot");
         setIsLoading(false);
         return;
       }
@@ -87,19 +79,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error("Auth error after retries:", err);
-      setError("Failed to authenticate after 3 retries");
-      setUser({
-        id: "0ed1ec7c-fd36-4b32-a437-a42eace04409",
-        telegramId: "student_8",
-        firstName: "Ирина",
-        lastName: "Михайлова",
-        role: "STUDENT",
-        balance: 46,
-        phone: null,
-        email: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      setError("Ошибка авторизации. Попробуйте перезапустить приложение через Telegram.");
     } finally {
       setIsLoading(false);
     }

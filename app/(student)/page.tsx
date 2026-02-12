@@ -56,10 +56,33 @@ interface BookingWithClass {
 }
 
 export default function MainPage() {
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading, error: authError } = useUser();
   const [upcomingBookings, setUpcomingBookings] = useState<BookingWithClass[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Показываем ошибку авторизации
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Ошибка авторизации</h2>
+            <p className="text-gray-600 mb-4">{authError}</p>
+            <Button 
+              onClick={() => window.location.reload()}
+              className="w-full bg-gray-900 hover:bg-black"
+            >
+              Попробовать снова
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!user?.id) {
