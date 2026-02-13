@@ -1,5 +1,10 @@
-import { AuthenticatedRouter } from "@/components/authenticated-router";
+import StudentMainPage from "@/app/(student)/page";
+import StudentLayout from "@/app/(student)/layout";
 
 export default function Home() {
-  return <AuthenticatedRouter />;
+  return (
+    <StudentLayout>
+      <StudentMainPage />
+    </StudentLayout>
+  );
 }
