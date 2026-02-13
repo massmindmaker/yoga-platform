@@ -3,7 +3,6 @@ import "./globals.css";
 import { TelegramProvider } from "@/components/providers/telegram-provider";
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen";
 import { Toaster } from "@/components/ui/sonner";
-import { ModeProvider } from "@/src/hooks/use-mode";
 
 export const metadata: Metadata = {
   title: "Yoga Platform",
@@ -30,13 +29,11 @@ export default function RootLayout({
     <html lang="ru">
       <body className="antialiased font-sans">
         <TelegramProvider>
-          <ModeProvider>
-            <OnboardingScreen>
-              <div className="min-h-screen bg-background">
-                {children}
-              </div>
-            </OnboardingScreen>
-          </ModeProvider>
+          <OnboardingScreen>
+            <div className="min-h-screen bg-background">
+              {children}
+            </div>
+          </OnboardingScreen>
           <Toaster 
             position="top-center"
             toastOptions={{

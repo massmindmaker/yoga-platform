@@ -1,5 +1,5 @@
-import { ModeRouter } from "@/components/mode-router";
+import { AuthenticatedRouter } from "@/components/authenticated-router";
 
 export default function Home() {
-  return <ModeRouter />;
+  return <AuthenticatedRouter />;
 }
