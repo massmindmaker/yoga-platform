@@ -6,8 +6,6 @@ import { Clock, MapPin, ChevronRight, Calendar, AlertCircle, CalendarX } from "l
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/page-header";
-import { BalanceCard } from "@/components/subscription/balance-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useUser } from "@/src/hooks/use-user-context";
 import Link from "next/link";
@@ -134,23 +132,36 @@ export default function MainPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="Yoga Studio" />
-
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="p-4 space-y-6"
       >
-        {/* Balance Card */}
-        <motion.div variants={itemVariants}>
-          <BalanceCard
-            balance={user?.balance || 0}
-            totalClasses={0}
-            usedClasses={0}
-            userName={user?.firstName}
-            photoUrl={user?.photoUrl}
-          />
+        {/* User greeting with avatar */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3 py-2">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+            {user?.photoUrl ? (
+              <img 
+                src={user.photoUrl} 
+                alt={user.firstName} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/penguin-avatar.png';
+                }}
+              />
+            ) : (
+              <img 
+                src="/images/penguin-avatar.png" 
+                alt="Default avatar" 
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Привет</p>
+            <h2 className="text-lg font-semibold text-gray-900">{user?.firstName || 'Гость'}</h2>
+          </div>
         </motion.div>
 
         {/* Upcoming Classes */}
