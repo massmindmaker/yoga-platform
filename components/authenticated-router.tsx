@@ -46,21 +46,11 @@ function RoleRouter() {
     );
   }
 
-  // Not in Telegram - show demo mode with limited functionality
+  // Not authenticated - still show app (works in browser and Telegram)
   if (!user) {
     return (
       <StudentLayout>
-        <div className="p-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-            <p className="text-amber-800 text-sm text-center">
-              Демо-режим. Для полного функционала откройте через{" "}
-              <a href="https://t.me/Yom23_bot" className="underline font-medium">
-                Telegram
-              </a>
-            </p>
-          </div>
-          <StudentMainPage />
-        </div>
+        <StudentMainPage />
       </StudentLayout>
     );
   }
