@@ -79,16 +79,16 @@ export function middleware(request: NextRequest) {
     response.headers.set(key, value);
   }
 
+  // Полностью исключаем webhook endpoints из всех проверок
+  if (
+    request.nextUrl.pathname === "/api/payments/webhook" ||
+    request.nextUrl.pathname === "/api/telegram/webhook"
+  ) {
+    return response;
+  }
+
   // Rate limiting для API routes
   if (request.nextUrl.pathname.startsWith("/api/")) {
-    // Исключаем webhook endpoints от rate limiting
-    if (
-      request.nextUrl.pathname === "/api/payments/webhook" ||
-      request.nextUrl.pathname === "/api/telegram/webhook"
-    ) {
-      return response;
-    }
-
     const identifier = getClientIP(request);
     const limit = rateLimit(identifier);
 
