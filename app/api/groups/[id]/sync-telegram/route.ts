@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { extractChatId, resolveChatId } from "@/lib/telegram-chat";
 
 function getBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN;
@@ -40,8 +41,30 @@ export async function POST(
       );
     }
 
+    // Resolve chat ID from various formats (link, username, etc.)
+    const rawChatId = group.telegramChat;
+    const chatIdExtracted = extractChatId(rawChatId);
+    
+    if (!chatIdExtracted) {
+      return NextResponse.json(
+        { success: false, error: "Неверный формат ссылки на чат" },
+        { status: 400 }
+      );
+    }
+    
+    // Try to resolve to actual chat ID
+    const resolveResult = await resolveChatId(BOT_TOKEN, chatIdExtracted);
+    
+    if (!resolveResult.success) {
+      return NextResponse.json(
+        { success: false, error: resolveResult.error || "Не удалось найти чат. Убедитесь, что бот @Yom23_bot добавлен в группу и является администратором" },
+        { status: 400 }
+      );
+    }
+    
+    const chatId = resolveResult.chatId!;
+    
     // Получаем список участников из Telegram чата
-    const chatId = group.telegramChat;
     const response = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/getChatMemberCount`,
       {

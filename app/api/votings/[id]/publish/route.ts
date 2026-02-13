@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendVotingToChat } from '@/lib/telegram';
+import { resolveChatId } from '@/lib/telegram-chat';
+
+function getBotToken() {
+  return process.env.TELEGRAM_BOT_TOKEN;
+}
 
 // POST /api/votings/[id]/publish - publish/republish voting to Telegram chat
 export async function POST(
@@ -43,7 +48,25 @@ export async function POST(
       );
     }
 
-    const telegramResult = await sendVotingToChat(voting.group.telegramChat, {
+    // Resolve chat ID from various formats
+    const BOT_TOKEN = getBotToken();
+    if (!BOT_TOKEN) {
+      return NextResponse.json(
+        { success: false, error: 'TELEGRAM_BOT_TOKEN not configured' },
+        { status: 500 }
+      );
+    }
+
+    const resolveResult = await resolveChatId(BOT_TOKEN, voting.group.telegramChat);
+    
+    if (!resolveResult.success) {
+      return NextResponse.json(
+        { success: false, error: resolveResult.error || 'Не удалось найти чат. Убедитесь, что бот добавлен в группу' },
+        { status: 400 }
+      );
+    }
+
+    const telegramResult = await sendVotingToChat(resolveResult.chatId!, {
       id: voting.id,
       title: voting.title,
       minParticipants: voting.minParticipants,
