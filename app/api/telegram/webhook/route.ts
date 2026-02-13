@@ -690,10 +690,9 @@ async function handleSuccessfulPayment(message: any) {
 // POST /api/telegram/webhook - webhook для сообщений от бота
 export async function POST(req: NextRequest) {
   try {
-    // Верификация webhook secret (если настроен)
+    // Верификация webhook secret (только если header присутствует)
     const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
     const headerSecret = req.headers.get("x-telegram-bot-api-secret-token");
-    console.log("[WEBHOOK] Secret check:", { hasSecret: !!webhookSecret, hasHeader: !!headerSecret, match: headerSecret === webhookSecret });
     if (webhookSecret && headerSecret && headerSecret !== webhookSecret) {
       console.error("[WEBHOOK] Invalid secret token");
       return NextResponse.json({ ok: false }, { status: 403 });
