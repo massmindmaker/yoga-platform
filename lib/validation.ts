@@ -40,6 +40,7 @@ export const createGroupSchema = z.object({
   groupType: z.enum(['REGULAR', 'INTENSIVE']).optional().default('REGULAR'),
   pricingType: z.enum(['FIXED', 'DYNAMIC']).optional().default('FIXED'),
   fixedPrice: z.number().int().positive().optional().default(1),
+  intensivePrice: z.number().int().positive().optional(),
   maxStudents: z.number().int().positive().optional().default(15),
   telegramChat: z.string().optional(),
   startsAt: z.string().optional(),

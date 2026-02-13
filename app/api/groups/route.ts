@@ -41,8 +41,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log("[GROUPS_POST] Received body:", JSON.stringify(body, null, 2));
 
     const validationResult = createGroupSchema.safeParse(body);
+    console.log("[GROUPS_POST] Validation result:", validationResult.success, validationResult.error?.issues);
     if (!validationResult.success) {
       return NextResponse.json(
         {
