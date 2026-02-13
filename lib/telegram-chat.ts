@@ -104,22 +104,36 @@ export async function resolveChatId(
       };
     }
     
-    // If failed and it's a private link, provide helpful error
-    if (isPrivateInviteLink(input)) {
+    // Handle specific Telegram errors
+    if (data.description?.includes('chat not found')) {
       return {
         success: false,
-        error: 'Для приватных чатов добавьте бота в группу вручную, затем обновите страницу',
+        error: 'Чат не найден. Убедитесь, что бот @Yom23_bot добавлен в группу и является администратором. Затем обновите страницу.',
+      };
+    }
+    
+    if (data.description?.includes('bot is not a member')) {
+      return {
+        success: false,
+        error: 'Бот не является участником чата. Добавьте бота @Yom23_bot в группу, сделайте администратором и обновите страницу.',
+      };
+    }
+    
+    if (data.description?.includes('not enough rights')) {
+      return {
+        success: false,
+        error: 'У бота недостаточно прав. Сделайте бота администратором группы и обновите страницу.',
       };
     }
     
     return {
       success: false,
-      error: data.description || 'Failed to resolve chat',
+      error: data.description || 'Не удалось получить доступ к чату',
     };
   } catch (error) {
     return {
       success: false,
-      error: 'Network error while resolving chat',
+      error: 'Ошибка сети при подключении к чату',
     };
   }
 }
