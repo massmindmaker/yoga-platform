@@ -140,20 +140,21 @@ export default function MainPage() {
       >
         {/* User greeting with avatar */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 py-2">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-[#CCFBF1] flex items-center justify-center border-2 border-[#3BCEAC]">
             {user?.photoUrl ? (
               <img 
                 src={user.photoUrl} 
-                alt={user.firstName} 
+                alt={user.firstName || 'User'} 
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/images/penguin-avatar.png';
+                  console.log('[Avatar] Failed to load photoUrl, using penguin');
+                  (e.target as HTMLImageElement).src = '/images/penguin-avatar.png?v=2';
                 }}
               />
             ) : (
               <img 
-                src="/images/penguin-avatar.png" 
-                alt="Default avatar" 
+                src="/images/penguin-avatar.png?v=2" 
+                alt="Penguin avatar" 
                 className="w-full h-full object-cover"
               />
             )}
