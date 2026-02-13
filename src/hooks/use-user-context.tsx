@@ -45,16 +45,32 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      const initData = telegram.initData || "";
+      // Wait for Telegram to be ready
+      if (!telegram.isReady) {
+        console.log("[AUTH] Telegram not ready yet, waiting...");
+        return;
+      }
+
+      const initData = telegram.initData;
       
       console.log("[AUTH] initData present:", !!initData);
-      console.log("[AUTH] initData length:", initData.length);
-      console.log("[AUTH] telegram object:", telegram);
+      console.log("[AUTH] initData length:", initData?.length);
+      console.log("[AUTH] isInTelegram:", telegram.isInTelegram);
+
+      // If not in Telegram, show demo mode
+      if (!telegram.isInTelegram) {
+        console.log("[AUTH] Not in Telegram, using demo mode");
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
 
       if (!initData) {
-        console.error("[AUTH] No Telegram initData - app must be opened via Telegram WebApp");
-        setError("Откройте приложение через Telegram бота @Yom23_bot");
-        setIsLoading(false);
+        console.error("[AUTH] No Telegram initData - retrying...");
+        // Don't set error immediately, retry after delay
+        setTimeout(() => {
+          authenticate();
+        }, 500);
         return;
       }
 
@@ -86,8 +102,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [telegram.initData]);
 
   useEffect(() => {
-    authenticate();
-  }, [authenticate]);
+    if (telegram.isReady) {
+      authenticate();
+    }
+  }, [telegram.isReady, authenticate]);
 
   return (
     <UserContext.Provider

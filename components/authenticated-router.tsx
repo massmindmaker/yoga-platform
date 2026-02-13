@@ -46,21 +46,22 @@ function RoleRouter() {
     );
   }
 
+  // Not in Telegram - show demo mode with limited functionality
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-6 shadow-lg max-w-sm w-full text-center">
-          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">⚠️</span>
+      <StudentLayout>
+        <div className="p-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <p className="text-amber-800 text-sm text-center">
+              Демо-режим. Для полного функционала откройте через{" "}
+              <a href="https://t.me/Yom23_bot" className="underline font-medium">
+                Telegram
+              </a>
+            </p>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">
-            Пользователь не найден
-          </h1>
-          <p className="text-gray-600">
-            Откройте приложение через Telegram бота @Yom23_bot
-          </p>
+          <StudentMainPage />
         </div>
-      </div>
+      </StudentLayout>
     );
   }
 

@@ -78,6 +78,7 @@ interface TelegramWebApp {
 interface TelegramContextType {
   webApp: TelegramWebApp | null;
   user: TelegramUser | null;
+  initData: string;
   isReady: boolean;
   isInTelegram: boolean;
 }
@@ -85,6 +86,7 @@ interface TelegramContextType {
 const TelegramContext = createContext<TelegramContextType>({
   webApp: null,
   user: null,
+  initData: "",
   isReady: false,
   isInTelegram: false,
 });
@@ -92,6 +94,7 @@ const TelegramContext = createContext<TelegramContextType>({
 export function TelegramProvider({ children }: { children: ReactNode }) {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [user, setUser] = useState<TelegramUser | null>(null);
+  const [initData, setInitData] = useState<string>("");
   const [isReady, setIsReady] = useState(false);
   const [isInTelegram, setIsInTelegram] = useState(false);
 
@@ -102,6 +105,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       if (tg) {
         setWebApp(tg);
         setUser(tg.initDataUnsafe?.user || null);
+        setInitData(tg.initData || "");
         setIsInTelegram(true);
         
         // Set header and background colors to match app
@@ -119,7 +123,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <TelegramContext.Provider value={{ webApp, user, isReady, isInTelegram }}>
+    <TelegramContext.Provider value={{ webApp, user, initData, isReady, isInTelegram }}>
       {children}
     </TelegramContext.Provider>
   );
