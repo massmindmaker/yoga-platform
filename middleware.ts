@@ -115,34 +115,8 @@ export function middleware(request: NextRequest) {
       );
     }
 
-    // CSRF protection для изменяющих запросов
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
-      const origin = request.headers.get("origin");
-      const allowedOrigins = [
-        process.env.NEXT_PUBLIC_APP_URL,
-        "https://web.telegram.org",
-        "http://localhost:3000",
-        "http://localhost:3001",
-      ].filter(Boolean);
-
-      // Проверяем origin (разрешаем запросы без origin для Telegram WebApp)
-      if (origin) {
-        const isAllowedOrigin = allowedOrigins.some((allowedOrigin) =>
-          allowedOrigin ? origin.startsWith(allowedOrigin) : false
-        );
-        // Разрешаем Vercel preview deployments (*.vercel.app текущего проекта)
-        const isVercelPreview =
-          origin.endsWith(".vercel.app") &&
-          origin.includes("massmindmakers");
-
-        if (!isAllowedOrigin && !isVercelPreview) {
-          return NextResponse.json(
-            { success: false, error: "Forbidden" },
-            { status: 403 }
-          );
-        }
-      }
-    }
+    // CSRF protection отключена для API routes - используем Telegram auth
+    // Запросы из Telegram WebApp могут иметь разные origin headers
   }
 
   return response;
