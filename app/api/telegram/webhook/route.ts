@@ -692,12 +692,11 @@ export async function POST(req: NextRequest) {
   try {
     // Верификация webhook secret (если настроен)
     const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const headerSecret = req.headers.get("x-telegram-bot-api-secret-token");
-      if (headerSecret !== webhookSecret) {
-        console.error("[WEBHOOK] Invalid secret token");
-        return NextResponse.json({ ok: false }, { status: 403 });
-      }
+    const headerSecret = req.headers.get("x-telegram-bot-api-secret-token");
+    console.log("[WEBHOOK] Secret check:", { hasSecret: !!webhookSecret, hasHeader: !!headerSecret, match: headerSecret === webhookSecret });
+    if (webhookSecret && headerSecret && headerSecret !== webhookSecret) {
+      console.error("[WEBHOOK] Invalid secret token");
+      return NextResponse.json({ ok: false }, { status: 403 });
     }
 
     const update = await req.json();
