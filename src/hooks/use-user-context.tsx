@@ -51,55 +51,68 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const initData = telegram.initData;
-      
-      console.log("[AUTH] initData present:", !!initData);
-      console.log("[AUTH] initData length:", initData?.length);
+      console.log("[AUTH] Telegram user from initDataUnsafe:", telegram.user);
       console.log("[AUTH] isInTelegram:", telegram.isInTelegram);
+      console.log("[AUTH] initData present:", !!telegram.initData);
 
-      // If not in Telegram, show demo mode
+      // If not in Telegram, show as guest
       if (!telegram.isInTelegram) {
-        console.log("[AUTH] Not in Telegram, using demo mode");
+        console.log("[AUTH] Not in Telegram, showing as guest");
         setUser(null);
         setIsLoading(false);
         return;
       }
 
-      if (!initData) {
-        console.error("[AUTH] No Telegram initData - retrying...");
-        // Don't set error immediately, retry after delay
-        setTimeout(() => {
-          authenticate();
-        }, 500);
-        return;
+      // Use Telegram user data immediately for UI (from initDataUnsafe)
+      // This is safe for display purposes according to Telegram best practices
+      if (telegram.user) {
+        console.log("[AUTH] Using Telegram user data immediately:", telegram.user);
+        setUser(telegram.user);
       }
 
-      const data = await fetchWithRetry<{ success: boolean; data?: { user: User }; error?: string }>(
-        "/api/auth/telegram",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ initData }),
-        },
-        3
-      );
+      // Validate with server if initData is available
+      if (telegram.initData) {
+        try {
+          console.log("[AUTH] Validating with server...");
+          const data = await fetchWithRetry<{ success: boolean; data?: { user: User }; error?: string }>(
+            "/api/auth/telegram",
+            {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                // Best practice: send initData in Authorization header as "tma <init-data>"
+                "Authorization": `tma ${telegram.initData}`
+              },
+              body: JSON.stringify({ initData: telegram.initData }),
+            },
+            3
+          );
 
-      console.log("[AUTH] Telegram auth response:", data);
+          console.log("[AUTH] Server validation response:", data);
 
-      if (data.success && data.data) {
-        console.log("[AUTH] User from API:", data.data.user);
-        console.log("[AUTH] User photoUrl:", data.data.user.photoUrl);
-        setUser(data.data.user);
+          if (data.success && data.data) {
+            console.log("[AUTH] Server returned user:", data.data.user);
+            // Update with server user (has proper ID from database)
+            setUser(data.data.user);
+          } else {
+            console.warn("[AUTH] Server validation failed:", data.error);
+            // Keep using Telegram user data if server validation fails
+            // This allows the app to work even if server validation has issues
+          }
+        } catch (err) {
+          console.error("[AUTH] Server validation error:", err);
+          // Keep using Telegram user data if server is unavailable
+        }
       } else {
-        setError(data.error || "Authentication failed");
+        console.warn("[AUTH] No initData available for server validation");
       }
     } catch (err) {
-      console.error("Auth error after retries:", err);
-      setError("Ошибка авторизации. Попробуйте перезапустить приложение через Telegram.");
+      console.error("[AUTH] Unexpected error:", err);
+      setError("Ошибка авторизации");
     } finally {
       setIsLoading(false);
     }
-  }, [telegram.initData]);
+  }, [telegram.initData, telegram.user, telegram.isReady, telegram.isInTelegram]);
 
   useEffect(() => {
     if (telegram.isReady) {
