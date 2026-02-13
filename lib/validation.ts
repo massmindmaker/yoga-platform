@@ -42,8 +42,8 @@ export const createGroupSchema = z.object({
   fixedPrice: z.number().int().positive().optional().default(1),
   maxStudents: z.number().int().positive().optional().default(15),
   telegramChat: z.string().optional(),
-  startsAt: z.string().datetime().optional(),
-  endsAt: z.string().datetime().optional(),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
   schedules: z.array(scheduleItemSchema).optional(),
 });
 
@@ -55,8 +55,8 @@ export const updateGroupSchema = z.object({
   fixedPrice: z.number().int().positive().optional(),
   maxStudents: z.number().int().positive().optional(),
   telegramChat: z.string().optional(),
-  startsAt: z.string().datetime().optional().nullable(),
-  endsAt: z.string().datetime().optional().nullable(),
+  startsAt: z.string().optional().nullable(),
+  endsAt: z.string().optional().nullable(),
   schedules: z.array(scheduleItemSchema).optional(),
 });
 
