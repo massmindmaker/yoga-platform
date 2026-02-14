@@ -7,12 +7,49 @@ function getAppUrl(path: string = ""): string {
   return ((process.env.NEXT_PUBLIC_APP_URL || "").trim() + path);
 }
 
+// Автоматическое сохранение числового chatId группы при любом сообщении
+// Это решает проблему приватных инвайт-ссылок (https://t.me/+xxx), которые нельзя резолвить через API
+async function autoSaveChatId(chatId: number) {
+  try {
+    const chatIdStr = chatId.toString();
+    
+    // Проверяем — уже сохранён?
+    const alreadySaved = await prisma.group.findFirst({
+      where: { telegramChatId: chatIdStr },
+    });
+    if (alreadySaved) return; // Уже привязан
+    
+    // Ищем группу, у которой нет telegramChatId, но есть telegramChat
+    // Берём первую такую группу (обычно у тренера одна группа привязана к чату)
+    const group = await prisma.group.findFirst({
+      where: {
+        telegramChatId: null,
+        telegramChat: { not: null },
+      },
+    });
+    
+    if (!group) return;
+    
+    // Сохраняем chatId
+    await prisma.group.update({
+      where: { id: group.id },
+      data: { telegramChatId: chatIdStr },
+    });
+    console.log(`[WEBHOOK] Auto-saved telegramChatId ${chatIdStr} for group "${group.name}" (${group.id})`);
+  } catch (error) {
+    console.error("[WEBHOOK] Error auto-saving chatId:", error);
+  }
+}
+
 // Обработка команды /start
 async function handleStart(chatId: number, user: any, isGroup: boolean) {
   try {
     console.log("[WEBHOOK] handleStart called:", { chatId, userId: user?.id, isGroup });
     
     if (isGroup) {
+      // Сохраняем числовой chatId
+      await autoSaveChatId(chatId);
+      
       await sendTelegramMessage(
         chatId,
         `👋 Привет, группа!
@@ -471,6 +508,9 @@ async function answerCallback(callbackQueryId: string, text?: string) {
 
 // Бота добавили в группу
 async function handleBotAddedToGroup(chatId: number) {
+  // Сохраняем числовой chatId для будущих API-вызовов
+  await autoSaveChatId(chatId);
+  
   await sendTelegramMessage(
     chatId,
     `👋 Привет, группа!
@@ -792,6 +832,11 @@ export async function POST(req: NextRequest) {
       const from = update.message.from;
       const text = update.message.text || "";
       const isGroup = update.message.chat.type === "group" || update.message.chat.type === "supergroup";
+
+      // Автосохранение chatId при любом сообщении из группы
+      if (isGroup) {
+        autoSaveChatId(chatId).catch(err => console.error("[WEBHOOK] autoSaveChatId error:", err));
+      }
 
       // Команда /start
       if (text === "/start") {

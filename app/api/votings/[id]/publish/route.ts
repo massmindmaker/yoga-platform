@@ -68,7 +68,7 @@ export async function POST(
     
     if (!resolveResult.success) {
       return NextResponse.json(
-        { success: false, error: resolveResult.error || 'Не удалось найти чат. Убедитесь, что бот добавлен в группу' },
+        { success: false, error: resolveResult.error || 'Не удалось найти чат. Для приватных групп: отправьте /start в группу с ботом, затем повторите отправку.' },
         { status: 400 }
       );
     }

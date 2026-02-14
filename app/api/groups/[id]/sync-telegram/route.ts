@@ -34,46 +34,57 @@ export async function POST(
       );
     }
 
-    if (!group.telegramChat) {
+    if (!group.telegramChat && !group.telegramChatId) {
       return NextResponse.json(
         { success: false, error: "Telegram chat not linked to this group" },
         { status: 400 }
       );
     }
 
-    // Resolve chat ID from various formats (link, username, etc.)
-    const rawChatId = group.telegramChat;
-    console.log('[SYNC_TELEGRAM] Raw chat ID from DB:', rawChatId);
+    // Use saved numeric telegramChatId if available (solves private invite links)
+    let chatId: string;
     
-    const chatIdExtracted = extractChatId(rawChatId);
-    console.log('[SYNC_TELEGRAM] Extracted chat ID:', chatIdExtracted);
-    
-    if (!chatIdExtracted) {
-      return NextResponse.json(
-        { success: false, error: "Неверный формат ссылки на чат: " + rawChatId },
-        { status: 400 }
-      );
+    if (group.telegramChatId) {
+      console.log('[SYNC_TELEGRAM] Using saved telegramChatId:', group.telegramChatId);
+      chatId = group.telegramChatId;
+    } else {
+      // Resolve chat ID from various formats (link, username, etc.)
+      const rawChatId = group.telegramChat!;
+      console.log('[SYNC_TELEGRAM] Raw chat ID from DB:', rawChatId);
+      
+      const chatIdExtracted = extractChatId(rawChatId);
+      console.log('[SYNC_TELEGRAM] Extracted chat ID:', chatIdExtracted);
+      
+      if (!chatIdExtracted) {
+        return NextResponse.json(
+          { success: false, error: "Неверный формат ссылки на чат: " + rawChatId },
+          { status: 400 }
+        );
+      }
+      
+      // Try to resolve to actual chat ID
+      const resolveResult = await resolveChatId(BOT_TOKEN, chatIdExtracted);
+      console.log('[SYNC_TELEGRAM] Resolve result:', resolveResult);
+      
+      if (!resolveResult.success) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: resolveResult.error || "Не удалось найти чат. Для приватных групп: отправьте /start в группу с ботом, затем повторите синхронизацию." 
+          },
+          { status: 400 }
+        );
+      }
+      
+      chatId = resolveResult.chatId!;
+      
+      // Сохраняем числовой ID чата в группу для будущего использования
+      await prisma.group.update({
+        where: { id: groupId },
+        data: { telegramChatId: chatId }
+      });
+      console.log('[SYNC_TELEGRAM] Saved telegramChatId:', chatId);
     }
-    
-    // Try to resolve to actual chat ID
-    const resolveResult = await resolveChatId(BOT_TOKEN, chatIdExtracted);
-    console.log('[SYNC_TELEGRAM] Resolve result:', resolveResult);
-    
-    if (!resolveResult.success) {
-      return NextResponse.json(
-        { success: false, error: resolveResult.error || "Не удалось найти чат. Убедитесь, что бот @Yom23_bot добавлен в группу и является администратором" },
-        { status: 400 }
-      );
-    }
-    
-    const chatId = resolveResult.chatId!;
-    
-    // Сохраняем числовой ID чата в группу для будущего использования
-    await prisma.group.update({
-      where: { id: groupId },
-      data: { telegramChatId: chatId }
-    });
-    console.log('[SYNC_TELEGRAM] Saved telegramChatId:', chatId);
     
     // Получаем список участников из Telegram чата
     const response = await fetch(
