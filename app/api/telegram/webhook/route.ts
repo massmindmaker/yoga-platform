@@ -838,32 +838,36 @@ export async function POST(req: NextRequest) {
         autoSaveChatId(chatId).catch(err => console.error("[WEBHOOK] autoSaveChatId error:", err));
       }
 
+      // В группах Telegram добавляет @botname к командам: /start@Yom23_bot
+      // Извлекаем чистую команду
+      const command = text.split("@")[0].split(" ")[0].toLowerCase();
+
       // Команда /start
-      if (text === "/start") {
+      if (command === "/start") {
         await handleStart(chatId, from, isGroup);
       }
       // Команда /help
-      else if (text === "/help") {
+      else if (command === "/help") {
         await handleHelp(chatId, isGroup);
       }
       // Команда /balance
-      else if (text === "/balance") {
+      else if (command === "/balance") {
         await handleBalance(chatId, from);
       }
       // Команда /schedule
-      else if (text === "/schedule") {
+      else if (command === "/schedule") {
         await handleSchedule(chatId, isGroup);
       }
       // Команда /vote
-      else if (text === "/vote") {
+      else if (command === "/vote") {
         await handleVote(chatId, from);
       }
       // Команда для группы - показать расписание группы
-      else if (isGroup && text === "/groupschedule") {
+      else if (isGroup && command === "/groupschedule") {
         await handleGroupSchedule(chatId);
       }
       // Команда для группы - статистика
-      else if (isGroup && text === "/stats") {
+      else if (isGroup && command === "/stats") {
         await handleGroupStats(chatId);
       }
       // Если в группу добавили участников (включая бота)
