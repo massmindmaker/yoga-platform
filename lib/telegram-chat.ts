@@ -81,7 +81,10 @@ export async function resolveChatId(
   botToken: string,
   input: string
 ): Promise<{ success: boolean; chatId?: string; error?: string }> {
+  console.log('[RESOLVE_CHAT] Input:', input);
+  
   const chatId = formatChatIdForApi(input);
+  console.log('[RESOLVE_CHAT] Formatted chatId:', chatId);
   
   try {
     // Try to get chat info
@@ -95,6 +98,7 @@ export async function resolveChatId(
     );
     
     const data = await response.json();
+    console.log('[RESOLVE_CHAT] Telegram API response:', data);
     
     if (data.ok) {
       // Return the actual chat ID from response

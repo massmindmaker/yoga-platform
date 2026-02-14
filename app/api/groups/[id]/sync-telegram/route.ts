@@ -43,17 +43,21 @@ export async function POST(
 
     // Resolve chat ID from various formats (link, username, etc.)
     const rawChatId = group.telegramChat;
+    console.log('[SYNC_TELEGRAM] Raw chat ID from DB:', rawChatId);
+    
     const chatIdExtracted = extractChatId(rawChatId);
+    console.log('[SYNC_TELEGRAM] Extracted chat ID:', chatIdExtracted);
     
     if (!chatIdExtracted) {
       return NextResponse.json(
-        { success: false, error: "Неверный формат ссылки на чат" },
+        { success: false, error: "Неверный формат ссылки на чат: " + rawChatId },
         { status: 400 }
       );
     }
     
     // Try to resolve to actual chat ID
     const resolveResult = await resolveChatId(BOT_TOKEN, chatIdExtracted);
+    console.log('[SYNC_TELEGRAM] Resolve result:', resolveResult);
     
     if (!resolveResult.success) {
       return NextResponse.json(
@@ -63,6 +67,13 @@ export async function POST(
     }
     
     const chatId = resolveResult.chatId!;
+    
+    // Сохраняем числовой ID чата в группу для будущего использования
+    await prisma.group.update({
+      where: { id: groupId },
+      data: { telegramChatId: chatId }
+    });
+    console.log('[SYNC_TELEGRAM] Saved telegramChatId:', chatId);
     
     // Получаем список участников из Telegram чата
     const response = await fetch(
@@ -94,7 +105,9 @@ export async function POST(
       );
     }
 
-    // Получаем администраторов чата (они же ученики)
+    // Получаем администраторов чата
+    // Примечание: Telegram Bot API не позволяет получить список всех участников чата.
+    // Мы синхронизируем администраторов, а остальных участников отслеживаем через webhook (new_chat_members).
     const adminsResponse = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/getChatAdministrators`,
       {
@@ -208,11 +221,12 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Синхронизация завершена. Добавлено: ${addedCount}, уже в группе: ${existingCount}`,
+      message: `Синхронизация администраторов завершена. Добавлено: ${addedCount}, уже в группе: ${existingCount}. Остальных участников чат добавит автоматически при подключении.`,
       data: {
         added: addedCount,
         existing: existingCount,
         totalMembers: members.length,
+        note: "Синхронизированы только администраторы. Обычные участники добавляются через webhook при подключении к чату.",
       },
     });
   } catch (error) {

@@ -99,13 +99,26 @@ export function useTelegram(): UseTelegramReturn {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!window.Telegram?.WebApp) {
-      setIsReady(true);
-      return;
-    }
     
-    const tg = window.Telegram.WebApp;
-    setWebApp(tg);
+    let retryCount = 0;
+    const maxRetries = 10;
+    const retryDelay = 100; // ms
+
+    const initTelegram = () => {
+      if (!window.Telegram?.WebApp) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`[Telegram] WebApp not available, retry ${retryCount}/${maxRetries}`);
+          setTimeout(initTelegram, retryDelay);
+          return;
+        }
+        console.log('[Telegram] WebApp not available after retries');
+        setIsReady(true);
+        return;
+      }
+      
+      const tg = window.Telegram.WebApp;
+      setWebApp(tg);
 
       // Initialize WebApp
       tg.ready();
@@ -114,6 +127,7 @@ export function useTelegram(): UseTelegramReturn {
       // Extract user data
       if (tg.initDataUnsafe?.user) {
         const tgUser = tg.initDataUnsafe.user;
+        console.log('[Telegram] User data found:', tgUser.first_name);
         setUser({
           id: tgUser.id.toString(),
           telegramId: tgUser.id.toString(),
@@ -121,16 +135,21 @@ export function useTelegram(): UseTelegramReturn {
           lastName: tgUser.last_name ?? null,
           username: tgUser.username,
           photoUrl: tgUser.photo_url,
-          role: 'STUDENT', // Default role
+          role: 'STUDENT',
           balance: 0,
           phone: null,
           email: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+      } else {
+        console.log('[Telegram] No user data in initDataUnsafe');
       }
 
       setIsReady(true);
+    };
+
+    initTelegram();
   }, []);
 
   const showMainButton = useCallback((text: string, onClick: () => void) => {

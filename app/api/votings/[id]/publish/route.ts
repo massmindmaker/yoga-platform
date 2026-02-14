@@ -19,7 +19,7 @@ export async function POST(
       where: { id: votingId },
       include: {
         group: {
-          select: { id: true, name: true, pricingType: true, fixedPrice: true, telegramChat: true },
+          select: { id: true, name: true, pricingType: true, fixedPrice: true, telegramChat: true, telegramChatId: true },
         },
         options: {
           include: { _count: { select: { votes: true } } },
@@ -57,7 +57,14 @@ export async function POST(
       );
     }
 
-    const resolveResult = await resolveChatId(BOT_TOKEN, voting.group.telegramChat);
+    // Use saved numeric telegramChatId if available (faster, no extra API call)
+    let resolveResult: { success: boolean; chatId?: string; error?: string };
+    const savedChatId = voting.group.telegramChatId;
+    if (savedChatId) {
+      resolveResult = { success: true, chatId: savedChatId };
+    } else {
+      resolveResult = await resolveChatId(BOT_TOKEN, voting.group.telegramChat);
+    }
     
     if (!resolveResult.success) {
       return NextResponse.json(

@@ -488,11 +488,73 @@ async function handleBotAddedToGroup(chatId: number) {
   );
 }
 
+// Новый участник добавлен в группу
+async function handleNewChatMember(chatId: number, member: any) {
+  try {
+    // Находим группу по chatId — ищем и по telegramChat (ссылка/username) и по telegramChatId (числовой ID)
+    const group = await prisma.group.findFirst({
+      where: {
+        OR: [
+          { telegramChat: chatId.toString() },
+          { telegramChatId: chatId.toString() },
+        ],
+      },
+    });
+
+    if (!group) {
+      console.log(`[WEBHOOK] Group not found for chat ${chatId}`);
+      return;
+    }
+
+    // Создаем или обновляем пользователя
+    const user = await prisma.user.upsert({
+      where: { telegramId: member.id.toString() },
+      update: {
+        firstName: member.first_name,
+        lastName: member.last_name || null,
+        username: member.username || null,
+      },
+      create: {
+        telegramId: member.id.toString(),
+        firstName: member.first_name,
+        lastName: member.last_name || null,
+        username: member.username || null,
+        role: "STUDENT",
+        balance: 0,
+      },
+    });
+
+    // Добавляем в группу
+    await prisma.groupStudent.upsert({
+      where: {
+        groupId_userId: {
+          groupId: group.id,
+          userId: user.id,
+        },
+      },
+      update: {},
+      create: {
+        groupId: group.id,
+        userId: user.id,
+      },
+    });
+
+    console.log(`[WEBHOOK] Added user ${user.id} to group ${group.id}`);
+  } catch (error) {
+    console.error("[WEBHOOK] Error handling new chat member:", error);
+  }
+}
+
 // Расписание для группы
 async function handleGroupSchedule(chatId: number) {
-  // Находим группу по chatId (если привязана)
+  // Находим группу по chatId (ищем по обоим полям)
   const group = await prisma.group.findFirst({
-    where: { telegramChat: chatId.toString() },
+    where: {
+      OR: [
+        { telegramChat: chatId.toString() },
+        { telegramChatId: chatId.toString() },
+      ],
+    },
   });
 
   if (!group) {
@@ -514,7 +576,12 @@ async function handleGroupSchedule(chatId: number) {
 // Статистика группы
 async function handleGroupStats(chatId: number) {
   const group = await prisma.group.findFirst({
-    where: { telegramChat: chatId.toString() },
+    where: {
+      OR: [
+        { telegramChat: chatId.toString() },
+        { telegramChatId: chatId.toString() },
+      ],
+    },
     include: { _count: { select: { students: true } } },
   });
 
@@ -754,7 +821,7 @@ export async function POST(req: NextRequest) {
       else if (isGroup && text === "/stats") {
         await handleGroupStats(chatId);
       }
-      // Если бота добавили в группу
+      // Если в группу добавили участников (включая бота)
       else if (update.message.new_chat_members) {
         const botId = (await getBotInfo()).id;
         const isBotAdded = update.message.new_chat_members.some(
@@ -762,6 +829,13 @@ export async function POST(req: NextRequest) {
         );
         if (isBotAdded) {
           await handleBotAddedToGroup(chatId);
+        }
+        
+        // Обрабатываем добавление обычных пользователей
+        for (const member of update.message.new_chat_members) {
+          if (!member.is_bot && member.id !== botId) {
+            await handleNewChatMember(chatId, member);
+          }
         }
       }
     }

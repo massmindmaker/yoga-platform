@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { useTelegram } from "./use-telegram";
+import { useTelegram } from "@/components/providers/telegram-provider";
 import type { User } from "../types";
 
 interface UserContextType {
@@ -34,6 +34,27 @@ async function fetchWithRetry<T>(
   throw new Error('Max retries exceeded');
 }
 
+/**
+ * Map TelegramUser (from initDataUnsafe) to our User type for immediate UI display.
+ * This is a temporary user object until server validates and returns the real one.
+ */
+function telegramUserToUser(tgUser: { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string }): User {
+  return {
+    id: tgUser.id.toString(),
+    telegramId: tgUser.id.toString(),
+    firstName: tgUser.first_name,
+    lastName: tgUser.last_name ?? null,
+    username: tgUser.username,
+    photoUrl: tgUser.photo_url,
+    role: 'STUDENT',
+    balance: 0,
+    phone: null,
+    email: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +72,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      console.log("[AUTH] Telegram user from initDataUnsafe:", telegram.user);
+      console.log("[AUTH] Telegram user from context:", telegram.user);
       console.log("[AUTH] isInTelegram:", telegram.isInTelegram);
       console.log("[AUTH] initData present:", !!telegram.initData);
 
@@ -63,11 +84,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Use Telegram user data immediately for UI (from initDataUnsafe)
-      // This is safe for display purposes according to Telegram best practices
+      // Use Telegram user data immediately for UI (from TelegramProvider context)
+      // Map TelegramUser → User for correct field names (first_name → firstName)
       if (telegram.user) {
-        console.log("[AUTH] Using Telegram user data immediately:", telegram.user);
-        setUser(telegram.user);
+        console.log("[AUTH] Using Telegram user data immediately:", telegram.user.first_name);
+        setUser(telegramUserToUser(telegram.user));
       }
 
       // Validate with server if initData is available
@@ -80,7 +101,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
               method: "POST",
               headers: { 
                 "Content-Type": "application/json",
-                // Best practice: send initData in Authorization header as "tma <init-data>"
                 "Authorization": `tma ${telegram.initData}`
               },
               body: JSON.stringify({ initData: telegram.initData }),
@@ -96,12 +116,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
             setUser(data.data.user);
           } else {
             console.warn("[AUTH] Server validation failed:", data.error);
-            // Keep using Telegram user data if server validation fails
-            // This allows the app to work even if server validation has issues
+            // Keep using mapped Telegram user data if server validation fails
           }
         } catch (err) {
           console.error("[AUTH] Server validation error:", err);
-          // Keep using Telegram user data if server is unavailable
+          // Keep using mapped Telegram user data if server is unavailable
         }
       } else {
         console.warn("[AUTH] No initData available for server validation");

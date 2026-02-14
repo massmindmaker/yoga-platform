@@ -10,6 +10,17 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useUser } from "@/src/hooks/use-user-context";
 import Link from "next/link";
 
+// Helper for localStorage name
+const getStoredName = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('yoga_user_name');
+};
+
+const setStoredName = (name: string) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('yoga_user_name', name);
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -58,30 +69,30 @@ export default function MainPage() {
   const [upcomingBookings, setUpcomingBookings] = useState<BookingWithClass[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // For manual name input (when no Telegram)
+  const [manualName, setManualName] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [storedName, setStoredNameState] = useState<string | null>(null);
+  
+  useEffect(() => {
+    setStoredNameState(getStoredName());
+  }, []);
+  
+  const handleSetName = () => {
+    if (manualName.trim()) {
+      setStoredName(manualName.trim());
+      setStoredNameState(manualName.trim());
+      setShowNameInput(false);
+    }
+  };
+  
+  // Determine display values
+  const displayName = user?.firstName || storedName;
+  const photoUrl = user?.photoUrl && !imageError ? user.photoUrl : '/images/penguin-avatar.png';
 
-  // Показываем ошибку авторизации
-  if (authError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-8 h-8 text-red-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Ошибка авторизации</h2>
-            <p className="text-gray-600 mb-4">{authError}</p>
-            <Button 
-              onClick={() => window.location.reload()}
-              className="w-full bg-gray-900 hover:bg-black"
-            >
-              Попробовать снова
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // All hooks MUST be before any conditional return (Rules of Hooks)
   useEffect(() => {
     if (!user?.id) {
       setIsLoadingBookings(false);
@@ -112,6 +123,29 @@ export default function MainPage() {
     fetchUpcomingBookings();
   }, [user?.id]);
 
+  // Показываем ошибку авторизации (ПОСЛЕ всех хуков)
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Ошибка авторизации</h2>
+            <p className="text-gray-600 mb-4">{authError}</p>
+            <Button 
+              onClick={() => window.location.reload()}
+              className="w-full bg-gray-900 hover:bg-black"
+            >
+              Попробовать снова
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
@@ -141,27 +175,57 @@ export default function MainPage() {
         {/* User greeting with avatar */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 py-2">
           <div className="w-12 h-12 rounded-full overflow-hidden bg-[#CCFBF1] flex items-center justify-center border-2 border-[#3BCEAC]">
-            {user?.photoUrl ? (
-              <img 
-                src={user.photoUrl} 
-                alt={user.firstName || 'User'} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.log('[Avatar] Failed to load photoUrl, using penguin');
-                  (e.target as HTMLImageElement).src = '/images/penguin-avatar.png?v=2';
-                }}
-              />
+            {isUserLoading ? (
+              <div className="w-full h-full bg-gray-200 animate-pulse" />
             ) : (
               <img 
-                src="/images/penguin-avatar.png?v=2" 
-                alt="Penguin avatar" 
+                src={photoUrl}
+                alt="Avatar"
                 className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
             )}
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Привет</p>
-            <h2 className="text-lg font-semibold text-gray-900">{user?.firstName || 'Гость'}</h2>
+          <div className="flex-1">
+            {isUserLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
+                <div className="h-6 w-24 bg-gray-200 animate-pulse rounded" />
+              </div>
+            ) : displayName ? (
+              <div>
+                <p className="text-sm text-gray-500">Привет</p>
+                <h2 className="text-lg font-semibold text-gray-900">{displayName}</h2>
+              </div>
+            ) : showNameInput ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  placeholder="Ваше имя"
+                  className="flex-1 px-3 py-1 border rounded text-sm"
+                  autoFocus
+                  onKeyPress={(e) => e.key === 'Enter' && handleSetName()}
+                />
+                <button 
+                  onClick={handleSetName}
+                  className="px-3 py-1 bg-[#3BCEAC] text-white rounded text-sm"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-500">Привет</p>
+                <button 
+                  onClick={() => setShowNameInput(true)}
+                  className="text-lg font-semibold text-gray-900 hover:text-[#3BCEAC]"
+                >
+                  Гость (нажмите чтобы ввести имя)
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
 

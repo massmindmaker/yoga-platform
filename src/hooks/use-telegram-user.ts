@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTelegram } from "./use-telegram";
+import { useTelegram } from "@/components/providers/telegram-provider";
 
 interface TelegramUser {
   id: string;
