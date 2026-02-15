@@ -53,8 +53,8 @@ export async function POST(
           data: {
             userId: vote.userId,
             amount: refundAmount,
-            type: 'CLASS_CANCELLED',
-            description: `Возврат — занятие отменено: ${voting.title}`,
+            type: 'VOTE_REFUND',
+            description: `Возврат — голосование отменено: ${voting.title}`,
             voteId: vote.id,
             votingId,
           },

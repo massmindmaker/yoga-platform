@@ -66,11 +66,17 @@ async function fetchWithRetry<T>(
     try {
       const response = await fetch(url, options);
       if (!response.ok) {
+        // Don't retry client errors (4xx) — they won't fix themselves
+        if (response.status >= 400 && response.status < 500) {
+          const data = await response.json().catch(() => ({}));
+          throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status, data });
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       return data;
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status >= 400 && e?.status < 500) throw e;
       if (i === retries - 1) throw e;
       await new Promise(r => setTimeout(r, 1000));
     }

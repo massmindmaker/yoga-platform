@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Edit3,
   Send,
   Trash2,
   Users,
@@ -78,7 +77,6 @@ interface VotingCardProps {
   currentUserId?: string;
   isTrainer?: boolean;
   onVote?: (optionId: string) => void;
-  onEdit?: (voting: VotingData) => void;
   onDelete?: (votingId: string) => void;
   onFinalize?: (votingId: string) => void;
   onCancel?: (votingId: string) => void;
@@ -94,7 +92,6 @@ export function VotingCard({
   currentUserId,
   isTrainer = false,
   onVote,
-  onEdit,
   onFinalize,
   onCancel,
   onPublishToChat,
@@ -208,15 +205,6 @@ export function VotingCard({
               {/* Trainer action icons */}
               {isTrainer && isActive && (
                 <div className="flex items-center gap-1 pt-1 border-t border-gray-50">
-                  {onEdit && (
-                    <button
-                      onClick={() => onEdit(voting)}
-                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors"
-                      title="Редактировать"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  )}
                   {onPublishToChat && (
                     <button
                       onClick={handlePublish}
@@ -315,7 +303,11 @@ export function VotingCard({
                   disabled={!selectedOption || isVoting}
                   className="w-full bg-[#3BCEAC] hover:bg-[#14B8A6] text-white h-11 rounded-xl font-semibold disabled:opacity-50"
                 >
-                  {isVoting ? "Голосование..." : "Проголосовать"}
+                  {isVoting
+                    ? "Голосование..."
+                    : voting.chargeOnVote && voting.group?.fixedPrice
+                      ? `Проголосовать (${voting.group.fixedPrice} ${pluralize(voting.group.fixedPrice, "занятие", "занятия", "занятий")})`
+                      : "Проголосовать"}
                 </Button>
               )}
 

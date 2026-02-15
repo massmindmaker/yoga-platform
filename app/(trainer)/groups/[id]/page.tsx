@@ -81,10 +81,6 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleEditVoting = (votingId: string) => {
-    router.push(`/groups/${groupId}/voting/${votingId}/edit`);
-  };
-
   const handleDelete = async () => {
     setIsDeleting(true);
     const result = await deleteGroup();

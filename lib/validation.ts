@@ -86,6 +86,7 @@ export const createVotingSchema = z.object({
 export const voteSchema = z.object({
   optionIds: z.array(z.string().uuid('Invalid option ID')).min(1, 'Select at least one option'),
   userId: z.string().uuid('Invalid user ID'),
+  telegramChatId: z.string().optional(),
 });
 
 export const finalizeVotingSchema = z.object({

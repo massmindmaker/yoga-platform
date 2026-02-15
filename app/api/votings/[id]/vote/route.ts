@@ -29,7 +29,7 @@ export async function POST(
       );
     }
 
-    const { optionIds, userId, telegramChatId } = validationResult.data as { optionIds: string[]; userId: string; telegramChatId?: string };
+    const { optionIds, userId, telegramChatId } = validationResult.data;
 
     // Get voting with group info
     const voting = await prisma.voting.findUnique({
