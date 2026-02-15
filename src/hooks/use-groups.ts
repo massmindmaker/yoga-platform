@@ -8,6 +8,21 @@ interface Schedule {
   time: string;
 }
 
+interface GroupStudent {
+  id: string;
+  userId: string;
+  joinedAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+    balance: number;
+    telegramId: string | null;
+  };
+}
+
 interface Group {
   id: string;
   name: string;
@@ -17,10 +32,13 @@ interface Group {
   fixedPrice: number;
   maxStudents: number;
   telegramChat: string | null;
+  telegramChatId: string | null;
   trainerId: string | null;
   startsAt: string | null;
   endsAt: string | null;
   schedules: Schedule[];
+  students?: GroupStudent[];
+  votings?: any[];
   _count: {
     students: number;
     votings?: number;

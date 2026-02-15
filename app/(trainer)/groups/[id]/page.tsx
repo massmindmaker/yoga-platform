@@ -197,7 +197,7 @@ export default function GroupDetailPage() {
       </motion.div>
 
       {/* Schedule — только для REGULAR групп */}
-      {(group as any).groupType !== "INTENSIVE" && (
+      {group.groupType !== "INTENSIVE" && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -246,7 +246,7 @@ export default function GroupDetailPage() {
       )}
 
       {/* Active Votings — using shared VotingCard component */}
-      {(group as any).votings && (group as any).votings.length > 0 && (
+      {group.votings && group.votings.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -257,14 +257,14 @@ export default function GroupDetailPage() {
               <Vote className="w-5 h-5" />
               Активные голосования
             </h3>
-            {(group as any).votings.map((voting: any) => {
+            {group.votings.map((voting: any) => {
               // Map group data into voting for VotingCard
               const votingWithGroup = {
                 ...voting,
                 group: {
                   id: group.id,
                   name: group.name,
-                  pricingType: group.pricingType || "FIXED",
+                  pricingType: group.pricingType,
                   fixedPrice: group.fixedPrice,
                 },
                 createdAt: voting.createdAt || new Date().toISOString(),
@@ -392,7 +392,7 @@ export default function GroupDetailPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {(group as any).students?.map((student: any) => (
+                {group.students?.map((student) => (
                   <div
                     key={student.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
