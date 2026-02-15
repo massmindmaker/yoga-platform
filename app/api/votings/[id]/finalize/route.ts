@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { finalizeVotingSchema } from '@/lib/validation';
 import { createPayment } from '@/lib/tbank';
+import { stopTelegramPoll, sendDynamicPaymentMessage } from '@/lib/telegram';
 
 // POST /api/votings/[id]/finalize - подвести итоги (тренер назначает цены для DYNAMIC)
 export async function POST(
@@ -103,7 +104,29 @@ export async function POST(
       },
     });
 
-    // TODO: Publish results to Telegram chat
+    // Закрываем нативный Poll в Telegram
+    if (voting.telegramChatId && voting.telegramMsgId) {
+      await stopTelegramPoll(voting.telegramChatId, voting.telegramMsgId).catch((err) =>
+        console.error('[VOTING_FINALIZE] stopPoll error:', err)
+      );
+      
+      // Для DYNAMIC — отправляем сообщение с кнопками оплаты и ценами
+      if (voting.group.pricingType === 'DYNAMIC' && updated) {
+        await sendDynamicPaymentMessage(voting.telegramChatId, {
+          id: voting.id,
+          title: voting.title,
+          options: updated.options.map((opt) => ({
+            id: opt.id,
+            dayOfWeek: opt.dayOfWeek,
+            time: opt.time,
+            finalPrice: opt.finalPrice,
+            _count: opt._count,
+          })),
+        }).catch((err) =>
+          console.error('[VOTING_FINALIZE] sendDynamicPaymentMessage error:', err)
+        );
+      }
+    }
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {

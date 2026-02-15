@@ -170,9 +170,11 @@ export async function POST(req: NextRequest) {
         const telegramResult = await sendVotingToChat(chatId, {
           id: voting.id,
           title: voting.title,
+          multipleChoice: voting.multipleChoice,
           minParticipants: voting.minParticipants,
           deadline: voting.deadline,
           chargeOnVote: voting.chargeOnVote,
+          pricingType: group.pricingType,
           options: voting.options.map(opt => ({
             id: opt.id,
             dayOfWeek: opt.dayOfWeek,
@@ -185,10 +187,13 @@ export async function POST(req: NextRequest) {
         });
 
         if (telegramResult.success && telegramResult.messageId) {
-          // Save Telegram message ID
           await prisma.voting.update({
             where: { id: voting.id },
-            data: { telegramPollId: telegramResult.messageId.toString() },
+            data: {
+              telegramPollId: telegramResult.pollId || null,
+              telegramMsgId: telegramResult.messageId.toString(),
+              telegramChatId: chatId,
+            },
           });
         }
       }

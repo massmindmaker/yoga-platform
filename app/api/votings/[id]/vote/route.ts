@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { voteSchema, idParamSchema } from '@/lib/validation';
-import { sendPaymentRequestAfterVote, createTelegramInvoice } from '@/lib/telegram';
 import { sendTelegramMessage } from '@/lib/bot-messages';
 
 // POST /api/votings/[id]/vote - проголосовать (множественный выбор)
@@ -64,75 +63,7 @@ export async function POST(
       );
     }
 
-    // Check if chargeOnVote — need to deduct balance
-    const shouldCharge = voting.chargeOnVote && voting.group.pricingType === 'FIXED';
-    const chargePerVote = voting.group.fixedPrice || 1;
-
-    if (shouldCharge) {
-      // Check user balance
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { balance: true },
-      });
-
-      if (!user) {
-        return NextResponse.json(
-          { success: false, error: 'User not found' },
-          { status: 404 }
-        );
-      }
-
-      // Check existing votes to avoid double-charging
-      const existingVotes = await prisma.vote.findMany({
-        where: { votingId, userId, refunded: false },
-        select: { optionId: true },
-      });
-      const alreadyVotedIds = existingVotes.map((v) => v.optionId);
-      const newOptionIds = optionIds.filter((id) => !alreadyVotedIds.includes(id));
-      const totalCharge = newOptionIds.length * chargePerVote;
-
-      if (user.balance < totalCharge) {
-        // Если есть telegramChatId - отправляем запрос на оплату в Telegram
-        if (telegramChatId) {
-          await sendPaymentRequestAfterVote(telegramChatId, userId, {
-            id: votingId,
-            title: voting.title,
-            group: {
-              fixedPrice: voting.group.fixedPrice || undefined,
-            },
-          });
-          
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'Insufficient balance',
-              code: 'INSUFFICIENT_BALANCE',
-              message: 'Отправлен запрос на оплату в Telegram',
-              details: {
-                currentBalance: user.balance,
-                required: totalCharge,
-                shortage: totalCharge - user.balance,
-              },
-            },
-            { status: 402 }
-          );
-        }
-
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Insufficient balance',
-            code: 'INSUFFICIENT_BALANCE',
-            details: {
-              currentBalance: user.balance,
-              required: totalCharge,
-              shortage: totalCharge - user.balance,
-            },
-          },
-          { status: 402 }
-        );
-      }
-    }
+    // Голос всегда бесплатный — оплата происходит отдельно через кнопки в Telegram
 
     // Create votes in a transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -152,33 +83,14 @@ export async function POST(
         // Create vote
         const vote = await tx.vote.upsert({
           where: { optionId_userId: { optionId, userId } },
-          update: { refunded: false, refundedAt: null, balanceCharged: shouldCharge },
+          update: { refunded: false, refundedAt: null, balanceCharged: false },
           create: {
             votingId,
             optionId,
             userId,
-            balanceCharged: shouldCharge,
+            balanceCharged: false,
           },
         });
-
-        // Charge balance if needed
-        if (shouldCharge) {
-          await tx.user.update({
-            where: { id: userId },
-            data: { balance: { decrement: chargePerVote } },
-          });
-
-          await tx.balanceTransaction.create({
-            data: {
-              userId,
-              amount: -chargePerVote,
-              type: 'VOTE_DEDUCTION',
-              description: `Списание за голос: ${voting.title}`,
-              voteId: vote.id,
-              votingId,
-            },
-          });
-        }
 
         createdVotes.push(vote);
       }
@@ -196,7 +108,7 @@ export async function POST(
 
         await sendTelegramMessage(
           parseInt(telegramChatId),
-          `✅ *Голос принят!*\n\n🗳️ ${voting.title}\n✅ Вы проголосовали за ${result.length} вариант(ов)${shouldCharge ? '\n💰 Списано: ' + (result.length * chargePerVote) + ' занятий' : ''}\n💳 Остаток: ${user?.balance || 0} занятий`,
+          `✅ *Голос принят!*\n\n🗳️ ${voting.title}\n✅ Вы проголосовали за ${result.length} вариант(ов)\n💳 Баланс: ${user?.balance || 0} занятий`,
           {
             inline_keyboard: [
               [{

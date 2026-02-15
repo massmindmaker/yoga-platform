@@ -125,16 +125,20 @@ export async function getOrCreateUser(telegramUser: TelegramUser) {
   });
 }
 
-// Отправить голосование с inline кнопками
+// Отправить голосование как нативный Telegram Poll
+// Для FIXED: сразу после Poll отправляется сообщение с кнопками оплаты
+// Для DYNAMIC: кнопка оплаты появится после финализации (sendDynamicPaymentMessage)
 export async function sendVotingToChat(
   chatId: string,
   voting: {
     id: string;
     title: string;
     description?: string;
+    multipleChoice?: boolean;
     minParticipants: number;
     deadline: Date;
     chargeOnVote: boolean;
+    pricingType: string;
     options: Array<{
       id: string;
       dayOfWeek: number;
@@ -151,39 +155,154 @@ export async function sendVotingToChat(
   }
 
   const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-  
-  const deadlineStr = voting.deadline.toLocaleString("ru-RU", {
-    day: "numeric", month: "long", hour: "2-digit", minute: "2-digit"
+
+  // Формируем вопрос Poll
+  const question = `🗳️ ${voting.title}`;
+
+  // Варианты ответа — текстовые строки (макс 100 символов)
+  const pollOptions = voting.options.map((opt) => {
+    let label = `${DAYS_SHORT[opt.dayOfWeek]} ${opt.time}`;
+    if (opt.description) label += ` — ${opt.description}`;
+    return { text: label.slice(0, 100) };
   });
 
-  let message = `🗳️ *${voting.title}*\n`;
-  if (voting.description) message += `\n${voting.description}\n`;
-  message += `\n📅 Дедлайн: ${deadlineStr}`;
-  message += `\n👥 Минимум участников: ${voting.minParticipants}`;
-  
-  if (voting.chargeOnVote) {
-    const price = voting.group.fixedPrice || 1000;
-    message += `\n💰 При голосовании спишется 1 занятие (${price}₽)`;
-  }
-  message += `\n\n_Выберите дни, когда сможете прийти:_`;
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendPoll`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        question,
+        options: pollOptions,
+        is_anonymous: false,
+        allows_multiple_answers: voting.multipleChoice !== false,
+      }),
+    });
+    const data = await response.json();
+    if (!data.ok) {
+      console.error("[BOT] Telegram sendPoll error:", data);
+      return { success: false, error: data.description };
+    }
 
-  // Telegram callback_data limit: 64 bytes
-  // UUID format is too long (vote_{36}_{36} = 78 bytes)
-  // Solution: use short voting ID (first 8 chars) + option index
-  const shortVotingId = voting.id.slice(0, 8);
-  const keyboard = {
-    inline_keyboard: voting.options.map((opt, index) => [{
-      text: `${DAYS_SHORT[opt.dayOfWeek]} ${opt.time}`,
-      callback_data: `v:${shortVotingId}:${index}`
-    }])
-  };
+    const pollId = data.result.poll.id;
+    const messageId = data.result.message_id;
+
+    // Для FIXED pricing — сразу отправляем сообщение с кнопками оплаты под Poll-ом
+    if (voting.pricingType === "FIXED") {
+      const price = voting.group.fixedPrice || 1;
+      // callback_data limit: 64 bytes. Format: pf:{8-char-voting-id}
+      const shortId = voting.id.slice(0, 8);
+      
+      const paymentMsg = `💳 *Оплата участия*\n\nСтоимость: *${price} зан.*\nВы можете оплатить картой или списать с баланса.\nОплата наличными — в зале.`;
+      
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: paymentMsg,
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: `💳 Оплатить картой`, callback_data: `pc:${shortId}` },
+                { text: `📝 Списать с баланса`, callback_data: `pb:${shortId}` },
+              ],
+            ],
+          },
+        }),
+      }).catch((err) => console.error("[BOT] Error sending payment message:", err));
+    } else {
+      // DYNAMIC — информируем, что цена будет позже
+      const infoMsg = `ℹ️ Стоимость занятия зависит от количества участников.\nОплата станет доступна после завершения голосования.`;
+      
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: infoMsg,
+        }),
+      }).catch((err) => console.error("[BOT] Error sending info message:", err));
+    }
+
+    return { success: true, messageId, pollId };
+  } catch (error) {
+    console.error("[BOT] Error sending poll:", error);
+    return { success: false, error: "Network error" };
+  }
+}
+
+// Остановить нативный Telegram Poll
+export async function stopTelegramPoll(chatId: string, messageId: string) {
+  const token = getBotToken();
+  if (!token) return { success: false, error: "Bot token not configured" };
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/stopPoll`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, message_id: parseInt(messageId) }),
+    });
+    const data = await response.json();
+    if (data.ok) return { success: true };
+    console.error("[BOT] stopPoll error:", data);
+    return { success: false, error: data.description };
+  } catch (error) {
+    console.error("[BOT] Error stopping poll:", error);
+    return { success: false, error: "Network error" };
+  }
+}
+
+// Отправить сообщение с кнопкой оплаты после финализации DYNAMIC голосования
+export async function sendDynamicPaymentMessage(
+  chatId: string,
+  voting: {
+    id: string;
+    title: string;
+    options: Array<{ id: string; dayOfWeek: number; time: string; finalPrice?: number | null; _count?: { votes: number } }>;
+  }
+) {
+  const token = getBotToken();
+  if (!token) return { success: false, error: "Bot token not configured" };
+
+  const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  const shortId = voting.id.slice(0, 8);
+
+  let message = `🏁 *Голосование завершено: ${voting.title}*\n\n`;
+  
+  const buttons: Array<{ text: string; callback_data: string }[]> = [];
+  
+  for (const opt of voting.options) {
+    const day = DAYS_SHORT[opt.dayOfWeek];
+    const voters = opt._count?.votes || 0;
+    const price = opt.finalPrice;
+    message += `${day} ${opt.time} — ${voters} чел.`;
+    if (price) {
+      message += ` → *${price}₽*`;
+    }
+    message += `\n`;
+    
+    if (price) {
+      // callback_data: pd:{shortVotingId}:{optionIndex} (dynamic pay card)
+      const optIdx = voting.options.indexOf(opt);
+      buttons.push([
+        { text: `💳 ${day} ${opt.time} — ${price}₽`, callback_data: `pd:${shortId}:${optIdx}` },
+      ]);
+    }
+  }
+  
+  message += `\nОплатите картой или наличными в зале:`;
 
   try {
     const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: chatId, text: message, parse_mode: "Markdown", reply_markup: keyboard,
+        chat_id: chatId,
+        text: message,
+        parse_mode: "Markdown",
+        reply_markup: buttons.length > 0 ? { inline_keyboard: buttons } : undefined,
       }),
     });
     const data = await response.json();
@@ -191,43 +310,7 @@ export async function sendVotingToChat(
     console.error("[BOT] Telegram API error:", data);
     return { success: false, error: data.description };
   } catch (error) {
-    console.error("[BOT] Error sending voting:", error);
-    return { success: false, error: "Network error" };
-  }
-}
-
-// Отправить сообщение с кнопкой оплаты после голосования
-export async function sendPaymentRequestAfterVote(
-  chatId: string,
-  userId: string,
-  voting: { id: string; title: string; group: { fixedPrice?: number } }
-) {
-  const token = getBotToken();
-  if (!token) return { success: false, error: "Bot token not configured" };
-
-  const price = voting.group.fixedPrice || 1000;
-  
-  const message = `✅ Вы проголосовали в "${voting.title}"\n\n💰 Для подтверждения участия необходимо оплатить 1 занятие (${price}₽)\n\nНажмите кнопку ниже для оплаты:`;
-
-  const keyboard = {
-    inline_keyboard: [
-      [{ text: `💳 Оплатить ${price}₽`, callback_data: `pay_voting_${voting.id}_${userId}` }],
-      [{ text: "🧘‍♀️ Открыть в приложении", web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/voting?pay=${voting.id}` } }]
-    ]
-  };
-
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "Markdown", reply_markup: keyboard }),
-    });
-    const data = await response.json();
-    if (data.ok) return { success: true, messageId: data.result.message_id };
-    console.error("[BOT] Telegram API error:", data);
-    return { success: false, error: data.description };
-  } catch (error) {
-    console.error("[BOT] Error sending payment request:", error);
+    console.error("[BOT] Error sending dynamic payment message:", error);
     return { success: false, error: "Network error" };
   }
 }

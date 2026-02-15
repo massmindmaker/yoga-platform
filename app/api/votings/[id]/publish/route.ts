@@ -76,9 +76,11 @@ export async function POST(
     const telegramResult = await sendVotingToChat(resolveResult.chatId!, {
       id: voting.id,
       title: voting.title,
+      multipleChoice: voting.multipleChoice,
       minParticipants: voting.minParticipants,
       deadline: voting.deadline,
       chargeOnVote: voting.chargeOnVote,
+      pricingType: voting.group.pricingType,
       options: voting.options.map(opt => ({
         id: opt.id,
         dayOfWeek: opt.dayOfWeek,
@@ -93,12 +95,16 @@ export async function POST(
     if (telegramResult.success && telegramResult.messageId) {
       await prisma.voting.update({
         where: { id: voting.id },
-        data: { telegramPollId: telegramResult.messageId.toString() },
+        data: {
+          telegramPollId: telegramResult.pollId || null,
+          telegramMsgId: telegramResult.messageId.toString(),
+          telegramChatId: resolveResult.chatId!,
+        },
       });
 
       return NextResponse.json({
         success: true,
-        data: { messageId: telegramResult.messageId },
+        data: { messageId: telegramResult.messageId, pollId: telegramResult.pollId },
       });
     }
 

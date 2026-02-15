@@ -267,7 +267,9 @@ model Voting {
   weekStart       DateTime?                      // Начало периода голосования
   weekEnd         DateTime?                      // Конец периода голосования
   status          VotingStatus  @default(ACTIVE)
-  telegramPollId  String?                        // ID сообщения в Telegram
+  telegramPollId  String?                        // ID нативного Telegram Poll (для poll_answer)
+  telegramMsgId   String?                        // ID сообщения в чате (для stopPoll)
+  telegramChatId  String?                        // Chat ID где отправлен poll
   createdAt       DateTime      @default(now())
   
   group           Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
