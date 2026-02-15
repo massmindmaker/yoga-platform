@@ -167,10 +167,14 @@ export async function sendVotingToChat(
   }
   message += `\n\n_Выберите дни, когда сможете прийти:_`;
 
+  // Telegram callback_data limit: 64 bytes
+  // UUID format is too long (vote_{36}_{36} = 78 bytes)
+  // Solution: use short voting ID (first 8 chars) + option index
+  const shortVotingId = voting.id.slice(0, 8);
   const keyboard = {
-    inline_keyboard: voting.options.map(opt => [{
+    inline_keyboard: voting.options.map((opt, index) => [{
       text: `${DAYS_SHORT[opt.dayOfWeek]} ${opt.time}`,
-      callback_data: `vote_${voting.id}_${opt.id}`
+      callback_data: `v:${shortVotingId}:${index}`
     }])
   };
 

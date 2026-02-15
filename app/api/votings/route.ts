@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     // Verify group exists
     const group = await prisma.group.findUnique({
       where: { id: groupId },
-      select: { id: true, pricingType: true, fixedPrice: true, telegramChat: true },
+      select: { id: true, pricingType: true, fixedPrice: true, telegramChat: true, telegramChatId: true },
     });
 
     if (!group) {
@@ -145,30 +145,52 @@ export async function POST(req: NextRequest) {
     });
 
     // Publish to Telegram chat if group has telegramChat
-    if (group.telegramChat) {
-      const telegramResult = await sendVotingToChat(group.telegramChat, {
-        id: voting.id,
-        title: voting.title,
-        minParticipants: voting.minParticipants,
-        deadline: voting.deadline,
-        chargeOnVote: voting.chargeOnVote,
-        options: voting.options.map(opt => ({
-          id: opt.id,
-          dayOfWeek: opt.dayOfWeek,
-          time: opt.time,
-          description: opt.description || undefined,
-        })),
-        group: {
-          fixedPrice: group.fixedPrice || undefined,
-        },
-      });
+    if (group.telegramChat || group.telegramChatId) {
+      // Use saved numeric telegramChatId if available (required for private groups)
+      let chatId: string | null = group.telegramChatId || null;
+      
+      if (!chatId && group.telegramChat) {
+        // Try to resolve from link
+        const { resolveChatId } = await import('@/lib/telegram-chat');
+        const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+        if (BOT_TOKEN) {
+          const resolveResult = await resolveChatId(BOT_TOKEN, group.telegramChat);
+          if (resolveResult.success && resolveResult.chatId) {
+            chatId = resolveResult.chatId;
+            // Save resolved chatId for future use
+            await prisma.group.update({
+              where: { id: group.id },
+              data: { telegramChatId: chatId },
+            });
+          }
+        }
+      }
 
-      if (telegramResult.success && telegramResult.messageId) {
-        // Save Telegram message ID
-        await prisma.voting.update({
-          where: { id: voting.id },
-          data: { telegramPollId: telegramResult.messageId.toString() },
+      if (chatId) {
+        const telegramResult = await sendVotingToChat(chatId, {
+          id: voting.id,
+          title: voting.title,
+          minParticipants: voting.minParticipants,
+          deadline: voting.deadline,
+          chargeOnVote: voting.chargeOnVote,
+          options: voting.options.map(opt => ({
+            id: opt.id,
+            dayOfWeek: opt.dayOfWeek,
+            time: opt.time,
+            description: opt.description || undefined,
+          })),
+          group: {
+            fixedPrice: group.fixedPrice || undefined,
+          },
         });
+
+        if (telegramResult.success && telegramResult.messageId) {
+          // Save Telegram message ID
+          await prisma.voting.update({
+            where: { id: voting.id },
+            data: { telegramPollId: telegramResult.messageId.toString() },
+          });
+        }
       }
     }
 

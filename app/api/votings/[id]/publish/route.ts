@@ -41,7 +41,7 @@ export async function POST(
       );
     }
 
-    if (!voting.group.telegramChat) {
+    if (!voting.group.telegramChat && !voting.group.telegramChatId) {
       return NextResponse.json(
         { success: false, error: 'У группы нет привязанного Telegram чата' },
         { status: 400 }
@@ -63,7 +63,7 @@ export async function POST(
     if (savedChatId) {
       resolveResult = { success: true, chatId: savedChatId };
     } else {
-      resolveResult = await resolveChatId(BOT_TOKEN, voting.group.telegramChat);
+      resolveResult = await resolveChatId(BOT_TOKEN, voting.group.telegramChat!);
     }
     
     if (!resolveResult.success) {

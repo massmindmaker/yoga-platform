@@ -118,7 +118,7 @@ export default function TrainerVotingPage() {
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Голосования" />
         <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
         </div>
       </div>
     );
@@ -148,7 +148,7 @@ export default function TrainerVotingPage() {
         >
           <button
             onClick={handleCreateClick}
-            className="w-full py-4 border-2 border-dashed border-gray-900/40 rounded-2xl text-gray-900 font-medium hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 border-2 border-dashed border-[#3BCEAC]/40 rounded-2xl text-[#0D9488] font-medium hover:border-[#3BCEAC] hover:bg-[#F0FDF9] transition-all flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Создать голосование

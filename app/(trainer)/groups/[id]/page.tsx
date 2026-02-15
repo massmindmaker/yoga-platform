@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { VotingCard } from "@/components/voting/voting-card-new";
 
 const DAYS_OF_WEEK = [
   "Воскресенье",
@@ -248,220 +249,72 @@ export default function GroupDetailPage() {
         </motion.div>
       )}
 
-      {/* Active Votings */}
+      {/* Active Votings — using shared VotingCard component */}
       {(group as any).votings && (group as any).votings.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
         >
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Vote className="w-5 h-5" />
-                Активные голосования
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="space-y-3">
-                {(group as any).votings.map((voting: any) => {
-                  const totalVotes = voting._count.votes;
-                  const progress = Math.round((totalVotes / voting.minParticipants) * 100);
-                  const isActive = voting.status === 'ACTIVE';
-                  const isExpanded = expandedVoting === voting.id;
-                  
-                  // Получаем уникальных проголосовавших пользователей
-                  const votersMap = new Map();
-                  voting.options?.forEach((option: any) => {
-                    option.votes?.forEach((vote: any) => {
-                      if (vote.user && !votersMap.has(vote.user.id)) {
-                        votersMap.set(vote.user.id, vote.user);
+          <div className="space-y-3">
+            <h3 className="text-lg font-bold flex items-center gap-2 px-1">
+              <Vote className="w-5 h-5" />
+              Активные голосования
+            </h3>
+            {(group as any).votings.map((voting: any) => {
+              // Map group data into voting for VotingCard
+              const votingWithGroup = {
+                ...voting,
+                group: {
+                  id: group.id,
+                  name: group.name,
+                  pricingType: group.pricingType || "FIXED",
+                  fixedPrice: group.fixedPrice,
+                },
+                createdAt: voting.createdAt || new Date().toISOString(),
+              };
+
+              return (
+                <VotingCard
+                  key={voting.id}
+                  voting={votingWithGroup}
+                  isTrainer={true}
+                  onPublishToChat={handlePublishToChat}
+                  onCancel={async (id) => {
+                    if (!confirm("Отменить голосование? Баланс будет возвращён участникам.")) return;
+                    try {
+                      const res = await fetch(`/api/votings/${id}/cancel`, { method: "POST" });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast.success("Голосование отменено");
+                        window.location.reload();
+                      } else {
+                        toast.error(data.error || "Ошибка отмены");
                       }
-                    });
-                  });
-                  const uniqueVoters = Array.from(votersMap.values());
-                  
-                  return (
-                    <div
-                      key={voting.id}
-                      className={`p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-100 cursor-pointer transition-all ${isExpanded ? 'ring-2 ring-gray-700' : ''}`}
-                      onClick={() => setExpandedVoting(isExpanded ? null : voting.id)}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-gray-900 text-base leading-snug">{voting.title}</h4>
-                            {isExpanded && isActive && (
-                              <div className="flex items-center gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-6 w-6 rounded-full"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditVoting(voting.id);
-                                  }}
-                                >
-                                  <Edit className="w-3 h-3 text-blue-500" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-6 w-6 rounded-full"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePublishToChat(voting.id);
-                                  }}
-                                  disabled={publishingVotingId === voting.id}
-                                >
-                                  {publishingVotingId === voting.id ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <Send className="w-3 h-3 text-green-500" />
-                                  )}
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-6 w-6 rounded-full"
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (!confirm("Отменить голосование? Баланс будет возвращён участникам.")) return;
-                                    try {
-                                      const res = await fetch(`/api/votings/${voting.id}/cancel`, { method: "POST" });
-                                      const data = await res.json();
-                                      if (data.success) {
-                                        toast.success("Голосование отменено");
-                                        window.location.reload();
-                                      } else {
-                                        toast.error(data.error || "Ошибка отмены");
-                                      }
-                                    } catch {
-                                      toast.error("Ошибка отмены голосования");
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-3 h-3 text-red-500" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                            До {new Date(voting.deadline).toLocaleDateString("ru-RU", { 
-                              day: "numeric", 
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            isActive 
-                              ? "bg-green-100 text-green-700" 
-                              : "bg-gray-100 text-gray-600"
-                          }`}>
-                            {isActive ? "Активно" : "Завершено"}
-                          </span>
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-gray-400" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                      
-                       <div className="flex items-center gap-3 text-base">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-600 leading-relaxed">Проголосовало</span>
-                            <span className="text-sm font-bold text-gray-900">
-                              {totalVotes}/{voting.minParticipants} ({progress}%)
-                            </span>
-                          </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                            <div 
-                              className="h-full bg-gradient-to-r from-gray-800 to-gray-700 transition-all duration-300"
-                              style={{ width: `${Math.min(progress, 100)}%` }}
-                            />
-                          </div>
-                          
-                          {/* Миниатюрные аватарки проголосовавших */}
-                          {uniqueVoters.length > 0 && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <div className="flex -space-x-2">
-                                {uniqueVoters.slice(0, 5).map((voter: any, idx: number) => (
-                                  <Avatar key={voter.id} className="w-6 h-6 border-2 border-white">
-                                    <AvatarFallback className="text-[10px] bg-gray-100 text-gray-900">
-                                      {voter.firstName?.[0]}{voter.lastName?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                              </div>
-                              {uniqueVoters.length > 5 && (
-                                <span className="text-xs text-gray-500 ml-1">+{uniqueVoters.length - 5}</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Развернутая информация */}
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="mt-4 pt-4 border-t border-gray-100"
-                        >
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Результаты голосования:</h5>
-                          <div className="space-y-2">
-                            {voting.options?.map((option: any) => {
-                              const optionVotes = option.votes?.length || 0;
-                              const optionProgress = voting.minParticipants > 0 
-                                ? Math.round((optionVotes / voting.minParticipants) * 100) 
-                                : 0;
-                              
-                              return (
-                                <div key={option.id} className="bg-white/50 rounded-lg p-2">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm">
-                                      {DAYS_SHORT[option.dayOfWeek]} {option.time}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {optionVotes} голосов
-                                    </span>
-                                  </div>
-                                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-gray-700 rounded-full"
-                                      style={{ width: `${Math.min(optionProgress, 100)}%` }}
-                                    />
-                                  </div>
-                                  {/* Список проголосовавших за этот вариант */}
-                                  {option.votes?.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {option.votes.map((vote: any) => (
-                                        vote.user && (
-                                          <span key={vote.id} className="text-xs bg-gray-100 text-gray-900 px-2 py-0.5 rounded-full">
-                                            {vote.user.firstName} {vote.user.lastName?.[0]}.
-                                          </span>
-                                        )
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    } catch {
+                      toast.error("Ошибка отмены голосования");
+                    }
+                  }}
+                  onFinalize={async (id) => {
+                    try {
+                      const res = await fetch(`/api/votings/${id}/finalize`, { method: "POST" });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast.success("Голосование завершено");
+                        window.location.reload();
+                      } else {
+                        toast.error(data.error || "Ошибка завершения");
+                      }
+                    } catch {
+                      toast.error("Ошибка завершения голосования");
+                    }
+                  }}
+                  expanded={expandedVoting === voting.id}
+                  onExpandChange={(expanded) => setExpandedVoting(expanded ? voting.id : null)}
+                />
+              );
+            })}
+          </div>
         </motion.div>
       )}
 
@@ -478,29 +331,53 @@ export default function GroupDetailPage() {
                 Ученики ({group._count.students})
               </CardTitle>
             {group.telegramChat && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch(`/api/groups/${groupId}/sync-telegram`, {
-                      method: 'POST'
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                      toast.success(data.message || 'Ученики синхронизированы');
-                      window.location.reload();
-                    } else {
-                      toast.error(data.error || 'Ошибка синхронизации');
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/groups/${groupId}/sync-telegram`, {
+                        method: 'POST'
+                      });
+                      const data = await response.json();
+                      if (data.success) {
+                        toast.success(data.message || 'Ученики синхронизированы');
+                        window.location.reload();
+                      } else {
+                        toast.error(data.error || 'Ошибка синхронизации');
+                      }
+                    } catch (error) {
+                      toast.error('Ошибка синхронизации');
                     }
-                  } catch (error) {
-                    toast.error('Ошибка синхронизации');
-                  }
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Синхронизировать
-              </Button>
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Синхронизировать
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-gray-400"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/groups/${groupId}/sync-telegram?action=reconnect`, {
+                        method: 'POST'
+                      });
+                      const data = await response.json();
+                      if (data.success) {
+                        toast.success(data.message);
+                      } else {
+                        toast.error(data.error || 'Ошибка');
+                      }
+                    } catch {
+                      toast.error('Ошибка переподключения');
+                    }
+                  }}
+                >
+                  Переподключить
+                </Button>
+              </div>
             )}
           </CardHeader>
           <CardContent className="p-4 pt-0">

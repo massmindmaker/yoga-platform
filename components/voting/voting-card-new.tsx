@@ -2,22 +2,21 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Clock, 
-  CheckCircle2, 
-  ChevronDown, 
+import {
+  Clock,
+  CheckCircle2,
+  ChevronDown,
   ChevronUp,
   Edit3,
-  MoreVertical,
-  Calendar,
-  Wallet,
-  MessageSquare,
+  Send,
+  Trash2,
   Users,
   X,
-  Send
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-// Russian pluralization helper
 function pluralize(n: number, one: string, few: string, many: string): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -26,12 +25,6 @@ function pluralize(n: number, one: string, few: string, many: string): string {
   if (mod10 >= 2 && mod10 <= 4) return few;
   return many;
 }
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AvatarStack, UserAvatar } from "@/components/ui/user-avatar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
 
 interface VoteUser {
   id: string;
@@ -94,7 +87,7 @@ interface VotingCardProps {
   onExpandChange?: (expanded: boolean) => void;
 }
 
-const weekDays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+const DAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
 export function VotingCard({
   voting,
@@ -102,7 +95,6 @@ export function VotingCard({
   isTrainer = false,
   onVote,
   onEdit,
-  onDelete,
   onFinalize,
   onCancel,
   onPublishToChat,
@@ -110,7 +102,6 @@ export function VotingCard({
   onExpandChange,
 }: VotingCardProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isVoting, setIsVoting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -118,459 +109,227 @@ export function VotingCard({
   const isExpanded = controlledExpanded ?? internalExpanded;
   const setIsExpanded = onExpandChange ?? setInternalExpanded;
 
-  // Получаем всех уникальных пользователей, проголосовавших
-  const allVoters = voting.options.flatMap(opt => 
-    (opt.votes || []).map(v => ({
-      id: v.user.id,
-      firstName: v.user.firstName,
-      lastName: v.user.lastName,
-      photoUrl: v.user.photoUrl,
-    }))
-  );
-  
-  // Убираем дубликаты
-  const uniqueVoters = allVoters.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-  
-  const totalVotes = voting._count?.votes || voting.options.reduce((sum, opt) => sum + (opt._count?.votes || 0), 0);
+  const totalVotes = voting._count?.votes || voting.options.reduce((s, o) => s + (o._count?.votes || 0), 0);
+  const isActive = voting.status === "ACTIVE";
+  const progressPct = voting.minParticipants > 0 ? Math.min((totalVotes / voting.minParticipants) * 100, 100) : 0;
   const isSuccessful = totalVotes >= voting.minParticipants;
-  const progressPercent = Math.min((totalVotes / voting.minParticipants) * 100, 100);
-  
-  // Проверяем, голосовал ли текущий пользователь
-  const hasVoted = voting.options.some(opt => 
+
+  const hasVoted = voting.options.some(opt =>
     (opt.votes || []).some(v => v.user.id === currentUserId)
   );
-  
-  // Получаем варианты, за которые проголосовал пользователь
-  const votedOptions = voting.options.filter(opt => 
+  const votedOptions = voting.options.filter(opt =>
     (opt.votes || []).some(v => v.user.id === currentUserId)
   );
 
-  const getTimeLeft = () => {
-    const deadline = new Date(voting.deadline);
-    const now = new Date();
-    const diff = deadline.getTime() - now.getTime();
-    
-    if (diff <= 0) {
-      if (voting.status === "FINALIZED") return "Итоги подведены";
-      if (voting.status === "CANCELLED") return "Отменено";
-      return "Голосование закрыто";
-    }
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) return `${days}д ${hours}ч`;
-    return `${hours}ч`;
-  };
-
-  const getStatusBadge = () => {
-    switch (voting.status) {
-      case "ACTIVE":
-        return <Badge className="bg-green-500 text-white border-0">Активно</Badge>;
-      case "FINALIZED":
-        return <Badge className="bg-blue-500 text-white border-0">Завершено</Badge>;
-      case "CANCELLED":
-        return <Badge className="bg-red-500 text-white border-0">Отменено</Badge>;
-      case "CLOSED":
-        return <Badge className="bg-gray-500 text-white border-0">Закрыто</Badge>;
-      default:
-        return null;
-    }
-  };
+  const deadlineStr = new Date(voting.deadline).toLocaleDateString("ru-RU", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+  });
 
   const handleVote = async (optionId: string) => {
     if (!onVote || isVoting) return;
     setIsVoting(true);
-    try {
-      await onVote(optionId);
-    } finally {
-      setIsVoting(false);
-    }
+    try { await onVote(optionId); } finally { setIsVoting(false); }
   };
 
-  const handlePublishToChat = async () => {
+  const handlePublish = async () => {
     if (!onPublishToChat || isPublishing) return;
     setIsPublishing(true);
-    try {
-      await onPublishToChat(voting.id);
-    } finally {
-      setIsPublishing(false);
-    }
+    try { await onPublishToChat(voting.id); } finally { setIsPublishing(false); }
   };
 
   return (
-    <>
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 200 }}
+    <div className={cn(
+      "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all",
+      isExpanded && "ring-2 ring-[#3BCEAC]/30 shadow-md"
+    )}>
+      {/* ===== COMPACT HEADER — always visible ===== */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full text-left p-4 flex items-center gap-3"
       >
-        <Card className={cn(
-          "border-0 shadow-xl overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:-translate-y-0.5 hover:shadow-2xl",
-          isExpanded && "shadow-2xl ring-2 ring-gray-400 scale-100 translate-y-0"
-        )}>
-          {/* Header */}
-          <div className="bg-gradient-to-r from-gray-900 to-black p-5 text-white">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-xl truncate leading-tight">{voting.title}</h3>
-                <div className="flex items-center gap-3 mt-2 text-base text-white/80 flex-wrap leading-relaxed">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    До {new Date(voting.deadline).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
-                  </span>
-                  {voting.group && (
-                    <span className="flex items-center gap-1">
-                      <MessageSquare className="w-4 h-4" />
-                      {voting.group.name}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge()}
-                <button
-                  onClick={() => setShowDetails(true)}
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+        {/* Left: mint accent bar */}
+        <div className={cn(
+          "w-1 self-stretch rounded-full flex-shrink-0",
+          isActive ? "bg-[#3BCEAC]" : "bg-gray-300"
+        )} />
 
-            {/* Микро-аватары и статистика */}
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center gap-2">
-                {uniqueVoters.length > 0 ? (
-                  <>
-                    <AvatarStack 
-                      users={uniqueVoters} 
-                      max={4} 
-                      size="xs" 
-                    />
-                    <span className="text-base text-white/80 leading-relaxed">
-                      {uniqueVoters.length} {pluralize(uniqueVoters.length, "человек", "человека", "человек")}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-sm text-white/60">Пока никто не голосовал</span>
-                )}
-              </div>
-              <Badge className="bg-white/20 text-white border-0">
-                {getTimeLeft()}
-              </Badge>
-            </div>
+        {/* Middle: info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h4 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
+              {voting.title}
+            </h4>
+            <Badge className={cn(
+              "text-[10px] px-1.5 py-0 border-0 flex-shrink-0",
+              isActive ? "bg-[#CCFBF1] text-[#0D9488]" : "bg-gray-100 text-gray-500"
+            )}>
+              {isActive ? "Активно" : voting.status === "CANCELLED" ? "Отменено" : "Закрыто"}
+            </Badge>
           </div>
-
-          <CardContent className="p-5 space-y-4">
-            {/* Progress */}
-            <div>
-              <div className="flex items-center justify-between text-base mb-2">
-                <span className="text-gray-600 leading-relaxed">Минимум участников</span>
-                <span className={cn(
-                  "font-bold text-lg",
-                    isSuccessful ? "text-gray-900" : "text-gray-400"
-                )}>
-                  {totalVotes}/{voting.minParticipants}
-                </span>
-              </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  className={cn(
-                    "h-full rounded-full",
-                    isSuccessful 
-                      ? "bg-gradient-to-r from-gray-700 to-gray-900" 
-                      : "bg-gradient-to-r from-gray-300 to-gray-400"
-                  )}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                {isSuccessful 
-                  ? "✅ Занятие состоится!" 
-                  : `Нужно еще ${voting.minParticipants - totalVotes} ${pluralize(voting.minParticipants - totalVotes, "человек", "человека", "человек")}`
-                }
-              </p>
-            </div>
-
-            {/* Разворачиваемый контент */}
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div className="pt-4 border-t border-gray-100 space-y-4">
-                    {/* Варианты голосования */}
-                    <div className="space-y-2">
-                      <p className="text-base font-bold text-gray-700 leading-relaxed">
-                        {hasVoted ? "Вы проголосовали за:" : "Выберите вариант:"}
-                      </p>
-                      
-                      {voting.options.map((option) => {
-                        const optionVotes = option.votes || [];
-                        const isSelected = votedOptions.some(vo => vo.id === option.id);
-                        const voters = optionVotes.map(v => ({
-                          id: v.user.id,
-                          firstName: v.user.firstName,
-                          lastName: v.user.lastName,
-                          photoUrl: v.user.photoUrl,
-                        }));
-
-                        return (
-                          <motion.button
-                            key={option.id}
-                            onClick={() => !hasVoted && setSelectedOption(option.id)}
-                            disabled={hasVoted || voting.status !== "ACTIVE"}
-                            className={cn(
-                              "w-full p-4 rounded-xl border-2 text-left transition-all",
-                              isSelected || selectedOption === option.id
-                                ? "border-gray-900 bg-gray-50"
-                                : hasVoted
-                                ? "border-gray-100 bg-gray-50 opacity-60"
-                                : "border-gray-100 hover:border-gray-400 bg-white"
-                            )}
-                            whileTap={!hasVoted && voting.status === "ACTIVE" ? { scale: 0.98 } : undefined}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={cn(
-                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                                  isSelected || selectedOption === option.id
-                                    ? "border-gray-900 bg-gray-900"
-                                    : "border-gray-300"
-                                )}>
-                                  {(isSelected || selectedOption === option.id) && (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                                  )}
-                                </div>
-                                <div>
-                                  <span className="font-bold text-gray-900 text-base leading-snug">
-                                    {weekDays[option.dayOfWeek]}, {option.time}
-                                  </span>
-                                  {option.description && (
-                                    <p className="text-sm text-gray-500 leading-relaxed">{option.description}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {voters.length > 0 && (
-                                  <AvatarStack users={voters} max={3} size="xs" />
-                                )}
-                                <Badge variant="secondary" className="text-xs">
-                                  {option._count?.votes || optionVotes.length}
-                                </Badge>
-                              </div>
-                            </div>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Кнопка голосования */}
-                    {!hasVoted && voting.status === "ACTIVE" && (
-                      <Button
-                        onClick={() => selectedOption && handleVote(selectedOption)}
-                        disabled={!selectedOption || isVoting}
-                        className="w-full bg-gray-900 hover:bg-black text-white h-12 rounded-xl font-semibold shadow-xl disabled:opacity-50"
-                      >
-                        {isVoting ? "Голосование..." : "Проголосовать"}
-                      </Button>
-                    )}
-
-                    {hasVoted && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-                        <div className="flex items-center justify-center gap-2 text-green-700">
-                          <CheckCircle2 className="w-5 h-5" />
-                          <span className="font-medium">Вы проголосовали</span>
-                        </div>
-                        <p className="text-xs text-green-600 mt-1">
-                          {isSuccessful 
-                            ? "Занятие состоится. Ссылка на оплату придет после закрытия голосования."
-                            : "Ожидаем набора минимального количества участников."
-                          }
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Действия тренера */}
-                    {isTrainer && voting.status === "ACTIVE" && (
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit?.(voting)}
-                          className="flex-1"
-                        >
-                          <Edit3 className="w-4 h-4 mr-1" />
-                          Редактировать
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onFinalize?.(voting.id)}
-                          className="flex-1 border-green-500 text-green-600 hover:bg-green-50"
-                          disabled={!isSuccessful}
-                        >
-                          <CheckCircle2 className="w-4 h-4 mr-1" />
-                          Завершить
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onCancel?.(voting.id)}
-                          className="border-red-500 text-red-600 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
+          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              До {deadlineStr}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {totalVotes}/{voting.minParticipants}
+            </span>
+          </div>
+          {/* Mini progress bar */}
+          <div className="h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                isSuccessful ? "bg-[#3BCEAC]" : "bg-gray-300"
               )}
-            </AnimatePresence>
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        </div>
 
-            {/* Кнопка развернуть/свернуть */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full flex items-center justify-center gap-1 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="w-4 h-4" />
-                  <span>Свернуть</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-4 h-4" />
-                  <span>Подробнее</span>
-                </>
-              )}
-            </button>
-          </CardContent>
-        </Card>
-      </motion.div>
+        {/* Right: chevron */}
+        <div className="flex-shrink-0 text-gray-400">
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </div>
+      </button>
 
-      {/* Sheet с деталями голосования */}
-      <Sheet open={showDetails} onOpenChange={setShowDetails}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl">
-          <SheetHeader className="pb-4">
-            <SheetTitle className="text-left text-xl font-bold leading-tight">{voting.title}</SheetTitle>
-          </SheetHeader>
-          
-          <div className="space-y-6 overflow-y-auto pb-20">
-            {/* Статус */}
-            <div className="flex items-center gap-2">
-              {getStatusBadge()}
-              <span className="text-sm text-gray-500">
-                Создано {new Date(voting.createdAt).toLocaleDateString("ru-RU")}
-              </span>
-            </div>
-
-            {/* Информация о голосовании */}
-            <Card>
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-gray-700" />
-                  <div>
-                    <p className="text-base font-bold">Дедлайн</p>
-                    <p className="text-base text-gray-500 leading-relaxed">
-                      {new Date(voting.deadline).toLocaleString("ru-RU")}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-gray-700" />
-                  <div>
-                    <p className="text-base font-bold">Минимум участников</p>
-                    <p className="text-base text-gray-500 leading-relaxed">{voting.minParticipants} человек</p>
-                  </div>
-                </div>
-
-                {voting.chargeOnVote && (
-                  <div className="flex items-center gap-3">
-                    <Wallet className="w-5 h-5 text-gray-700" />
-                    <div>
-                      <p className="text-base font-bold">Списание с баланса</p>
-                      <p className="text-base text-gray-500 leading-relaxed">При голосовании списывается 1 занятие</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Список всех проголосовавших */}
-            <div>
-              <h4 className="font-bold text-lg mb-3 leading-tight">Проголосовавшие ({uniqueVoters.length})</h4>
-              
-              {uniqueVoters.length > 0 ? (
-                <div className="space-y-2">
-                  {uniqueVoters.map((voter) => (
-                    <div 
-                      key={voter.id} 
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+      {/* ===== EXPANDED CONTENT ===== */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-3">
+              {/* Trainer action icons */}
+              {isTrainer && isActive && (
+                <div className="flex items-center gap-1 pt-1 border-t border-gray-50">
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(voting)}
+                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors"
+                      title="Редактировать"
                     >
-                      <UserAvatar
-                        src={voter.photoUrl}
-                        firstName={voter.firstName}
-                        lastName={voter.lastName}
-                        size="sm"
-                      />
-                      <div className="flex-1">
-                        <p className="font-bold text-base leading-snug">
-                          {voter.firstName} {voter.lastName || ""}
-                        </p>
-                        <p className="text-sm text-gray-500 leading-relaxed">
-                          {voting.options
-                            .filter(opt => (opt.votes || []).some(v => v.user.id === voter.id))
-                            .map(opt => `${weekDays[opt.dayOfWeek]}, ${opt.time}`)
-                            .join("; ")}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  )}
+                  {onPublishToChat && (
+                    <button
+                      onClick={handlePublish}
+                      disabled={isPublishing}
+                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#3BCEAC] transition-colors disabled:opacity-50"
+                      title="Отправить в чат"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  )}
+                  {onFinalize && (
+                    <button
+                      onClick={() => onFinalize(voting.id)}
+                      disabled={!isSuccessful}
+                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-green-600 transition-colors disabled:opacity-30"
+                      title="Завершить"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  {onCancel && (
+                    <button
+                      onClick={() => onCancel(voting.id)}
+                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-red-500 transition-colors"
+                      title="Отменить"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  {/* Status hints */}
+                  <span className="ml-auto text-xs text-gray-400">
+                    {isSuccessful ? "✅ Кворум набран" : `Ещё ${voting.minParticipants - totalVotes} ${pluralize(voting.minParticipants - totalVotes, "голос", "голоса", "голосов")}`}
+                  </span>
                 </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">Пока никто не проголосовал</p>
+              )}
+
+              {/* Voting options */}
+              <div className="space-y-1.5">
+                {voting.options.map((option) => {
+                  const votes = option.votes || [];
+                  const voteCount = option._count?.votes || votes.length;
+                  const isSelected = votedOptions.some(vo => vo.id === option.id);
+                  const isChosen = selectedOption === option.id;
+
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => {
+                        if (!hasVoted && isActive) setSelectedOption(option.id);
+                      }}
+                      disabled={hasVoted || !isActive}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
+                        isSelected || isChosen
+                          ? "border-[#3BCEAC] bg-[#F0FDF9]"
+                          : "border-gray-100 bg-gray-50",
+                        !hasVoted && isActive && "hover:border-[#3BCEAC]/50"
+                      )}
+                    >
+                      {/* Radio dot */}
+                      <div className={cn(
+                        "w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center",
+                        isSelected || isChosen ? "border-[#3BCEAC] bg-[#3BCEAC]" : "border-gray-300"
+                      )}>
+                        {(isSelected || isChosen) && (
+                          <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                        )}
+                      </div>
+                      {/* Day & time */}
+                      <div className="flex-1">
+                        <span className="font-semibold text-sm text-gray-900">
+                          {DAYS[option.dayOfWeek]} {option.time}
+                        </span>
+                        {option.description && (
+                          <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
+                        )}
+                      </div>
+                      {/* Vote count + voter names */}
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xs font-medium text-gray-600">{voteCount}</span>
+                        {votes.length > 0 && (
+                          <p className="text-[10px] text-gray-400 mt-0.5 max-w-[100px] truncate">
+                            {votes.map(v => v.user.firstName).join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Vote button (student) */}
+              {!hasVoted && isActive && !isTrainer && (
+                <Button
+                  onClick={() => selectedOption && handleVote(selectedOption)}
+                  disabled={!selectedOption || isVoting}
+                  className="w-full bg-[#3BCEAC] hover:bg-[#14B8A6] text-white h-11 rounded-xl font-semibold disabled:opacity-50"
+                >
+                  {isVoting ? "Голосование..." : "Проголосовать"}
+                </Button>
+              )}
+
+              {/* Voted confirmation */}
+              {hasVoted && (
+                <div className="flex items-center gap-2 p-3 bg-[#F0FDF9] rounded-xl">
+                  <CheckCircle2 className="w-4 h-4 text-[#3BCEAC] flex-shrink-0" />
+                  <span className="text-sm text-[#0D9488]">Вы проголосовали</span>
+                </div>
               )}
             </div>
-
-            {/* Telegram — статус и кнопка отправки */}
-            {voting.telegramPollId && (
-              <div className="bg-blue-50 p-4 rounded-xl">
-                <p className="text-sm text-blue-800">
-                  <MessageSquare className="w-4 h-4 inline mr-1" />
-                  Опубликовано в Telegram
-                </p>
-              </div>
-            )}
-
-            {isTrainer && voting.status === "ACTIVE" && onPublishToChat && (
-              <Button
-                onClick={handlePublishToChat}
-                disabled={isPublishing}
-                variant="outline"
-                className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {isPublishing 
-                  ? "Отправка..." 
-                  : voting.telegramPollId 
-                    ? "Отправить повторно в чат" 
-                    : "Отправить в чат"
-                }
-              </Button>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

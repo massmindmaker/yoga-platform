@@ -13,6 +13,8 @@ export async function POST(
 ) {
   try {
     const { id: groupId } = await params;
+    const { searchParams } = new URL(req.url);
+    const action = searchParams.get("action");
 
     const BOT_TOKEN = getBotToken();
     if (!BOT_TOKEN) {
@@ -34,6 +36,18 @@ export async function POST(
       );
     }
 
+    // Action: reconnect — сбросить telegramChatId и заново привязать
+    if (action === "reconnect") {
+      await prisma.group.update({
+        where: { id: groupId },
+        data: { telegramChatId: null },
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Chat ID сброшен. Отправьте /start в Telegram группу, затем нажмите Синхронизировать.",
+      });
+    }
+
     if (!group.telegramChat && !group.telegramChatId) {
       return NextResponse.json(
         { success: false, error: "Telegram chat not linked to this group" },
@@ -46,6 +60,28 @@ export async function POST(
     
     if (group.telegramChatId) {
       console.log('[SYNC_TELEGRAM] Using saved telegramChatId:', group.telegramChatId);
+      
+      // Verify the saved chatId is still valid
+      const verifyRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: group.telegramChatId }),
+      });
+      const verifyData = await verifyRes.json();
+      
+      if (!verifyData.ok) {
+        console.log('[SYNC_TELEGRAM] Saved chatId invalid, resetting:', group.telegramChatId);
+        // Reset invalid chatId
+        await prisma.group.update({
+          where: { id: groupId },
+          data: { telegramChatId: null },
+        });
+        return NextResponse.json({
+          success: false,
+          error: "Сохранённый Chat ID недействителен. Отправьте /start в Telegram группу с ботом @Yom23_bot, затем повторите синхронизацию.",
+        }, { status: 400 });
+      }
+      
       chatId = group.telegramChatId;
     } else {
       // Resolve chat ID from various formats (link, username, etc.)

@@ -54,7 +54,7 @@ export default function VotingPage() {
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Голосования" />
         <div className="flex items-center justify-center min-h-[50vh]">
-           <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+           <Loader2 className="w-8 h-8 animate-spin text-[#3BCEAC]" />
         </div>
       </div>
     );

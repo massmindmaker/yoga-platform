@@ -19,23 +19,86 @@ async function autoSaveChatId(chatId: number) {
     });
     if (alreadySaved) return; // Уже привязан
     
-    // Ищем группу, у которой нет telegramChatId, но есть telegramChat
-    // Берём первую такую группу (обычно у тренера одна группа привязана к чату)
-    const group = await prisma.group.findFirst({
+    // Получаем информацию о чате через Telegram API
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return;
+    
+    let chatTitle = "";
+    let chatInviteLink = "";
+    let chatUsername = "";
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getChat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        chatTitle = data.result.title || "";
+        chatInviteLink = data.result.invite_link || "";
+        chatUsername = data.result.username || "";
+      }
+    } catch {
+      // Не критично — продолжаем с fallback
+    }
+    
+    // Стратегия сопоставления: ищем группу по invite link, username, или если одна группа без chatId
+    const groupsWithoutChatId = await prisma.group.findMany({
       where: {
         telegramChatId: null,
         telegramChat: { not: null },
       },
     });
     
-    if (!group) return;
+    if (groupsWithoutChatId.length === 0) return;
+    
+    let matchedGroup = null;
+    
+    for (const group of groupsWithoutChatId) {
+      const link = group.telegramChat || "";
+      
+      // Точное совпадение invite link
+      if (chatInviteLink && link === chatInviteLink) {
+        matchedGroup = group;
+        break;
+      }
+      
+      // Сравниваем хеш-часть приватных ссылок (t.me/+HASH)
+      const linkHash = link.match(/t\.me\/\+([a-zA-Z0-9_-]+)/)?.[1];
+      const chatHash = chatInviteLink.match(/t\.me\/\+([a-zA-Z0-9_-]+)/)?.[1];
+      if (linkHash && chatHash && linkHash === chatHash) {
+        matchedGroup = group;
+        break;
+      }
+      
+      // Username совпадение: @username или t.me/username
+      if (chatUsername) {
+        if (link === `@${chatUsername}` || link.includes(`t.me/${chatUsername}`)) {
+          matchedGroup = group;
+          break;
+        }
+      }
+    }
+    
+    // Fallback: если только одна группа без chatId — привязываем к ней
+    if (!matchedGroup && groupsWithoutChatId.length === 1) {
+      matchedGroup = groupsWithoutChatId[0];
+      console.log(`[WEBHOOK] Auto-save fallback: only one group without chatId, matching "${matchedGroup.name}"`);
+    }
+    
+    if (!matchedGroup) {
+      console.log(`[WEBHOOK] Could not match chat "${chatTitle}" (${chatIdStr}) to any group.`);
+      console.log(`[WEBHOOK] Chat invite_link: "${chatInviteLink}", username: "${chatUsername}"`);
+      console.log(`[WEBHOOK] Groups without chatId: ${groupsWithoutChatId.map(g => `"${g.name}" (link: ${g.telegramChat})`).join(", ")}`);
+      return;
+    }
     
     // Сохраняем chatId
     await prisma.group.update({
-      where: { id: group.id },
+      where: { id: matchedGroup.id },
       data: { telegramChatId: chatIdStr },
     });
-    console.log(`[WEBHOOK] Auto-saved telegramChatId ${chatIdStr} for group "${group.name}" (${group.id})`);
+    console.log(`[WEBHOOK] Auto-saved telegramChatId ${chatIdStr} for group "${matchedGroup.name}" (${matchedGroup.id}), chat title: "${chatTitle}"`);
   } catch (error) {
     console.error("[WEBHOOK] Error auto-saving chatId:", error);
   }
@@ -289,13 +352,20 @@ async function handleCallbackQuery(callbackQuery: any) {
   const data = callbackQuery.data;
   const user = callbackQuery.from;
   
-  // Обработка голосования
+  // Новый формат: v:{shortVotingId}:{optionIndex}
+  if (data.startsWith("v:")) {
+    const parts = data.split(":");
+    const shortVotingId = parts[1];
+    const optionIndex = parseInt(parts[2], 10);
+    
+    await handleVoteFromCallback(callbackQuery, shortVotingId, optionIndex);
+    return;
+  }
+  
+  // Старый формат (совместимость): vote_{votingId}_{optionId}
   if (data.startsWith("vote_")) {
     const parts = data.split("_");
-    const votingId = parts[1];
-    const optionId = parts[2];
-    
-    await handleVoteFromCallback(callbackQuery, votingId, optionId);
+    await handleVoteFromCallbackLegacy(callbackQuery, parts[1], parts[2]);
     return;
   }
   
@@ -326,8 +396,8 @@ async function handleCallbackQuery(callbackQuery: any) {
   );
 }
 
-// Обработка голосования из callback
-async function handleVoteFromCallback(callbackQuery: any, votingId: string, optionId: string) {
+// Голосование из Telegram inline-кнопки (новый формат v:shortId:index)
+async function handleVoteFromCallback(callbackQuery: any, shortVotingId: string, optionIndex: number) {
   const chatId = callbackQuery.message.chat.id;
   const telegramUserId = callbackQuery.from.id.toString();
   
@@ -338,122 +408,142 @@ async function handleVoteFromCallback(callbackQuery: any, votingId: string, opti
     });
     
     if (!user) {
-      await sendTelegramMessage(
-        chatId,
-        "❌ Вы не зарегистрированы. Отправьте /start для регистрации."
-      );
-      await answerCallback(callbackQuery.id);
+      await answerCallback(callbackQuery.id, "❌ Отправьте /start для регистрации");
       return;
     }
     
-    // Проверяем, не голосовал ли уже
-    const existingVote = await prisma.vote.findFirst({
-      where: { votingId, userId: user.id }
+    // Находим голосование по короткому ID (first 8 chars)
+    const voting = await prisma.voting.findFirst({
+      where: { 
+        id: { startsWith: shortVotingId },
+        status: "ACTIVE"
+      },
+      include: { 
+        group: { select: { pricingType: true, fixedPrice: true } },
+        options: { orderBy: { id: "asc" } }
+      }
     });
     
-    if (existingVote) {
-      await sendTelegramMessage(
-        chatId,
-        "⚠️ Вы уже проголосовали в этом голосовании."
-      );
-      await answerCallback(callbackQuery.id);
+    if (!voting) {
+      await answerCallback(callbackQuery.id, "❌ Голосование не найдено или завершено");
       return;
     }
     
-    // Находим голосование
+    const option = voting.options[optionIndex];
+    if (!option) {
+      await answerCallback(callbackQuery.id, "❌ Вариант не найден");
+      return;
+    }
+
+    // Делегируем реальному API через внутренний вызов — единая логика
+    await processVoteFromTelegram(callbackQuery, chatId, user, voting, option);
+    
+  } catch (error) {
+    console.error("[WEBHOOK] Error processing vote:", error);
+    await answerCallback(callbackQuery.id, "❌ Ошибка обработки голоса");
+  }
+}
+
+// Старый формат (vote_{uuid}_{uuid}) — совместимость
+async function handleVoteFromCallbackLegacy(callbackQuery: any, votingId: string, optionId: string) {
+  const chatId = callbackQuery.message.chat.id;
+  const telegramUserId = callbackQuery.from.id.toString();
+  
+  try {
+    const user = await prisma.user.findFirst({ where: { telegramId: telegramUserId } });
+    if (!user) {
+      await answerCallback(callbackQuery.id, "❌ Отправьте /start для регистрации");
+      return;
+    }
+
     const voting = await prisma.voting.findUnique({
       where: { id: votingId },
       include: { 
-        group: true,
+        group: { select: { pricingType: true, fixedPrice: true } },
         options: true
       }
     });
     
     if (!voting || voting.status !== "ACTIVE") {
-      await sendTelegramMessage(
-        chatId,
-        "❌ Голосование не найдено или уже завершено."
-      );
-      await answerCallback(callbackQuery.id);
+      await answerCallback(callbackQuery.id, "❌ Голосование не найдено или завершено");
       return;
     }
-    
-    // Создаем голос
-    await prisma.vote.create({
-      data: {
-        votingId,
-        optionId,
-        userId: user.id
-      }
+
+    const option = voting.options.find(o => o.id === optionId);
+    if (!option) {
+      await answerCallback(callbackQuery.id, "❌ Вариант не найден");
+      return;
+    }
+
+    await processVoteFromTelegram(callbackQuery, chatId, user, voting, option);
+  } catch (error) {
+    console.error("[WEBHOOK] Error processing legacy vote:", error);
+    await answerCallback(callbackQuery.id, "❌ Ошибка обработки голоса");
+  }
+}
+
+// Общая логика голосования из Telegram — использует ту же логику, что и API route
+async function processVoteFromTelegram(callbackQuery: any, chatId: number, user: any, voting: any, option: any) {
+  const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  const shouldCharge = voting.chargeOnVote && voting.group.pricingType === "FIXED";
+  const chargePerVote = voting.group.fixedPrice || 1;
+  
+  // Проверяем, не голосовал ли уже за эту опцию (idempotent)
+  const existingVote = await prisma.vote.findUnique({
+    where: { optionId_userId: { optionId: option.id, userId: user.id } }
+  });
+  
+  if (existingVote && !existingVote.refunded) {
+    await answerCallback(callbackQuery.id, "⚠️ Вы уже голосовали за этот вариант");
+    return;
+  }
+  
+  // Проверяем баланс если нужна оплата
+  if (shouldCharge && user.balance < chargePerVote) {
+    await answerCallback(callbackQuery.id, `❌ Недостаточно занятий (нужно ${chargePerVote})`);
+    return;
+  }
+  
+  // Создаём голос через транзакцию (та же логика что в vote/route.ts)
+  await prisma.$transaction(async (tx) => {
+    // Upsert vote
+    await tx.vote.upsert({
+      where: { optionId_userId: { optionId: option.id, userId: user.id } },
+      update: { refunded: false, refundedAt: null, balanceCharged: shouldCharge },
+      create: {
+        votingId: voting.id,
+        optionId: option.id,
+        userId: user.id,
+        balanceCharged: shouldCharge,
+      },
     });
     
-    // Находим выбранную опцию
-    const option = voting.options.find(o => o.id === optionId);
-    const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-    
-    // Отправляем подтверждение голосования
-    await sendTelegramMessage(
-      chatId,
-      `✅ Вы проголосовали!\n\n📅 ${DAYS_SHORT[option?.dayOfWeek || 0]} ${option?.time}\n🗳️ ${voting.title}`,
-      {
-        inline_keyboard: [
-          [{
-            text: "🗳️ Посмотреть результаты",
-            web_app: { url: getAppUrl("/voting") }
-          }]
-        ]
-      }
-    );
-    
-    // Если нужна оплата - отправляем запрос на оплату
-    if (voting.chargeOnVote) {
-      const price = voting.group?.fixedPrice || 1000;
-      
-      // Проверяем баланс
-      if (user.balance < 1) {
-        // Создаем invoice для оплаты
-        await createTelegramInvoice(chatId.toString(), {
-          title: `Оплата голосования: ${voting.title}`,
-          description: `Оплата 1 занятия для участия в голосовании`,
-          payload: `voting_${votingId}_${user.id}`,
-          amount: price * 100, // в копейках
-          currency: "RUB"
-        });
-      } else {
-        // У пользователя есть баланс - списываем автоматически
-        await prisma.$transaction(async (tx) => {
-          await tx.user.update({
-            where: { id: user.id },
-            data: { balance: { decrement: 1 } }
-          });
-          
-          await tx.balanceTransaction.create({
-            data: {
-              userId: user.id,
-              amount: -1,
-              type: "VOTE_DEDUCTION",
-              description: `Списание за голосование: ${voting.title}`
-            }
-          });
-        });
-        
-        await sendTelegramMessage(
-          chatId,
-          `💰 С вашего баланса списано 1 занятие.\nОсталось занятий: ${user.balance - 1}`
-        );
-      }
+    // Списываем баланс
+    if (shouldCharge) {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { balance: { decrement: chargePerVote } },
+      });
+      await tx.balanceTransaction.create({
+        data: {
+          userId: user.id,
+          amount: -chargePerVote,
+          type: "VOTE_DEDUCTION",
+          description: `Списание за голос: ${voting.title}`,
+          votingId: voting.id,
+        },
+      });
     }
-    
-    await answerCallback(callbackQuery.id, "✅ Голос принят!");
-    
-  } catch (error) {
-    console.error("Error processing vote:", error);
-    await sendTelegramMessage(
-      chatId,
-      "❌ Произошла ошибка при обработке голоса."
-    );
-    await answerCallback(callbackQuery.id);
+  });
+  
+  const newBalance = user.balance - (shouldCharge ? chargePerVote : 0);
+  
+  let confirmText = `✅ Голос принят: ${DAYS_SHORT[option.dayOfWeek]} ${option.time}`;
+  if (shouldCharge) {
+    confirmText += `\n💰 Списано: ${chargePerVote}, осталось: ${newBalance}`;
   }
+  
+  await answerCallback(callbackQuery.id, confirmText);
 }
 
 // Обработка запроса на оплату
