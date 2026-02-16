@@ -196,11 +196,11 @@ export async function sendVotingToChat(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: "💳",
+          text: "\u200B",
           reply_markup: {
             inline_keyboard: [
-              [{ text: "💳 Оплатить картой", callback_data: `pc:${shortId}` }],
-              [{ text: "📝 Списать с баланса", callback_data: `pb:${shortId}` }],
+              [{ text: "💳  Оплатить картой                      ", callback_data: `pc:${shortId}` }],
+              [{ text: "📝  Списать с баланса                    ", callback_data: `pb:${shortId}` }],
             ],
           },
         }),
