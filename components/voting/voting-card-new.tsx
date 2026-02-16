@@ -10,10 +10,11 @@ import {
   Send,
   Trash2,
   Users,
-  X,
+  Edit3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 function pluralize(n: number, one: string, few: string, many: string): string {
@@ -81,11 +82,54 @@ interface VotingCardProps {
   onFinalize?: (votingId: string) => void;
   onCancel?: (votingId: string) => void;
   onPublishToChat?: (votingId: string) => void;
+  onEdit?: (votingId: string) => void;
+  onPayCard?: (votingId: string) => void;
+  onPayBalance?: (votingId: string) => void;
   expanded?: boolean;
   onExpandChange?: (expanded: boolean) => void;
 }
 
 const DAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+// Collect all unique voters across all options
+function getAllVoters(options: VotingOption[]): VoteUser[] {
+  const seen = new Set<string>();
+  const voters: VoteUser[] = [];
+  for (const opt of options) {
+    for (const v of opt.votes || []) {
+      if (!seen.has(v.user.id)) {
+        seen.add(v.user.id);
+        voters.push(v.user);
+      }
+    }
+  }
+  return voters;
+}
+
+// Micro-avatars row
+function VoterAvatars({ voters, maxShow = 5 }: { voters: VoteUser[]; maxShow?: number }) {
+  if (voters.length === 0) return null;
+  const shown = voters.slice(0, maxShow);
+  const extra = voters.length - maxShow;
+
+  return (
+    <div className="flex items-center -space-x-1.5">
+      {shown.map((voter) => (
+        <Avatar key={voter.id} className="w-5 h-5 border border-white">
+          {voter.photoUrl ? (
+            <img src={voter.photoUrl} alt="" className="w-full h-full object-cover rounded-full" />
+          ) : null}
+          <AvatarFallback className="bg-gray-200 text-[8px] text-gray-600 font-medium">
+            {voter.firstName?.[0]}
+          </AvatarFallback>
+        </Avatar>
+      ))}
+      {extra > 0 && (
+        <span className="text-[10px] text-gray-400 ml-1.5">+{extra}</span>
+      )}
+    </div>
+  );
+}
 
 export function VotingCard({
   voting,
@@ -95,6 +139,9 @@ export function VotingCard({
   onFinalize,
   onCancel,
   onPublishToChat,
+  onEdit,
+  onPayCard,
+  onPayBalance,
   expanded: controlledExpanded,
   onExpandChange,
 }: VotingCardProps) {
@@ -117,6 +164,8 @@ export function VotingCard({
   const votedOptions = voting.options.filter(opt =>
     (opt.votes || []).some(v => v.user.id === currentUserId)
   );
+
+  const allVoters = getAllVoters(voting.options);
 
   const deadlineStr = new Date(voting.deadline).toLocaleDateString("ru-RU", {
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
@@ -173,6 +222,12 @@ export function VotingCard({
               {totalVotes}/{voting.minParticipants}
             </span>
           </div>
+          {/* Micro-avatars in collapsed state */}
+          {allVoters.length > 0 && (
+            <div className="mt-2">
+              <VoterAvatars voters={allVoters} maxShow={6} />
+            </div>
+          )}
           {/* Mini progress bar */}
           <div className="h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
             <div
@@ -213,6 +268,15 @@ export function VotingCard({
                       title="Отправить в чат"
                     >
                       <Send className="w-4 h-4" />
+                    </button>
+                  )}
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(voting.id)}
+                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors"
+                      title="Редактировать"
+                    >
+                      <Edit3 className="w-4 h-4" />
                     </button>
                   )}
                   {onFinalize && (
@@ -264,32 +328,41 @@ export function VotingCard({
                         !hasVoted && isActive && "hover:border-[#3BCEAC]/50"
                       )}
                     >
-                      {/* Radio dot */}
-                      <div className={cn(
-                        "w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center",
-                        isSelected || isChosen ? "border-[#3BCEAC] bg-[#3BCEAC]" : "border-gray-300"
-                      )}>
-                        {(isSelected || isChosen) && (
-                          <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                        )}
-                      </div>
                       {/* Day & time */}
-                      <div className="flex-1">
-                        <span className="font-semibold text-sm text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <span className={cn(
+                          "font-semibold text-sm",
+                          isSelected || isChosen ? "text-[#0D9488]" : "text-gray-900"
+                        )}>
                           {DAYS[option.dayOfWeek]} {option.time}
                         </span>
                         {option.description && (
                           <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
                         )}
                       </div>
-                      {/* Vote count + voter names */}
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-xs font-medium text-gray-600">{voteCount}</span>
-                        {votes.length > 0 && (
-                          <p className="text-[10px] text-gray-400 mt-0.5 max-w-[100px] truncate">
-                            {votes.map(v => v.user.firstName).join(", ")}
-                          </p>
-                        )}
+                      {/* Micro-avatars for this option */}
+                      {votes.length > 0 && (
+                        <div className="flex items-center -space-x-1 flex-shrink-0">
+                          {votes.slice(0, 4).map((v) => (
+                            <Avatar key={v.id} className="w-5 h-5 border border-white">
+                              {v.user.photoUrl ? (
+                                <img src={v.user.photoUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                              ) : null}
+                              <AvatarFallback className="bg-gray-200 text-[8px] text-gray-600 font-medium">
+                                {v.user.firstName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                      )}
+                      {/* Vote count */}
+                      <div className="flex-shrink-0 min-w-[20px] text-right">
+                        <span className={cn(
+                          "text-sm font-bold",
+                          voteCount > 0 ? "text-gray-900" : "text-gray-300"
+                        )}>
+                          {voteCount}
+                        </span>
                       </div>
                     </button>
                   );
@@ -316,6 +389,29 @@ export function VotingCard({
                 <div className="flex items-center gap-2 p-3 bg-[#F0FDF9] rounded-xl">
                   <CheckCircle2 className="w-4 h-4 text-[#3BCEAC] flex-shrink-0" />
                   <span className="text-sm text-[#0D9488]">Вы проголосовали</span>
+                </div>
+              )}
+
+              {/* Payment buttons for students after voting */}
+              {hasVoted && !isTrainer && (onPayCard || onPayBalance) && (
+                <div className="flex gap-2">
+                  {onPayCard && (
+                    <Button
+                      variant="outline"
+                      onClick={() => onPayCard(voting.id)}
+                      className="flex-1 h-10 rounded-xl text-sm font-medium"
+                    >
+                      💳 Оплатить
+                    </Button>
+                  )}
+                  {onPayBalance && (
+                    <Button
+                      onClick={() => onPayBalance(voting.id)}
+                      className="flex-1 h-10 rounded-xl text-sm font-medium bg-[#3BCEAC] hover:bg-[#14B8A6] text-white"
+                    >
+                      📝 Списать с баланса
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

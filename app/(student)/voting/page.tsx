@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { VotingCard } from "@/components/voting/voting-card-new";
 import { motion } from "framer-motion";
@@ -30,10 +31,52 @@ const itemVariants = {
 };
 
 export default function VotingPage() {
+  const router = useRouter();
   const { user, isLoading: isUserLoading } = useUser();
   const userId = user?.id || "";
   const { votings, isLoading, error, vote, refetch } = useVotings({ userId });
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const handlePayCard = (votingId: string) => {
+    // Navigate to purchase page for card payment
+    router.push("/purchase");
+  };
+
+  const handlePayBalance = async (votingId: string) => {
+    if (!user?.id) return;
+
+    const balance = user.balance || 0;
+    if (balance < 1) {
+      toast.error("Недостаточно занятий на балансе");
+      router.push("/purchase");
+      return;
+    }
+
+    // Deduct 1 class from balance
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          votingId,
+          type: "BALANCE_DEDUCT",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Занятие списано с баланса");
+        refetch();
+      } else {
+        toast.error(data.error || "Ошибка списания");
+        if (data.code === "INSUFFICIENT_BALANCE") {
+          router.push("/purchase");
+        }
+      }
+    } catch {
+      toast.error("Ошибка списания с баланса");
+    }
+  };
 
   const handleVote = async (votingId: string, optionId: string) => {
     const result = await vote(votingId, [optionId]);
@@ -96,6 +139,8 @@ export default function VotingPage() {
               currentUserId={userId}
               isTrainer={false}
               onVote={(optionId) => handleVote(voting.id, optionId)}
+              onPayCard={handlePayCard}
+              onPayBalance={handlePayBalance}
               expanded={expandedId === voting.id}
               onExpandChange={(expanded) =>
                 setExpandedId(expanded ? voting.id : null)

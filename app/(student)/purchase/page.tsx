@@ -12,7 +12,7 @@ import { usePayments } from "@/src/hooks/use-payments";
 const PRICE_PER_CLASS = 700;
 
 export default function PurchasePage() {
-  const [count, setCount] = useState(4);
+  const [count, setCount] = useState(1);
   const { user } = useUser();
   const { createPayment, isLoading } = usePayments();
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,50 @@ export default function GroupDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [expandedVoting, setExpandedVoting] = useState<string | null>(null);
   const [publishingVotingId, setPublishingVotingId] = useState<string | null>(null);
+
+  // Edit voting dialog
+  const [editVotingId, setEditVotingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDeadline, setEditDeadline] = useState("");
+  const [editMinParticipants, setEditMinParticipants] = useState(3);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const handleEditVoting = (votingId: string) => {
+    const voting = (group?.votings || []).find((v: any) => v.id === votingId);
+    if (!voting) return;
+    setEditVotingId(votingId);
+    setEditTitle(voting.title);
+    setEditDeadline(new Date(voting.deadline).toISOString().slice(0, 16));
+    setEditMinParticipants(voting.minParticipants);
+  };
+
+  const handleSaveEditVoting = async () => {
+    if (!editVotingId) return;
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/votings/${editVotingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          deadline: new Date(editDeadline).toISOString(),
+          minParticipants: editMinParticipants,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Голосование обновлено");
+        setEditVotingId(null);
+        window.location.reload();
+      } else {
+        toast.error(data.error || "Ошибка сохранения");
+      }
+    } catch {
+      toast.error("Ошибка сохранения");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   const handlePublishToChat = async (votingId: string) => {
     setPublishingVotingId(votingId);
@@ -272,6 +317,7 @@ export default function GroupDetailPage() {
                   voting={votingWithGroup}
                   isTrainer={true}
                   onPublishToChat={handlePublishToChat}
+                  onEdit={handleEditVoting}
                   onCancel={async (id) => {
                     if (!confirm("Отменить голосование? Баланс будет возвращён участникам.")) return;
                     try {
@@ -430,6 +476,65 @@ export default function GroupDetailPage() {
           </Button>
         </Link>
       </motion.div>
+
+      {/* Edit Voting Dialog */}
+      <Dialog open={!!editVotingId} onOpenChange={(open) => !open && setEditVotingId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Редактировать голосование</DialogTitle>
+            <DialogDescription>Измените параметры голосования</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Название</label>
+              <Input
+                value={editTitle}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Дедлайн</label>
+              <Input
+                type="datetime-local"
+                value={editDeadline}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditDeadline(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Мин. участников</label>
+              <Input
+                type="number"
+                min={1}
+                value={editMinParticipants}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditMinParticipants(parseInt(e.target.value) || 1)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditVotingId(null)}
+              disabled={isSavingEdit}
+            >
+              Отмена
+            </Button>
+            <Button
+              onClick={handleSaveEditVoting}
+              disabled={isSavingEdit || !editTitle}
+              className="bg-gray-800 hover:bg-black"
+            >
+              {isSavingEdit ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Сохранение...
+                </>
+              ) : (
+                "Сохранить"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
