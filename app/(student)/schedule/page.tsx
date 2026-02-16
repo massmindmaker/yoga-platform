@@ -189,7 +189,7 @@ function ScheduleClassCard({
                 <Link href="/purchase" className="flex-1">
                   <Button
                     size="sm"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full bg-gray-900 hover:bg-black text-white"
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
                     Купить занятия

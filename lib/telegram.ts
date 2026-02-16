@@ -187,41 +187,32 @@ export async function sendVotingToChat(
     const pollId = data.result.poll.id;
     const messageId = data.result.message_id;
 
-    // Для FIXED pricing — сразу отправляем сообщение с кнопками оплаты под Poll-ом
+    // Для FIXED pricing — кнопки оплаты сразу под Poll-ом (без текста, вертикально)
     if (voting.pricingType === "FIXED") {
-      const price = voting.group.fixedPrice || 1;
-      // callback_data limit: 64 bytes. Format: pf:{8-char-voting-id}
       const shortId = voting.id.slice(0, 8);
-      
-      const paymentMsg = `💳 *Оплата участия*\n\nСтоимость: *${price} зан.*\nВы можете оплатить картой или списать с баланса.\nОплата наличными — в зале.`;
       
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: paymentMsg,
-          parse_mode: "Markdown",
+          text: "💳 Оплата участия:",
           reply_markup: {
             inline_keyboard: [
-              [
-                { text: `💳 Оплатить картой`, callback_data: `pc:${shortId}` },
-                { text: `📝 Списать с баланса`, callback_data: `pb:${shortId}` },
-              ],
+              [{ text: "💳 Оплатить картой", callback_data: `pc:${shortId}` }],
+              [{ text: "📝 Списать с баланса", callback_data: `pb:${shortId}` }],
             ],
           },
         }),
       }).catch((err) => console.error("[BOT] Error sending payment message:", err));
     } else {
-      // DYNAMIC — информируем, что цена будет позже
-      const infoMsg = `ℹ️ Стоимость занятия зависит от количества участников.\nОплата станет доступна после завершения голосования.`;
-      
+      // DYNAMIC — краткая информация, без кнопок (кнопки появятся после финализации)
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: infoMsg,
+          text: "ℹ️ Оплата после завершения голосования",
         }),
       }).catch((err) => console.error("[BOT] Error sending info message:", err));
     }

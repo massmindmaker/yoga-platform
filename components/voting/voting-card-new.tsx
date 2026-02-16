@@ -153,7 +153,7 @@ export function VotingCard({
         {/* Middle: info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
+            <h4 className="font-bold text-gray-900 text-base leading-snug truncate">
               {voting.title}
             </h4>
             <Badge className={cn(

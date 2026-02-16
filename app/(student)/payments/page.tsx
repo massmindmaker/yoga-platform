@@ -247,7 +247,7 @@ export default function StudentPaymentsPage() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="fixed bottom-20 left-4 right-4 z-40"
+        className="fixed bottom-20 left-0 right-0 z-40 px-4 max-w-md mx-auto"
       >
         <Link href="/purchase">
            <Button className="w-full bg-gray-900 hover:bg-black text-white h-14 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"

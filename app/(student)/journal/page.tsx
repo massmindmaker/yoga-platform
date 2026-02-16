@@ -116,7 +116,6 @@ export default function StudentJournalPage() {
       'ATTENDED': 'Посещено',
       'ABSENT': 'Неявка',
       'NO_SHOW': 'Неявка',
-      'LATE': 'Опоздание',
       'CANCELLED': 'Отменено',
     };
     return labels[status] || status;
@@ -128,7 +127,6 @@ export default function StudentJournalPage() {
       'ATTENDED': 'bg-green-100 text-green-700',
       'ABSENT': 'bg-red-100 text-red-700',
       'NO_SHOW': 'bg-red-100 text-red-700',
-      'LATE': 'bg-yellow-100 text-yellow-700',
       'CANCELLED': 'bg-gray-100 text-gray-600',
     };
     return colors[status] || 'bg-gray-100 text-gray-600';

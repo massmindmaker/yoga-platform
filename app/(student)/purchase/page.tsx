@@ -148,7 +148,7 @@ export default function PurchasePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="fixed bottom-20 left-4 right-4"
+          className="fixed bottom-20 left-0 right-0 px-4 max-w-md mx-auto"
         >
           <Button
             onClick={handlePurchase}

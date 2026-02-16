@@ -130,13 +130,13 @@ export default function DashboardPage() {
       label: "Учеников", 
       value: isLoading ? "..." : stats.totalStudents.toString(), 
       icon: Users, 
-      color: "bg-blue-500" 
+      color: "bg-gray-800" 
     },
     { 
       label: "Групп", 
       value: isLoading ? "..." : stats.totalGroups.toString(), 
       icon: Calendar, 
-      color: "bg-green-500" 
+      color: "bg-gray-700" 
     },
     { 
       label: "Занятий сегодня", 

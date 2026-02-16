@@ -31,8 +31,9 @@ export default function TrainerLayout({
         {children}
       </motion.main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
-        <div className="max-w-md mx-auto flex justify-around items-center h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom" aria-label="Навигация тренера">
+        <div className="bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg">
+        <div className="max-w-md mx-auto flex justify-around items-center h-16 px-2">
           {tabs.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
             const Icon = tab.icon;
@@ -41,7 +42,9 @@ export default function TrainerLayout({
               <Link
                 key={tab.id}
                 href={tab.href}
-                className="flex flex-col items-center justify-center w-16 h-full relative"
+                aria-label={tab.label}
+                aria-current={isActive ? "page" : undefined}
+                className="flex flex-col items-center justify-center w-16 h-full relative rounded-xl mx-1 transition-colors duration-200"
               >
                 {isActive && (
                   <motion.div
@@ -67,6 +70,7 @@ export default function TrainerLayout({
               </Link>
             );
           })}
+        </div>
         </div>
       </nav>
     </div>

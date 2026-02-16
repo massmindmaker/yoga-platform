@@ -206,11 +206,11 @@ export default function MainPage() {
                   placeholder="Ваше имя"
                   className="flex-1 px-3 py-1 border rounded text-sm"
                   autoFocus
-                  onKeyPress={(e) => e.key === 'Enter' && handleSetName()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSetName()}
                 />
                 <button 
                   onClick={handleSetName}
-                  className="px-3 py-1 bg-[#3BCEAC] text-white rounded text-sm"
+                  className="px-3 py-1 bg-gray-900 text-white rounded text-sm"
                 >
                   OK
                 </button>
