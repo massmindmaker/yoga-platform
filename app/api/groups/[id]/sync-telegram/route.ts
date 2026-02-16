@@ -266,14 +266,40 @@ export async function POST(
       });
     }
 
+    // Удаляем участников группы, которых больше нет в Telegram чате
+    // Собираем telegramId всех синхронизированных участников
+    const syncedTelegramIds = members.map((m: any) => m.user.id.toString());
+    
+    // Получаем всех текущих участников группы
+    const currentGroupStudents = await prisma.groupStudent.findMany({
+      where: { groupId },
+      include: { user: true },
+    });
+    
+    let removedCount = 0;
+    for (const gs of currentGroupStudents) {
+      // Если у участника есть telegramId и его нет в чате — удаляем из группы
+      if (gs.user.telegramId && !syncedTelegramIds.includes(gs.user.telegramId)) {
+        await prisma.groupStudent.delete({
+          where: {
+            groupId_userId: {
+              groupId,
+              userId: gs.userId,
+            },
+          },
+        });
+        removedCount++;
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Синхронизация администраторов завершена. Добавлено: ${addedCount}, уже в группе: ${existingCount}. Остальных участников чат добавит автоматически при подключении.`,
+      message: `Синхронизация завершена. Добавлено: ${addedCount}, обновлено: ${existingCount}, удалено: ${removedCount}.`,
       data: {
         added: addedCount,
         existing: existingCount,
+        removed: removedCount,
         totalMembers: members.length,
-        note: "Синхронизированы только администраторы. Обычные участники добавляются через webhook при подключении к чату.",
       },
     });
   } catch (error) {

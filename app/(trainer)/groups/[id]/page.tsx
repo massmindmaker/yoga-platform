@@ -369,7 +369,6 @@ export default function GroupDetailPage() {
                 Ученики ({group._count.students})
               </CardTitle>
             {group.telegramChat && (
-              <div className="flex gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -393,29 +392,6 @@ export default function GroupDetailPage() {
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Синхронизировать
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-gray-400"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`/api/groups/${groupId}/sync-telegram?action=reconnect`, {
-                        method: 'POST'
-                      });
-                      const data = await response.json();
-                      if (data.success) {
-                        toast.success(data.message);
-                      } else {
-                        toast.error(data.error || 'Ошибка');
-                      }
-                    } catch {
-                      toast.error('Ошибка переподключения');
-                    }
-                  }}
-                >
-                  Переподключить
-                </Button>
-              </div>
             )}
           </CardHeader>
           <CardContent className="p-4 pt-0">
