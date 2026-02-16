@@ -80,7 +80,7 @@ export default function StudentPaymentsPage() {
   const totalClasses = payments
     .filter(p => p.status === 'COMPLETED')
     .reduce((sum, p) => sum + p.classesCount, 0);
-  const averagePrice = totalClasses > 0 ? Math.round(totalSpent / totalClasses) : 0;
+
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -140,7 +140,7 @@ export default function StudentPaymentsPage() {
               </div>
 
               {/* Статистика */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-white">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-white">
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <TrendingUp className="w-4 h-4 text-green-500" />
@@ -148,19 +148,12 @@ export default function StudentPaymentsPage() {
                   </div>
                   <p className="font-bold text-gray-900">{isLoading ? "..." : totalSpent.toLocaleString()} ₽</p>
                 </div>
-                <div className="text-center border-x border-gray-100">
+                <div className="text-center border-l border-gray-100">
                   <div className="flex items-center justify-center gap-1 mb-1">
                      <Calendar className="w-4 h-4 text-gray-900" />
                     <span className="text-xs text-gray-500">Куплено</span>
                   </div>
                   <p className="font-bold text-gray-900">{isLoading ? "..." : totalClasses} занятий</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <CreditCard className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs text-gray-500">Средняя цена</span>
-                  </div>
-                  <p className="font-bold text-gray-900">{isLoading ? "..." : averagePrice} ₽</p>
                 </div>
               </div>
             </CardContent>
