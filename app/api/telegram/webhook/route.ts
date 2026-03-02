@@ -3,6 +3,55 @@ import { prisma } from "@/lib/db";
 import { sendTelegramMessage, sendMainMenu, notifyGroupAboutClass } from "@/lib/bot-messages";
 import { createTelegramInvoice } from "@/lib/telegram";
 
+// Типы Telegram Bot API (только используемые в webhook)
+interface TgUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  is_bot?: boolean;
+}
+
+interface TgCallbackQuery {
+  id: string;
+  from: TgUser;
+  message: {
+    chat: { id: number };
+    message_id: number;
+  };
+  data: string;
+}
+
+interface TgPollAnswer {
+  poll_id: string;
+  user: TgUser;
+  option_ids: number[];
+}
+
+interface TgPreCheckoutQuery {
+  id: string;
+  from: TgUser;
+  invoice_payload: string;
+  currency: string;
+  total_amount: number;
+}
+
+interface TgSuccessfulPayment {
+  currency: string;
+  total_amount: number;
+  invoice_payload: string;
+  telegram_payment_charge_id: string;
+  provider_payment_charge_id: string;
+}
+
+interface TgMessage {
+  chat: { id: number; type: string };
+  from: TgUser;
+  text?: string;
+  successful_payment?: TgSuccessfulPayment;
+  new_chat_members?: TgUser[];
+}
+
 function getAppUrl(path: string = ""): string {
   return ((process.env.NEXT_PUBLIC_APP_URL || "").trim() + path);
 }
@@ -105,7 +154,7 @@ async function autoSaveChatId(chatId: number) {
 }
 
 // Обработка команды /start
-async function handleStart(chatId: number, user: any, isGroup: boolean) {
+async function handleStart(chatId: number, user: TgUser, isGroup: boolean) {
   try {
     console.log("[WEBHOOK] handleStart called:", { chatId, userId: user?.id, isGroup });
     
@@ -233,7 +282,7 @@ async function handleHelp(chatId: number, isGroup: boolean) {
 }
 
 // Обработка команды /balance
-async function handleBalance(chatId: number, user: any) {
+async function handleBalance(chatId: number, user: TgUser) {
   const dbUser = await prisma.user.findFirst({
     where: { telegramId: user.id.toString() },
   });
@@ -305,7 +354,7 @@ async function handleSchedule(chatId: number, isGroup: boolean) {
 }
 
 // Обработка команды /vote
-async function handleVote(chatId: number, user: any) {
+async function handleVote(chatId: number, user: TgUser) {
   const activeVotings = await prisma.voting.findMany({
     where: { status: "ACTIVE" },
     include: { options: { include: { _count: { select: { votes: true } } } } },
@@ -348,7 +397,7 @@ async function handleVote(chatId: number, user: any) {
 
 // Обработка ответа на нативный Telegram Poll
 // Голос ВСЕГДА бесплатный — оплата происходит отдельно (кнопка под Poll-ом)
-async function handlePollAnswer(pollAnswer: any) {
+async function handlePollAnswer(pollAnswer: TgPollAnswer) {
   const telegramUserId = pollAnswer.user.id.toString();
   const pollId = pollAnswer.poll_id;
   const optionIndices: number[] = pollAnswer.option_ids;
@@ -440,7 +489,7 @@ async function handlePollAnswer(pollAnswer: any) {
 }
 
 // Обработка callback queries
-async function handleCallbackQuery(callbackQuery: any) {
+async function handleCallbackQuery(callbackQuery: TgCallbackQuery) {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
   const user = callbackQuery.from;
@@ -509,7 +558,7 @@ async function handleCallbackQuery(callbackQuery: any) {
 }
 
 // Голосование из Telegram inline-кнопки (новый формат v:shortId:index)
-async function handleVoteFromCallback(callbackQuery: any, shortVotingId: string, optionIndex: number) {
+async function handleVoteFromCallback(callbackQuery: TgCallbackQuery, shortVotingId: string, optionIndex: number) {
   const chatId = callbackQuery.message.chat.id;
   const telegramUserId = callbackQuery.from.id.toString();
   
@@ -557,7 +606,7 @@ async function handleVoteFromCallback(callbackQuery: any, shortVotingId: string,
 }
 
 // Старый формат (vote_{uuid}_{uuid}) — совместимость
-async function handleVoteFromCallbackLegacy(callbackQuery: any, votingId: string, optionId: string) {
+async function handleVoteFromCallbackLegacy(callbackQuery: TgCallbackQuery, votingId: string, optionId: string) {
   const chatId = callbackQuery.message.chat.id;
   const telegramUserId = callbackQuery.from.id.toString();
   
@@ -595,7 +644,13 @@ async function handleVoteFromCallbackLegacy(callbackQuery: any, votingId: string
 }
 
 // Общая логика голосования из Telegram inline-кнопок (legacy, без списания)
-async function processVoteFromTelegram(callbackQuery: any, chatId: number, user: any, voting: any, option: any) {
+async function processVoteFromTelegram(
+  callbackQuery: TgCallbackQuery,
+  chatId: number,
+  user: { id: string },
+  voting: { id: string },
+  option: { id: string; dayOfWeek: number; time: string },
+) {
   const DAYS_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
   
   // Проверяем, не голосовал ли уже за эту опцию (idempotent)
@@ -624,7 +679,7 @@ async function processVoteFromTelegram(callbackQuery: any, chatId: number, user:
 }
 
 // FIXED: Оплатить картой — создаёт Telegram Invoice
-async function handleFixedPayCard(callbackQuery: any, shortVotingId: string) {
+async function handleFixedPayCard(callbackQuery: TgCallbackQuery, shortVotingId: string) {
   const chatId = callbackQuery.message.chat.id;
   const telegramUserId = callbackQuery.from.id.toString();
   
@@ -667,7 +722,7 @@ async function handleFixedPayCard(callbackQuery: any, shortVotingId: string) {
 }
 
 // FIXED: Списать с баланса
-async function handleFixedPayBalance(callbackQuery: any, shortVotingId: string) {
+async function handleFixedPayBalance(callbackQuery: TgCallbackQuery, shortVotingId: string) {
   const telegramUserId = callbackQuery.from.id.toString();
   
   try {
@@ -736,7 +791,7 @@ async function handleFixedPayBalance(callbackQuery: any, shortVotingId: string) 
 }
 
 // DYNAMIC: Оплатить картой (после финализации)
-async function handleDynamicPayCard(callbackQuery: any, shortVotingId: string, optionIndex: number) {
+async function handleDynamicPayCard(callbackQuery: TgCallbackQuery, shortVotingId: string, optionIndex: number) {
   const chatId = callbackQuery.message.chat.id;
   const telegramUserId = callbackQuery.from.id.toString();
   
@@ -779,7 +834,7 @@ async function handleDynamicPayCard(callbackQuery: any, shortVotingId: string, o
 }
 
 // Обработка запроса на оплату (legacy)
-async function handlePaymentRequest(callbackQuery: any, votingId: string, userId: string) {
+async function handlePaymentRequest(callbackQuery: TgCallbackQuery, votingId: string, userId: string) {
   const chatId = callbackQuery.message.chat.id;
   
   try {
@@ -814,7 +869,7 @@ async function handlePaymentRequest(callbackQuery: any, votingId: string, userId
 
 // Вспомогательная функция для ответа на callback
 async function answerCallback(callbackQueryId: string, text?: string) {
-  const body: any = { callback_query_id: callbackQueryId };
+  const body: Record<string, string | boolean> = { callback_query_id: callbackQueryId };
   if (text) body.text = text;
   if (text) body.show_alert = true;
   
@@ -851,7 +906,7 @@ async function handleBotAddedToGroup(chatId: number) {
 }
 
 // Новый участник добавлен в группу
-async function handleNewChatMember(chatId: number, member: any) {
+async function handleNewChatMember(chatId: number, member: TgUser) {
   try {
     // Находим группу по chatId — ищем и по telegramChat (ссылка/username) и по telegramChatId (числовой ID)
     const group = await prisma.group.findFirst({
@@ -978,7 +1033,7 @@ async function getBotInfo() {
 }
 
 // Обработка pre-checkout query (проверка перед оплатой)
-async function handlePreCheckoutQuery(preCheckoutQuery: any) {
+async function handlePreCheckoutQuery(preCheckoutQuery: TgPreCheckoutQuery) {
   const payload = preCheckoutQuery.invoice_payload;
   
   // Поддерживаемые payload: voting_{id}_{userId}, dynvote_{id}_{optId}_{userId}
@@ -1020,9 +1075,10 @@ async function handlePreCheckoutQuery(preCheckoutQuery: any) {
 }
 
 // Обработка успешного платежа
-async function handleSuccessfulPayment(message: any) {
+async function handleSuccessfulPayment(message: TgMessage) {
   const chatId = message.chat.id;
   const payment = message.successful_payment;
+  if (!payment) return;
   const payload = payment.invoice_payload;
   const telegramUserId = message.from.id.toString();
   
@@ -1248,7 +1304,7 @@ export async function POST(req: NextRequest) {
       else if (update.message.new_chat_members) {
         const botId = (await getBotInfo()).id;
         const isBotAdded = update.message.new_chat_members.some(
-          (member: any) => member.id === botId
+          (member: TgUser) => member.id === botId
         );
         if (isBotAdded) {
           await handleBotAddedToGroup(chatId);
