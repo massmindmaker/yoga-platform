@@ -1,32 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { z } from "zod";
+import { getTelegramUser } from "@/lib/telegram";
 
 // Validation schemas
 const createWaitlistSchema = z.object({
-  userId: z.string().uuid('Invalid user ID'),
-  groupId: z.string().uuid('Invalid group ID').optional(),
-  classId: z.string().uuid('Invalid class ID').optional(),
+  groupId: z.string().uuid("Invalid group ID").optional(),
+  classId: z.string().uuid("Invalid class ID").optional(),
   priority: z.number().int().default(0),
 });
 
 const updateWaitlistSchema = z.object({
   priority: z.number().int().optional(),
-  status: z.enum(['ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED']).optional(),
+  status: z.enum(["ACTIVE", "FULFILLED", "CANCELLED", "EXPIRED"]).optional(),
 });
 
 // GET /api/waitlist - получить лист ожидания
 export async function GET(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    const groupId = searchParams.get('groupId');
-    const classId = searchParams.get('classId');
-    const status = searchParams.get('status');
+    const groupId = searchParams.get("groupId");
+    const classId = searchParams.get("classId");
+    const status = searchParams.get("status");
 
     const where: Record<string, unknown> = {};
-    
-    if (userId) where.userId = userId;
+
+    // Ученик видит только свои записи, тренер — все
+    if (user.role !== "TRAINER") {
+      where.userId = user.id;
+    } else {
+      const userId = searchParams.get("userId");
+      if (userId) where.userId = userId;
+    }
+
     if (groupId) where.groupId = groupId;
     if (classId) where.classId = classId;
     if (status) where.status = status;
@@ -42,44 +56,50 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'asc' },
+        { priority: "desc" },
+        { createdAt: "asc" },
       ],
     });
 
     return NextResponse.json({ success: true, data: waitlist });
   } catch (error) {
-    console.error('[WAITLIST_GET]', error);
+    console.error("[WAITLIST_GET]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch waitlist' },
+      { success: false, error: "Ошибка получения листа ожидания" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/waitlist - добавить в лист ожидания
+// POST /api/waitlist - добавить в лист ожидания (userId из auth)
 export async function POST(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     const validationResult = createWaitlistSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validationResult.error.issues,
-        },
+        { success: false, error: "Ошибка валидации", details: validationResult.error.issues },
         { status: 400 }
       );
     }
 
-    const { userId, groupId, classId, priority } = validationResult.data;
+    const { groupId, classId, priority } = validationResult.data;
+    // userId из auth
+    const userId = user.id;
 
     // Validate that at least one of groupId or classId is provided
     if (!groupId && !classId) {
       return NextResponse.json(
-        { success: false, error: 'Either groupId or classId must be provided' },
+        { success: false, error: "Необходимо указать groupId или classId" },
         { status: 400 }
       );
     }
@@ -90,26 +110,14 @@ export async function POST(req: NextRequest) {
         userId,
         ...(groupId && { groupId }),
         ...(classId && { classId }),
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
     });
 
     if (existingEntry) {
       return NextResponse.json(
-        { success: false, error: 'User is already in waitlist' },
+        { success: false, error: "Вы уже в листе ожидания" },
         { status: 409 }
-      );
-    }
-
-    // Verify user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
       );
     }
 
@@ -121,7 +129,7 @@ export async function POST(req: NextRequest) {
 
       if (!group) {
         return NextResponse.json(
-          { success: false, error: 'Group not found' },
+          { success: false, error: "Группа не найдена" },
           { status: 404 }
         );
       }
@@ -133,7 +141,7 @@ export async function POST(req: NextRequest) {
         groupId,
         classId,
         priority,
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
       include: {
         user: {
@@ -147,23 +155,37 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: entry });
   } catch (error) {
-    console.error('[WAITLIST_POST]', error);
+    console.error("[WAITLIST_POST]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to add to waitlist' },
+      { success: false, error: "Ошибка добавления в лист ожидания" },
       { status: 500 }
     );
   }
 }
 
-// PATCH /api/waitlist - обновить запись в листе ожидания
+// PATCH /api/waitlist - обновить запись в листе ожидания (только тренер)
 export async function PATCH(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может обновлять лист ожидания" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Waitlist entry ID is required' },
+        { success: false, error: "ID записи обязателен" },
         { status: 400 }
       );
     }
@@ -173,19 +195,15 @@ export async function PATCH(req: NextRequest) {
     const validationResult = updateWaitlistSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validationResult.error.issues,
-        },
+        { success: false, error: "Ошибка валидации", details: validationResult.error.issues },
         { status: 400 }
       );
     }
 
     const updateData: Record<string, unknown> = validationResult.data;
-    
+
     // If status is being changed to FULFILLED, set fulfilledAt
-    if (validationResult.data.status === 'FULFILLED') {
+    if (validationResult.data.status === "FULFILLED") {
       updateData.fulfilledAt = new Date();
     }
 
@@ -204,23 +222,37 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: entry });
   } catch (error) {
-    console.error('[WAITLIST_PATCH]', error);
+    console.error("[WAITLIST_PATCH]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update waitlist entry' },
+      { success: false, error: "Ошибка обновления записи" },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/waitlist - удалить из листа ожидания
+// DELETE /api/waitlist - удалить из листа ожидания (только тренер)
 export async function DELETE(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может удалять из листа ожидания" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Waitlist entry ID is required' },
+        { success: false, error: "ID записи обязателен" },
         { status: 400 }
       );
     }
@@ -229,9 +261,9 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[WAITLIST_DELETE]', error);
+    console.error("[WAITLIST_DELETE]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete waitlist entry' },
+      { success: false, error: "Ошибка удаления записи" },
       { status: 500 }
     );
   }

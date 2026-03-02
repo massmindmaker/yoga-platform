@@ -87,7 +87,7 @@ export default function GroupsPage() {
       </div>
 
       <div className="p-4 space-y-3">
-        {groups.map((group: any, index) => {
+        {groups.map((group, index) => {
           const schedule = formatSchedule(group.schedules || []);
           const isIntensive = group.groupType === "INTENSIVE";
           

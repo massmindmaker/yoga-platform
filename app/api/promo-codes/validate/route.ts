@@ -1,21 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { z } from "zod";
+import { getTelegramUser } from "@/lib/telegram";
 
 const validateSchema = z.object({
   code: z.string().min(1),
-  userId: z.string().optional(),
 });
 
-// POST /api/promo-codes/validate - validate a promo code
+// POST /api/promo-codes/validate - проверить промокод
 export async function POST(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const validation = validateSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Invalid request' },
+        { success: false, error: "Неверный запрос" },
         { status: 400 }
       );
     }
@@ -24,33 +32,33 @@ export async function POST(req: NextRequest) {
     const now = new Date();
 
     const promoCode = await prisma.promoCode.findUnique({
-      where: { code: code.toUpperCase() }
+      where: { code: code.toUpperCase() },
     });
 
     if (!promoCode) {
       return NextResponse.json(
-        { success: false, error: 'Promo code not found' },
+        { success: false, error: "Промокод не найден" },
         { status: 404 }
       );
     }
 
     if (!promoCode.isActive) {
       return NextResponse.json(
-        { success: false, error: 'Promo code is inactive' },
+        { success: false, error: "Промокод неактивен" },
         { status: 400 }
       );
     }
 
     if (promoCode.validUntil < now) {
       return NextResponse.json(
-        { success: false, error: 'Promo code has expired' },
+        { success: false, error: "Промокод истёк" },
         { status: 400 }
       );
     }
 
     if (promoCode.maxUses && promoCode.usedCount >= promoCode.maxUses) {
       return NextResponse.json(
-        { success: false, error: 'Promo code usage limit reached' },
+        { success: false, error: "Лимит использования промокода исчерпан" },
         { status: 400 }
       );
     }
@@ -61,12 +69,12 @@ export async function POST(req: NextRequest) {
         code: promoCode.code,
         discountPercent: promoCode.discountPercent,
         discountAmount: promoCode.discountAmount,
-      }
+      },
     });
   } catch (error) {
-    console.error('[PROMO_CODES_VALIDATE]', error);
+    console.error("[PROMO_CODES_VALIDATE]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to validate promo code' },
+      { success: false, error: "Ошибка проверки промокода" },
       { status: 500 }
     );
   }

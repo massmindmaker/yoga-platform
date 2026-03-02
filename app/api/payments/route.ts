@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { createPayment, handlePaymentWebhook } from "@/lib/tbank";
-import { createPaymentSchema, getPaymentsQuerySchema } from "@/lib/validation";
+import { createPayment } from "@/lib/tbank";
+import { createPaymentSchema } from "@/lib/validation";
+import { getTelegramUser } from "@/lib/telegram";
 
 // POST /api/payments - создать платеж
 export async function POST(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
+    // Подставляем userId из auth
+    body.userId = user.id;
 
     // Validate request body
     const validationResult = createPaymentSchema.safeParse(body);
@@ -76,35 +87,28 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/payments - получить платежи пользователя
+// GET /api/payments - получить платежи текущего пользователя
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
-
-    // Validate query params
-    const validationResult = getPaymentsQuerySchema.safeParse({ userId });
-    if (!validationResult.success) {
+    const user = await getTelegramUser(req);
+    if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Validation failed",
-          details: validationResult.error.issues,
-        },
-        { status: 400 }
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
       );
     }
 
+    // userId из auth, не из query params
     const payments = await prisma.payment.findMany({
-      where: { userId: validationResult.data.userId },
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ success: true, data: payments });
   } catch (error) {
-    console.error("Error fetching payments:", error);
+    console.error("[PAYMENTS_GET]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch payments" },
+      { success: false, error: "Ошибка получения платежей" },
       { status: 500 }
     );
   }

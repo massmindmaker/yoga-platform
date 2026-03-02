@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface Schedule {
   id: string;
@@ -23,7 +24,41 @@ interface GroupStudent {
   };
 }
 
-interface Group {
+interface GroupVoting {
+  id: string;
+  title: string;
+  type: "SCHEDULE" | "CONFIRM" | "SURVEY";
+  status: "ACTIVE" | "FINALIZED" | "CLOSED" | "CANCELLED";
+  deadline: string;
+  minParticipants: number;
+  chargeOnVote: boolean;
+  multipleChoice: boolean;
+  createdAt: string;
+  telegramPollId?: string | null;
+  options: Array<{
+    id: string;
+    dayOfWeek: number;
+    time: string;
+    date?: string | null;
+    description?: string | null;
+    finalPrice?: number | null;
+    cancelled: boolean;
+    _count: { votes: number };
+    votes: Array<{
+      id: string;
+      userId: string;
+      balanceCharged: boolean;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string | null;
+      };
+    }>;
+  }>;
+  _count: { votes: number };
+}
+
+export interface Group {
   id: string;
   name: string;
   description: string | null;
@@ -38,33 +73,14 @@ interface Group {
   endsAt: string | null;
   schedules: Schedule[];
   students?: GroupStudent[];
-  votings?: any[];
+  votings?: GroupVoting[];
   _count: {
     students: number;
     votings?: number;
   };
 }
 
-async function fetchWithRetry<T>(
-  url: string,
-  options?: RequestInit,
-  retries = 3
-): Promise<T> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (e) {
-      if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-  throw new Error('Max retries exceeded');
-}
+
 
 export function useGroups() {
   const [groups, setGroups] = useState<Group[]>([]);

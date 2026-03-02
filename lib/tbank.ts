@@ -1,8 +1,14 @@
 // T-Bank (Tinkoff) Payment Integration
 import crypto from "crypto";
 
-const TERMINAL_KEY = process.env.TBANK_TERMINAL_KEY;
-const PASSWORD = process.env.TBANK_PASSWORD;
+// Читаем env в момент вызова, не при загрузке модуля (важно для serverless)
+function getTerminalKey() {
+  return process.env.TBANK_TERMINAL_KEY;
+}
+
+function getPassword() {
+  return process.env.TBANK_PASSWORD;
+}
 
 interface PaymentRequest {
   amount: number; // в копейках
@@ -24,12 +30,15 @@ export async function createPayment(
   data: PaymentRequest
 ): Promise<PaymentResponse> {
   try {
-    if (!TERMINAL_KEY || !PASSWORD) {
+    const terminalKey = getTerminalKey();
+    const password = getPassword();
+
+    if (!terminalKey || !password) {
       return { success: false, error: "T-Bank credentials not configured" };
     }
 
     const params = new URLSearchParams({
-      TerminalKey: TERMINAL_KEY,
+      TerminalKey: terminalKey,
       Amount: data.amount.toString(),
       OrderId: data.orderId,
       Description: data.description,
@@ -44,11 +53,11 @@ export async function createPayment(
 
     // Добавляем токен безопасности
     const token = generateToken({
-      TerminalKey: TERMINAL_KEY,
+      TerminalKey: terminalKey,
       Amount: data.amount.toString(),
       OrderId: data.orderId,
       Description: data.description,
-      Password: PASSWORD,
+      Password: password,
     });
     params.append("Token", token);
 
@@ -84,19 +93,22 @@ export async function createPayment(
 // Проверить статус платежа
 export async function checkPaymentStatus(paymentId: string) {
   try {
-    if (!TERMINAL_KEY || !PASSWORD) {
+    const terminalKey = getTerminalKey();
+    const password = getPassword();
+
+    if (!terminalKey || !password) {
       return { success: false, error: "T-Bank credentials not configured" };
     }
 
     const params = new URLSearchParams({
-      TerminalKey: TERMINAL_KEY,
+      TerminalKey: terminalKey,
       PaymentId: paymentId,
     });
 
     const token = generateToken({
-      TerminalKey: TERMINAL_KEY,
+      TerminalKey: terminalKey,
       PaymentId: paymentId,
-      Password: PASSWORD,
+      Password: password,
     });
     params.append("Token", token);
 
@@ -130,7 +142,8 @@ function generateToken(params: Record<string, string>): string {
 // Проверка подписи webhook от T-Bank
 export function verifyTBankSignature(payload: Record<string, unknown>): boolean {
   try {
-    if (!PASSWORD) {
+    const password = getPassword();
+    if (!password) {
       console.error("T-Bank password not configured");
       return false;
     }
@@ -151,7 +164,7 @@ export function verifyTBankSignature(payload: Record<string, unknown>): boolean 
     // Добавляем пароль
     const paramsWithPassword = {
       ...data,
-      Password: PASSWORD,
+      Password: password,
     };
     
     // Сортируем и конкатенируем значения

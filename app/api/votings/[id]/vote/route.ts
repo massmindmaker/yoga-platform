@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { voteSchema, idParamSchema } from '@/lib/validation';
 import { sendTelegramMessage } from '@/lib/bot-messages';
+import { getTelegramUser } from '@/lib/telegram';
 
 // POST /api/votings/[id]/vote - проголосовать (множественный выбор)
 export async function POST(
@@ -9,6 +10,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const { id: votingId } = await params;
 
     const idValidation = idParamSchema.safeParse({ id: votingId });
@@ -20,6 +29,8 @@ export async function POST(
     }
 
     const body = await req.json();
+    // Подставляем userId из auth, не из body
+    body.userId = user.id;
     const validationResult = voteSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -101,14 +112,14 @@ export async function POST(
     // Отправляем подтверждение в Telegram, если указан telegramChatId
     if (telegramChatId && result.length > 0) {
       try {
-        const user = await prisma.user.findUnique({
+        const freshUser = await prisma.user.findUnique({
           where: { id: userId },
           select: { balance: true },
         });
 
         await sendTelegramMessage(
           parseInt(telegramChatId),
-          `✅ *Голос принят!*\n\n🗳️ ${voting.title}\n✅ Вы проголосовали за ${result.length} вариант(ов)\n💳 Баланс: ${user?.balance || 0} занятий`,
+          `✅ *Голос принят!*\n\n🗳️ ${voting.title}\n✅ Вы проголосовали за ${result.length} вариант(ов)\n💳 Баланс: ${freshUser?.balance || 0} занятий`,
           {
             inline_keyboard: [
               [{
@@ -139,25 +150,28 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: votingId } = await params;
-    const body = await req.json();
-    const { userId, optionIds } = body;
-
-    if (!userId) {
+    const user = await getTelegramUser(req);
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
       );
     }
+
+    const { id: votingId } = await params;
+    const body = await req.json();
+    const { optionIds } = body;
+    // userId берём из auth, не из body
+    const userId = user.id;
 
     const voting = await prisma.voting.findUnique({
       where: { id: votingId },
       include: { group: { select: { fixedPrice: true } } },
     });
 
-    if (!voting || voting.status !== 'ACTIVE') {
+    if (!voting || voting.status !== "ACTIVE") {
       return NextResponse.json(
-        { success: false, error: 'Voting not found or not active' },
+        { success: false, error: "Голосование не найдено или не активно" },
         { status: 400 }
       );
     }
@@ -171,7 +185,7 @@ export async function DELETE(
 
     if (votesToRefund.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No votes to cancel' },
+        { success: false, error: "Нет голосов для отмены" },
         { status: 404 }
       );
     }
@@ -197,7 +211,7 @@ export async function DELETE(
             data: {
               userId,
               amount: refundAmount,
-              type: 'VOTE_REFUND',
+              type: "VOTE_REFUND",
               description: `Возврат за отмену голоса: ${voting.title}`,
               voteId: vote.id,
               votingId,
@@ -209,9 +223,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, data: { refunded: votesToRefund.length } });
   } catch (error) {
-    console.error('[VOTE_DELETE]', error);
+    console.error("[VOTE_DELETE]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to cancel vote' },
+      { success: false, error: "Ошибка отмены голоса" },
       { status: 500 }
     );
   }

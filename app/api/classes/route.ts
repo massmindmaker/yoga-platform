@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getTelegramUser } from "@/lib/telegram";
 import type { Prisma, ClassStatus } from "@prisma/client";
 
 // GET /api/classes - получить занятия
 export async function GET(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get("groupId");
     const from = searchParams.get("from");
@@ -12,7 +21,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
 
     const where: Prisma.ClassWhereInput = {};
-    
+
     if (groupId) {
       where.schedule = { groupId };
     }
@@ -40,15 +49,15 @@ export async function GET(req: NextRequest) {
       include: {
         schedule: {
           include: {
-            group: true
-          }
+            group: true,
+          },
         },
         trainer: {
           select: {
             id: true,
             firstName: true,
-            lastName: true
-          }
+            lastName: true,
+          },
         },
         bookings: {
           include: {
@@ -56,18 +65,18 @@ export async function GET(req: NextRequest) {
               select: {
                 id: true,
                 firstName: true,
-                lastName: true
-              }
-            }
-          }
+                lastName: true,
+              },
+            },
+          },
         },
         _count: {
-          select: { bookings: true }
-        }
+          select: { bookings: true },
+        },
       },
       orderBy: {
-        date: "asc"
-      }
+        date: "asc",
+      },
     });
 
     // Cache for 30 seconds (stale-while-revalidate pattern)
@@ -75,14 +84,14 @@ export async function GET(req: NextRequest) {
       { success: true, data: classes },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300',
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=300",
         },
       }
     );
   } catch (error) {
     console.error("[CLASSES_GET]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch classes" },
+      { success: false, error: "Ошибка получения занятий" },
       { status: 500 }
     );
   }

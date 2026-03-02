@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { updateGroupSchema, idParamSchema } from "@/lib/validation";
-import type { ScheduleInput } from "@/src/types";
+import { getTelegramUser } from "@/lib/telegram";
 
 // GET /api/groups/[id] - получить группу
 export async function GET(
@@ -9,17 +9,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     // Validate ID param
     const idValidation = idParamSchema.safeParse({ id });
     if (!idValidation.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid ID format",
-          details: idValidation.error.issues,
-        },
+        { success: false, error: "Неверный формат ID", details: idValidation.error.issues },
         { status: 400 }
       );
     }
@@ -38,14 +42,14 @@ export async function GET(
                 username: true,
                 photoUrl: true,
                 balance: true,
-                telegramId: true
-              }
-            }
-          }
+                telegramId: true,
+              },
+            },
+          },
         },
         votings: {
           where: {
-            status: { in: ['ACTIVE', 'FINALIZED'] }
+            status: { in: ["ACTIVE", "FINALIZED"] },
           },
           include: {
             options: {
@@ -58,58 +62,68 @@ export async function GET(
                         firstName: true,
                         lastName: true,
                         telegramId: true,
-                      }
-                    }
-                  }
+                      },
+                    },
+                  },
                 },
-                _count: { select: { votes: true } }
-              }
+                _count: { select: { votes: true } },
+              },
             },
-            _count: { select: { votes: true } }
+            _count: { select: { votes: true } },
           },
-          orderBy: { createdAt: 'desc' },
-          take: 5
+          orderBy: { createdAt: "desc" },
+          take: 5,
         },
         _count: {
-          select: { students: true }
-        }
-      }
+          select: { students: true },
+        },
+      },
     });
 
     if (!group) {
       return NextResponse.json(
-        { success: false, error: "Group not found" },
+        { success: false, error: "Группа не найдена" },
         { status: 404 }
       );
     }
 
     return NextResponse.json({ success: true, data: group });
   } catch (error) {
-    console.error("Error fetching group:", error);
+    console.error("[GROUP_GET]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch group" },
+      { success: false, error: "Ошибка получения группы" },
       { status: 500 }
     );
   }
 }
 
-// PATCH /api/groups/[id] - обновить группу
+// PATCH /api/groups/[id] - обновить группу (только тренер)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может редактировать группу" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
 
     // Validate ID param
     const idValidation = idParamSchema.safeParse({ id });
     if (!idValidation.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid ID format",
-          details: idValidation.error.issues,
-        },
+        { success: false, error: "Неверный формат ID", details: idValidation.error.issues },
         { status: 400 }
       );
     }
@@ -120,26 +134,22 @@ export async function PATCH(
     const validationResult = updateGroupSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Validation failed",
-          details: validationResult.error.issues,
-        },
+        { success: false, error: "Ошибка валидации", details: validationResult.error.issues },
         { status: 400 }
       );
     }
 
-    const { 
-      name, 
-      description, 
+    const {
+      name,
+      description,
       groupType,
       pricingType,
       fixedPrice,
-      maxStudents, 
-      telegramChat, 
+      maxStudents,
+      telegramChat,
       startsAt,
       endsAt,
-      schedules 
+      schedules,
     } = validationResult.data;
 
     // Обновляем основную информацию
@@ -158,14 +168,14 @@ export async function PATCH(
     const group = await prisma.$transaction(async (tx) => {
       if (schedules) {
         await tx.schedule.deleteMany({
-          where: { groupId: id }
+          where: { groupId: id },
         });
 
         updateData.schedules = {
           create: schedules.map((s: { dayOfWeek: number; time: string }) => ({
             dayOfWeek: s.dayOfWeek,
             time: s.time,
-          }))
+          })),
         };
       }
 
@@ -173,51 +183,61 @@ export async function PATCH(
         where: { id },
         data: updateData as Record<string, unknown>,
         include: {
-          schedules: true
-        }
+          schedules: true,
+        },
       });
     });
 
     return NextResponse.json({ success: true, data: group });
   } catch (error) {
-    console.error("Error updating group:", error);
+    console.error("[GROUP_PATCH]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to update group" },
+      { success: false, error: "Ошибка обновления группы" },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/groups/[id] - удалить группу
+// DELETE /api/groups/[id] - удалить группу (только тренер)
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может удалять группу" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
 
     // Validate ID param
     const idValidation = idParamSchema.safeParse({ id });
     if (!idValidation.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid ID format",
-          details: idValidation.error.issues,
-        },
+        { success: false, error: "Неверный формат ID", details: idValidation.error.issues },
         { status: 400 }
       );
     }
 
     await prisma.group.delete({
-      where: { id }
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting group:", error);
+    console.error("[GROUP_DELETE]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to delete group" },
+      { success: false, error: "Ошибка удаления группы" },
       { status: 500 }
     );
   }

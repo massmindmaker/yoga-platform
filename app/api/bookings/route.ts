@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getTelegramUser } from "@/lib/telegram";
 
 // GET /api/bookings - получить бронирования пользователя
 export async function GET(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
     const status = searchParams.get("status");
     const upcoming = searchParams.get("upcoming");
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "userId required" },
-        { status: 400 }
-      );
-    }
+    // Используем user.id из auth вместо userId из query
+    const userId = user.id;
 
     const where: Record<string, unknown> = { userId };
     
@@ -62,12 +66,22 @@ export async function GET(req: NextRequest) {
 // POST /api/bookings - создать бронирование
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { userId, classId } = body;
-
-    if (!userId || !classId) {
+    const user = await getTelegramUser(req);
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: "userId and classId required" },
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { classId } = body;
+    // Используем user.id из auth — не доверяем userId из body
+    const userId = user.id;
+
+    if (!classId) {
+      return NextResponse.json(
+        { success: false, error: "classId required" },
         { status: 400 }
       );
     }

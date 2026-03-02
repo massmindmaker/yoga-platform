@@ -46,7 +46,7 @@ model User {
   waitlists     Waitlist[]
 
   @@index([role])
-  @@index([telegramId])
+  // telegramId уже имеет @unique, отдельный @@index не нужен
   @@map("users")
 }
 
@@ -278,6 +278,7 @@ model Voting {
 
   @@index([groupId])
   @@index([status])
+  @@index([telegramPollId])
   @@map("votings")
 }
 
@@ -370,7 +371,7 @@ model PassUsage {
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([passId])
-  @@index([bookingId])
+  // bookingId уже имеет @unique, отдельный @@index не нужен
   @@map("pass_usages")
 }
 
@@ -508,7 +509,7 @@ model UserNotificationSettings {
   // Relations
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  // userId уже имеет @unique, отдельный @@index не нужен
   @@map("user_notification_settings")
 }
 
@@ -526,7 +527,7 @@ model PromoCode {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  @@index([code])
+  // code уже имеет @unique, отдельный @@index не нужен
   @@index([isActive])
   @@index([validUntil])
   @@map("promo_codes")
@@ -610,7 +611,7 @@ model SystemSetting {
   description String?
   updatedAt   DateTime  @updatedAt
 
-  @@index([key])
+  // key уже имеет @unique, отдельный @@index не нужен
   @@map("system_settings")
 }
 

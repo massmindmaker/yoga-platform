@@ -1,17 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { extractChatId, resolveChatId } from "@/lib/telegram-chat";
+import { getTelegramUser } from "@/lib/telegram";
 
 function getBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN;
 }
 
-// POST /api/groups/[id]/sync-telegram - синхронизировать учеников из Telegram чата
+// POST /api/groups/[id]/sync-telegram - синхронизировать учеников из Telegram чата (только тренер)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может синхронизировать участников" },
+        { status: 403 }
+      );
+    }
+
     const { id: groupId } = await params;
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
@@ -19,7 +34,7 @@ export async function POST(
     const BOT_TOKEN = getBotToken();
     if (!BOT_TOKEN) {
       return NextResponse.json(
-        { success: false, error: "TELEGRAM_BOT_TOKEN not configured" },
+        { success: false, error: "TELEGRAM_BOT_TOKEN не настроен" },
         { status: 500 }
       );
     }
@@ -31,7 +46,7 @@ export async function POST(
 
     if (!group) {
       return NextResponse.json(
-        { success: false, error: "Group not found" },
+        { success: false, error: "Группа не найдена" },
         { status: 404 }
       );
     }
@@ -50,17 +65,17 @@ export async function POST(
 
     if (!group.telegramChat && !group.telegramChatId) {
       return NextResponse.json(
-        { success: false, error: "Telegram chat not linked to this group" },
+        { success: false, error: "Telegram чат не привязан к этой группе" },
         { status: 400 }
       );
     }
 
     // Use saved numeric telegramChatId if available (solves private invite links)
     let chatId: string;
-    
+
     if (group.telegramChatId) {
-      console.log('[SYNC_TELEGRAM] Using saved telegramChatId:', group.telegramChatId);
-      
+      console.log("[SYNC_TELEGRAM] Using saved telegramChatId:", group.telegramChatId);
+
       // Verify the saved chatId is still valid
       const verifyRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat`, {
         method: "POST",
@@ -68,9 +83,9 @@ export async function POST(
         body: JSON.stringify({ chat_id: group.telegramChatId }),
       });
       const verifyData = await verifyRes.json();
-      
+
       if (!verifyData.ok) {
-        console.log('[SYNC_TELEGRAM] Saved chatId invalid, resetting:', group.telegramChatId);
+        console.log("[SYNC_TELEGRAM] Saved chatId invalid, resetting:", group.telegramChatId);
         // Reset invalid chatId
         await prisma.group.update({
           where: { id: groupId },
@@ -81,47 +96,47 @@ export async function POST(
           error: "Сохранённый Chat ID недействителен. Отправьте /start в Telegram группу с ботом @Yom23_bot, затем повторите синхронизацию.",
         }, { status: 400 });
       }
-      
+
       chatId = group.telegramChatId;
     } else {
       // Resolve chat ID from various formats (link, username, etc.)
       const rawChatId = group.telegramChat!;
-      console.log('[SYNC_TELEGRAM] Raw chat ID from DB:', rawChatId);
-      
+      console.log("[SYNC_TELEGRAM] Raw chat ID from DB:", rawChatId);
+
       const chatIdExtracted = extractChatId(rawChatId);
-      console.log('[SYNC_TELEGRAM] Extracted chat ID:', chatIdExtracted);
-      
+      console.log("[SYNC_TELEGRAM] Extracted chat ID:", chatIdExtracted);
+
       if (!chatIdExtracted) {
         return NextResponse.json(
           { success: false, error: "Неверный формат ссылки на чат: " + rawChatId },
           { status: 400 }
         );
       }
-      
+
       // Try to resolve to actual chat ID
       const resolveResult = await resolveChatId(BOT_TOKEN, chatIdExtracted);
-      console.log('[SYNC_TELEGRAM] Resolve result:', resolveResult);
-      
+      console.log("[SYNC_TELEGRAM] Resolve result:", resolveResult);
+
       if (!resolveResult.success) {
         return NextResponse.json(
-          { 
-            success: false, 
-            error: resolveResult.error || "Не удалось найти чат. Для приватных групп: отправьте /start в группу с ботом, затем повторите синхронизацию." 
+          {
+            success: false,
+            error: resolveResult.error || "Не удалось найти чат. Для приватных групп: отправьте /start в группу с ботом, затем повторите синхронизацию.",
           },
           { status: 400 }
         );
       }
-      
+
       chatId = resolveResult.chatId!;
-      
+
       // Сохраняем числовой ID чата в группу для будущего использования
       await prisma.group.update({
         where: { id: groupId },
-        data: { telegramChatId: chatId }
+        data: { telegramChatId: chatId },
       });
-      console.log('[SYNC_TELEGRAM] Saved telegramChatId:', chatId);
+      console.log("[SYNC_TELEGRAM] Saved telegramChatId:", chatId);
     }
-    
+
     // Получаем список участников из Telegram чата
     const response = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/getChatMemberCount`,
@@ -133,10 +148,10 @@ export async function POST(
     );
 
     const memberCountData = await response.json();
-    
+
     if (!memberCountData.ok) {
       // More specific error messages based on Telegram error
-      let errorMessage = "Failed to fetch Telegram chat info";
+      let errorMessage = "Ошибка получения информации о чате";
       if (memberCountData.error_code === 400) {
         if (memberCountData.description?.includes("chat not found")) {
           errorMessage = "Чат не найден. Проверьте ID чата и убедитесь, что бот добавлен в чат";
@@ -153,8 +168,6 @@ export async function POST(
     }
 
     // Получаем администраторов чата
-    // Примечание: Telegram Bot API не позволяет получить список всех участников чата.
-    // Мы синхронизируем администраторов, а остальных участников отслеживаем через webhook (new_chat_members).
     const adminsResponse = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/getChatAdministrators`,
       {
@@ -165,17 +178,27 @@ export async function POST(
     );
 
     const adminsData = await adminsResponse.json();
-    
+
     if (!adminsData.ok) {
       return NextResponse.json(
-        { success: false, error: "Failed to fetch chat members" },
+        { success: false, error: "Ошибка получения участников чата" },
         { status: 500 }
       );
     }
 
     // Фильтруем только обычных пользователей (не ботов)
+    interface TelegramChatMember {
+      user: {
+        id: number;
+        is_bot: boolean;
+        first_name?: string;
+        last_name?: string;
+        username?: string;
+      };
+    }
+
     const members = adminsData.result.filter(
-      (member: any) => !member.user.is_bot
+      (member: TelegramChatMember) => !member.user.is_bot
     );
 
     let addedCount = 0;
@@ -216,15 +239,15 @@ export async function POST(
       } catch {
         // Фото не критично — продолжаем
       }
-      
+
       // Проверяем, существует ли пользователь
-      let user = await prisma.user.findFirst({
+      let dbUser = await prisma.user.findFirst({
         where: { telegramId: telegramUser.id.toString() },
       });
 
       // Если нет - создаем
-      if (!user) {
-        user = await prisma.user.create({
+      if (!dbUser) {
+        dbUser = await prisma.user.create({
           data: {
             telegramId: telegramUser.id.toString(),
             firstName: telegramUser.first_name || "Unknown",
@@ -239,11 +262,11 @@ export async function POST(
       } else {
         // Обновляем имя, фото и username
         await prisma.user.update({
-          where: { id: user.id },
+          where: { id: dbUser.id },
           data: {
-            firstName: telegramUser.first_name || user.firstName,
-            lastName: telegramUser.last_name || user.lastName,
-            username: telegramUser.username || user.username,
+            firstName: telegramUser.first_name || dbUser.firstName,
+            lastName: telegramUser.last_name || dbUser.lastName,
+            username: telegramUser.username || dbUser.username,
             ...(photoUrl ? { photoUrl } : {}),
           },
         });
@@ -255,27 +278,26 @@ export async function POST(
         where: {
           groupId_userId: {
             groupId: groupId,
-            userId: user.id,
+            userId: dbUser.id,
           },
         },
         update: {},
         create: {
           groupId: groupId,
-          userId: user.id,
+          userId: dbUser.id,
         },
       });
     }
 
     // Удаляем участников группы, которых больше нет в Telegram чате
-    // Собираем telegramId всех синхронизированных участников
-    const syncedTelegramIds = members.map((m: any) => m.user.id.toString());
-    
+    const syncedTelegramIds = members.map((m: TelegramChatMember) => m.user.id.toString());
+
     // Получаем всех текущих участников группы
     const currentGroupStudents = await prisma.groupStudent.findMany({
       where: { groupId },
       include: { user: true },
     });
-    
+
     let removedCount = 0;
     for (const gs of currentGroupStudents) {
       // Если у участника есть telegramId и его нет в чате — удаляем из группы
@@ -305,7 +327,7 @@ export async function POST(
   } catch (error) {
     console.error("[SYNC_TELEGRAM_POST]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to sync students from Telegram" },
+      { success: false, error: "Ошибка синхронизации участников из Telegram" },
       { status: 500 }
     );
   }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { addDays, startOfWeek, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { fetchWithRetry } from "@/lib/fetch";
 
 export interface ScheduleClass {
   id: string;
@@ -48,26 +49,7 @@ interface UseScheduleReturn {
   refetch: () => void;
 }
 
-async function fetchWithRetry<T>(
-  url: string,
-  options?: RequestInit,
-  retries = 3
-): Promise<T> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (e) {
-      if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-  throw new Error('Max retries exceeded');
-}
+
 
 export function useSchedule(): UseScheduleReturn {
   const [classes, setClasses] = useState<ScheduleClass[]>([]);

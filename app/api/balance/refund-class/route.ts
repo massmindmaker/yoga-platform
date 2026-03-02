@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getTelegramUser } from "@/lib/telegram";
 
 // POST /api/balance/refund-class - тренер возвращает занятие на баланс
 export async function POST(req: NextRequest) {
   try {
+    const trainer = await getTelegramUser(req);
+    if (!trainer || trainer.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Доступ только для тренера" },
+        { status: 403 }
+      );
+    }
+
     const { userId, amount, reason, voteId, votingId } = await req.json();
 
     if (!userId) {

@@ -1,12 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { getTelegramUser } from "@/lib/telegram";
 
-// POST /api/votings/[id]/cancel - отменить голосование (возврат всем)
+// POST /api/votings/[id]/cancel - отменить голосование (только тренер, возврат всем)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может отменить голосование" },
+        { status: 403 }
+      );
+    }
+
     const { id: votingId } = await params;
 
     const voting = await prisma.voting.findUnique({
@@ -22,14 +37,14 @@ export async function POST(
 
     if (!voting) {
       return NextResponse.json(
-        { success: false, error: 'Voting not found' },
+        { success: false, error: "Голосование не найдено" },
         { status: 404 }
       );
     }
 
-    if (voting.status !== 'ACTIVE') {
+    if (voting.status !== "ACTIVE") {
       return NextResponse.json(
-        { success: false, error: `Cannot cancel voting with status ${voting.status}` },
+        { success: false, error: `Нельзя отменить голосование со статусом ${voting.status}` },
         { status: 400 }
       );
     }
@@ -53,7 +68,7 @@ export async function POST(
           data: {
             userId: vote.userId,
             amount: refundAmount,
-            type: 'VOTE_REFUND',
+            type: "VOTE_REFUND",
             description: `Возврат — голосование отменено: ${voting.title}`,
             voteId: vote.id,
             votingId,
@@ -61,23 +76,21 @@ export async function POST(
         });
       }
 
-      // Mark all option votes as cancelled
+      // Mark voting as cancelled
       await tx.voting.update({
         where: { id: votingId },
-        data: { status: 'CANCELLED' },
+        data: { status: "CANCELLED" },
       });
     });
-
-    // TODO: Notify users in Telegram
 
     return NextResponse.json({
       success: true,
       data: { refundedVotes: voting.votes.length },
     });
   } catch (error) {
-    console.error('[VOTING_CANCEL]', error);
+    console.error("[VOTING_CANCEL]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to cancel voting' },
+      { success: false, error: "Ошибка отмены голосования" },
       { status: 500 }
     );
   }

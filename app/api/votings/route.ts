@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createVotingSchema } from '@/lib/validation';
-import { sendVotingToChat } from '@/lib/telegram';
+import { sendVotingToChat, getTelegramUser } from '@/lib/telegram';
 
 // GET /api/votings - получить активные голосования
 export async function GET(req: NextRequest) {
@@ -71,9 +71,17 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/votings - создать голосование
+// POST /api/votings - создать голосование (только тренер)
 export async function POST(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user || user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Доступ только для тренера" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
 
     const validationResult = createVotingSchema.safeParse(body);

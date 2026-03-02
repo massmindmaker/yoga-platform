@@ -56,9 +56,32 @@ export default function StudentJournalPage() {
         
         if (data.success) {
           // Transform bookings to attendance records format
-          const records: AttendanceRecord[] = (data.data || [])
-            .filter((booking: any) => booking.attendance)
-            .map((booking: any) => ({
+          interface BookingWithAttendance {
+            id: string;
+            attendance?: {
+              id: string;
+              status: "ATTENDED" | "NO_SHOW" | "CANCELLED";
+              notes: string | null;
+              createdAt: string;
+            };
+            class: {
+              id: string;
+              date: string;
+              schedule: {
+                id: string;
+                dayOfWeek: number;
+                time: string;
+                group: {
+                  id: string;
+                  name: string;
+                  description: string | null;
+                };
+              };
+            };
+          }
+          const records: AttendanceRecord[] = (data.data as BookingWithAttendance[] || [])
+            .filter((booking): booking is BookingWithAttendance & { attendance: NonNullable<BookingWithAttendance["attendance"]> } => !!booking.attendance)
+            .map((booking) => ({
               id: booking.attendance.id,
               status: booking.attendance.status,
               notes: booking.attendance.notes,

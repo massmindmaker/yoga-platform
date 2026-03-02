@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createGroupSchema } from "@/lib/validation";
+import { getTelegramUser } from "@/lib/telegram";
 
 // GET /api/groups - получить все группы
 export async function GET(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const trainerId = searchParams.get("trainerId");
     const groupType = searchParams.get("groupType");
@@ -21,37 +30,45 @@ export async function GET(req: NextRequest) {
           select: { id: true, firstName: true, lastName: true },
         },
         _count: {
-          select: { students: true, votings: true }
-        }
+          select: { students: true, votings: true },
+        },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ success: true, data: groups });
   } catch (error) {
     console.error("[GROUPS_GET]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch groups" },
+      { success: false, error: "Ошибка получения групп" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/groups - создать группу
+// POST /api/groups - создать группу (только тренер)
 export async function POST(req: NextRequest) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может создавать группы" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
-    console.log("[GROUPS_POST] Received body:", JSON.stringify(body, null, 2));
 
     const validationResult = createGroupSchema.safeParse(body);
-    console.log("[GROUPS_POST] Validation result:", validationResult.success, validationResult.error?.issues);
     if (!validationResult.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Validation failed",
-          details: validationResult.error.issues,
-        },
+        { success: false, error: "Ошибка валидации", details: validationResult.error.issues },
         { status: 400 }
       );
     }
@@ -69,8 +86,8 @@ export async function POST(req: NextRequest) {
       schedules,
     } = validationResult.data;
 
-    // TODO: Get trainer ID from Telegram auth
-    const trainerId = body.trainerId || null;
+    // trainerId из auth, не из body
+    const trainerId = user.id;
 
     const group = await prisma.group.create({
       data: {
@@ -89,8 +106,8 @@ export async function POST(req: NextRequest) {
             dayOfWeek: s.dayOfWeek,
             time: s.time,
             description: s.description || null,
-          })) || []
-        }
+          })) || [],
+        },
       },
       include: {
         schedules: true,
@@ -98,16 +115,16 @@ export async function POST(req: NextRequest) {
           select: { id: true, firstName: true, lastName: true },
         },
         _count: {
-          select: { students: true }
-        }
-      }
+          select: { students: true },
+        },
+      },
     });
 
     return NextResponse.json({ success: true, data: group });
   } catch (error) {
     console.error("[GROUPS_POST]", error);
     return NextResponse.json(
-      { success: false, error: "Failed to create group" },
+      { success: false, error: "Ошибка создания группы" },
       { status: 500 }
     );
   }

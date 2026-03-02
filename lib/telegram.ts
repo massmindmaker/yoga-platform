@@ -27,10 +27,15 @@ export function validateTelegramData(initData: string): TelegramUser | null {
       return null;
     }
 
-    // В dev-режиме разрешаем без верификации (нет реального Telegram)
     const token = getBotToken();
     if (!token) {
-      console.warn("[AUTH] No bot token, skipping HMAC verification");
+      // В production — обязательно нужен токен
+      if (process.env.NODE_ENV === "production") {
+        console.error("[AUTH] TELEGRAM_BOT_TOKEN is not set in production!");
+        return null;
+      }
+      // В dev-режиме разрешаем без верификации (нет реального Telegram)
+      console.warn("[AUTH] No bot token, skipping HMAC verification (dev mode)");
       return parseTelegramUser(params);
     }
 
@@ -53,7 +58,10 @@ export function validateTelegramData(initData: string): TelegramUser | null {
       .update(dataCheckString)
       .digest("hex");
 
-    if (computedHash !== hash) {
+    // Сравнение через timingSafeEqual для защиты от timing-атак
+    const hashBuffer = Buffer.from(hash, "hex");
+    const computedBuffer = Buffer.from(computedHash, "hex");
+    if (hashBuffer.length !== computedBuffer.length || !crypto.timingSafeEqual(hashBuffer, computedBuffer)) {
       console.error("[AUTH] HMAC verification failed");
       return null;
     }
@@ -123,6 +131,29 @@ export async function getOrCreateUser(telegramUser: TelegramUser) {
       balance: 0,
     },
   });
+}
+
+/**
+ * Извлекает и проверяет пользователя из Telegram initData в заголовке запроса.
+ * Возвращает пользователя из БД или null (если не авторизован).
+ *
+ * Использование в API-роуте:
+ *   const user = await getTelegramUser(req);
+ *   if (!user) return NextResponse.json({ success: false, error: "Не авторизован" }, { status: 401 });
+ */
+export async function getTelegramUser(req: Request) {
+  const initData = req.headers.get("x-telegram-init-data");
+  if (!initData) return null;
+
+  const telegramUser = validateTelegramData(initData);
+  if (!telegramUser) return null;
+
+  // Ищем пользователя в БД по telegramId
+  const user = await prisma.user.findUnique({
+    where: { telegramId: telegramUser.id.toString() },
+  });
+
+  return user;
 }
 
 // Отправить голосование как нативный Telegram Poll

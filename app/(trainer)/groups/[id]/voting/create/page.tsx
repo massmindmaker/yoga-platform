@@ -95,8 +95,9 @@ export default function CreateVotingPage() {
       } else {
         throw new Error(result.error || "Ошибка создания");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Ошибка создания голосования");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Ошибка создания голосования";
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -435,11 +436,11 @@ export default function CreateVotingPage() {
                   </button>
                 </div>
 
-                {(group as any)?.pricingType === "FIXED" && formData.pricingMode === "balance" && (
+{group?.pricingType === "FIXED" && formData.pricingMode === "balance" && (
                   <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-blue-800">
-                      Группа с фиксированной ценой. При голосовании будет списано 1 занятие с баланса ({(group as any)?.fixedPrice || 1000}₽)
+                      Группа с фиксированной ценой. При голосовании будет списано 1 занятие с баланса ({group?.fixedPrice || 1000}₽)
                     </p>
                   </div>
                 )}

@@ -18,6 +18,28 @@ interface DashboardStats {
   todayClasses: number;
 }
 
+interface DashboardBooking {
+  id: string;
+  status: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+  };
+}
+
+interface ApiUser {
+  id: string;
+  role: string;
+}
+
+interface ApiGroup {
+  id: string;
+  _count?: { students: number };
+}
+
 interface TodayClass {
   id: string;
   date: string;
@@ -36,7 +58,7 @@ interface TodayClass {
     firstName: string;
     lastName: string | null;
   };
-  bookings: any[];
+  bookings: DashboardBooking[];
 }
 
 export default function DashboardPage() {
@@ -75,7 +97,7 @@ export default function DashboardPage() {
         // Calculate total students from users API
         let totalStudents = 0;
         if (usersData.success && usersData.data) {
-          totalStudents = usersData.data.filter((u: any) => u.role === 'STUDENT').length;
+          totalStudents = usersData.data.filter((u: ApiUser) => u.role === 'STUDENT').length;
         }
 
         // Get total groups
@@ -85,7 +107,7 @@ export default function DashboardPage() {
           // Also calculate students from groups if users API didn't work well
           if (totalStudents === 0) {
             totalStudents = groupsData.data.reduce(
-              (sum: number, g: any) => sum + (g._count?.students || 0), 
+              (sum: number, g: ApiGroup) => sum + (g._count?.students || 0), 
               0
             );
           }
@@ -229,7 +251,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {todayClasses.map((cls, index) => {
               const isExpanded = expandedClassId === cls.id;
-              const paidBookings = cls.bookings?.filter((b: any) => b.status === 'CONFIRMED') || [];
+              const paidBookings = cls.bookings?.filter((b) => b.status === 'CONFIRMED') || [];
               
               return (
                 <motion.div
@@ -287,7 +309,7 @@ export default function DashboardPage() {
                               </h4>
                               {paidBookings.length > 0 ? (
                                 <div className="space-y-2">
-                                  {paidBookings.map((booking: any) => (
+                                  {paidBookings.map((booking) => (
                                     <div 
                                       key={booking.id} 
                                       className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg"

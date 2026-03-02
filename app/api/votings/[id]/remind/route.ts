@@ -1,13 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { sendTelegramMessage } from '@/lib/telegram';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { getTelegramUser, sendTelegramMessage } from "@/lib/telegram";
 
-// POST /api/votings/[id]/remind - send reminder to users who haven't voted
+// POST /api/votings/[id]/remind - отправить напоминание (только тренер)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может отправлять напоминания" },
+        { status: 403 }
+      );
+    }
+
     const { id: votingId } = await params;
 
     // Get voting with group and participants
@@ -19,28 +33,28 @@ export async function POST(
             students: {
               include: {
                 user: {
-                  select: { id: true, telegramId: true, firstName: true }
-                }
-              }
-            }
-          }
+                  select: { id: true, telegramId: true, firstName: true },
+                },
+              },
+            },
+          },
         },
         votes: {
-          select: { userId: true }
-        }
-      }
+          select: { userId: true },
+        },
+      },
     });
 
     if (!voting) {
       return NextResponse.json(
-        { success: false, error: 'Voting not found' },
+        { success: false, error: "Голосование не найдено" },
         { status: 404 }
       );
     }
 
-    if (voting.status !== 'ACTIVE') {
+    if (voting.status !== "ACTIVE") {
       return NextResponse.json(
-        { success: false, error: 'Voting is not active' },
+        { success: false, error: "Голосование не активно" },
         { status: 400 }
       );
     }
@@ -56,11 +70,11 @@ export async function POST(
     for (const student of nonVoters) {
       try {
         await sendTelegramMessage(student.user.telegramId!, {
-          text: `⏰ Напоминание о голосовании!\n\n"${voting.title}"\n\nДедлайн: ${new Date(voting.deadline).toLocaleString('ru-RU')}\n\nПроголосуйте, чтобы мы могли спланировать занятия.`,
+          text: `⏰ Напоминание о голосовании!\n\n"${voting.title}"\n\nДедлайн: ${new Date(voting.deadline).toLocaleString("ru-RU")}\n\nПроголосуйте, чтобы мы могли спланировать занятия.`,
         });
         remindersSent.push(student.userId);
       } catch (err) {
-        console.error(`Failed to send reminder to ${student.userId}:`, err);
+        console.error(`[VOTINGS_REMIND] Failed to send reminder to ${student.userId}:`, err);
       }
     }
 
@@ -69,12 +83,12 @@ export async function POST(
       data: {
         remindersSent: remindersSent.length,
         totalNonVoters: nonVoters.length,
-      }
+      },
     });
   } catch (error) {
-    console.error('[VOTINGS_REMIND]', error);
+    console.error("[VOTINGS_REMIND]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to send reminders' },
+      { success: false, error: "Ошибка отправки напоминаний" },
       { status: 500 }
     );
   }

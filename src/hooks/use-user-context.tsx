@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { useTelegram } from "@/components/providers/telegram-provider";
+import { fetchWithRetry } from "@/lib/fetch";
 import type { User } from "../types";
 
 interface UserContextType {
@@ -13,26 +14,7 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-async function fetchWithRetry<T>(
-  url: string,
-  options?: RequestInit,
-  retries = 3
-): Promise<T> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (e) {
-      if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-  throw new Error('Max retries exceeded');
-}
+
 
 /**
  * Map TelegramUser (from initDataUnsafe) to our User type for immediate UI display.

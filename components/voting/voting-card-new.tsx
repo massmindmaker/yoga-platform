@@ -29,7 +29,7 @@ function pluralize(n: number, one: string, few: string, many: string): string {
 interface VoteUser {
   id: string;
   firstName: string;
-  lastName?: string;
+  lastName?: string | null;
   photoUrl?: string | null;
   balance?: number;
 }

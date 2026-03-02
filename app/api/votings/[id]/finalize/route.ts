@@ -1,15 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { finalizeVotingSchema } from '@/lib/validation';
-import { createPayment } from '@/lib/tbank';
-import { stopTelegramPoll, sendDynamicPaymentMessage } from '@/lib/telegram';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { finalizeVotingSchema } from "@/lib/validation";
+import { getTelegramUser, stopTelegramPoll, sendDynamicPaymentMessage } from "@/lib/telegram";
 
-// POST /api/votings/[id]/finalize - подвести итоги (тренер назначает цены для DYNAMIC)
+// POST /api/votings/[id]/finalize - подвести итоги (только тренер)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getTelegramUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Не авторизован" },
+        { status: 401 }
+      );
+    }
+    if (user.role !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Только тренер может финализировать голосование" },
+        { status: 403 }
+      );
+    }
+
     const { id: votingId } = await params;
     const body = await req.json();
 
@@ -30,24 +43,24 @@ export async function POST(
 
     if (!voting) {
       return NextResponse.json(
-        { success: false, error: 'Voting not found' },
+        { success: false, error: "Голосование не найдено" },
         { status: 404 }
       );
     }
 
-    if (voting.status !== 'ACTIVE') {
+    if (voting.status !== "ACTIVE") {
       return NextResponse.json(
-        { success: false, error: 'Voting is not active' },
+        { success: false, error: "Голосование не активно" },
         { status: 400 }
       );
     }
 
     // For DYNAMIC pricing — trainer sets prices per option
-    if (voting.group.pricingType === 'DYNAMIC') {
+    if (voting.group.pricingType === "DYNAMIC") {
       const validationResult = finalizeVotingSchema.safeParse(body);
       if (!validationResult.success) {
         return NextResponse.json(
-          { success: false, error: 'Validation failed', details: validationResult.error.issues },
+          { success: false, error: "Ошибка валидации", details: validationResult.error.issues },
           { status: 400 }
         );
       }
@@ -60,10 +73,8 @@ export async function POST(
           const option = voting.options.find((o) => o.id === optionId);
           if (!option) continue;
 
-          let paymentLink: string | null = null;
+          const paymentLink: string | null = null;
 
-          // Generate T-Bank payment links for each voter
-          // For now, we store the price — individual links generated on demand
           await tx.votingOption.update({
             where: { id: optionId },
             data: {
@@ -76,14 +87,14 @@ export async function POST(
         // Update voting status
         await tx.voting.update({
           where: { id: votingId },
-          data: { status: 'FINALIZED' },
+          data: { status: "FINALIZED" },
         });
       });
     } else {
       // For FIXED pricing — just close the voting
       await prisma.voting.update({
         where: { id: votingId },
-        data: { status: 'CLOSED' },
+        data: { status: "CLOSED" },
       });
     }
 
@@ -107,11 +118,11 @@ export async function POST(
     // Закрываем нативный Poll в Telegram
     if (voting.telegramChatId && voting.telegramMsgId) {
       await stopTelegramPoll(voting.telegramChatId, voting.telegramMsgId).catch((err) =>
-        console.error('[VOTING_FINALIZE] stopPoll error:', err)
+        console.error("[VOTING_FINALIZE] stopPoll error:", err)
       );
-      
+
       // Для DYNAMIC — отправляем сообщение с кнопками оплаты и ценами
-      if (voting.group.pricingType === 'DYNAMIC' && updated) {
+      if (voting.group.pricingType === "DYNAMIC" && updated) {
         await sendDynamicPaymentMessage(voting.telegramChatId, {
           id: voting.id,
           title: voting.title,
@@ -123,16 +134,16 @@ export async function POST(
             _count: opt._count,
           })),
         }).catch((err) =>
-          console.error('[VOTING_FINALIZE] sendDynamicPaymentMessage error:', err)
+          console.error("[VOTING_FINALIZE] sendDynamicPaymentMessage error:", err)
         );
       }
     }
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
-    console.error('[VOTING_FINALIZE]', error);
+    console.error("[VOTING_FINALIZE]", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to finalize voting' },
+      { success: false, error: "Ошибка финализации голосования" },
       { status: 500 }
     );
   }

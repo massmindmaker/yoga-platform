@@ -71,7 +71,7 @@ export default function GroupDetailPage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const handleEditVoting = (votingId: string) => {
-    const voting = (group?.votings || []).find((v: any) => v.id === votingId);
+    const voting = (group?.votings || []).find((v) => v.id === votingId);
     if (!voting) return;
     setEditVotingId(votingId);
     setEditTitle(voting.title);
@@ -298,7 +298,7 @@ export default function GroupDetailPage() {
           transition={{ delay: 0.25 }}
         >
           <div className="space-y-3">
-            {group.votings.map((voting: any) => {
+            {group.votings.map((voting) => {
               // Map group data into voting for VotingCard
               const votingWithGroup = {
                 ...voting,

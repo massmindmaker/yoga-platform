@@ -67,14 +67,14 @@ export default function EditGroupPage() {
       setFormData({
         name: group.name,
         description: group.description || "",
-        groupType: (group as any).groupType || "REGULAR",
-        pricingType: (group as any).pricingType || "FIXED",
-        fixedPrice: (group as any).fixedPrice || 1000,
+        groupType: group.groupType || "REGULAR",
+        pricingType: group.pricingType || "FIXED",
+        fixedPrice: group.fixedPrice || 1000,
         maxStudents: group.maxStudents,
         daySchedules,
         telegramChat: group.telegramChat || "",
-        startsAt: (group as any).startsAt ? new Date((group as any).startsAt).toISOString().split('T')[0] : "",
-        endsAt: (group as any).endsAt ? new Date((group as any).endsAt).toISOString().split('T')[0] : "",
+        startsAt: group.startsAt ? new Date(group.startsAt).toISOString().split('T')[0] : "",
+        endsAt: group.endsAt ? new Date(group.endsAt).toISOString().split('T')[0] : "",
       });
     }
   }, [group]);
