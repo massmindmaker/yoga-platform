@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useUser } from "@/src/hooks/use-user-context";
+import { fetchWithRetry } from "@/lib/fetch";
 import Link from "next/link";
 
 // Helper for localStorage name
@@ -104,17 +105,18 @@ export default function MainPage() {
         setIsLoadingBookings(true);
         setError(null);
         
-        const response = await fetch(`/api/bookings?userId=${user!.id}&upcoming=true`);
-        const data = await response.json();
+        const data = await fetchWithRetry<{ success: boolean; data?: BookingWithClass[]; error?: string }>(
+          `/api/bookings?upcoming=true`
+        );
         
         if (data.success) {
           setUpcomingBookings(data.data || []);
         } else {
-          setError(data.error || "Failed to fetch bookings");
+          setError(data.error || "Не удалось загрузить занятия");
         }
       } catch (err) {
         console.error("Error fetching bookings:", err);
-        setError("Failed to load bookings");
+        setError("Не удалось загрузить занятия");
       } finally {
         setIsLoadingBookings(false);
       }

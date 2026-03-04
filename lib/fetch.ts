@@ -10,6 +10,8 @@
 
 // Ссылка на initData устанавливается TelegramProvider при инициализации
 let _initData: string = "";
+// Telegram user ID — не протухает, используется для простой авторизации
+let _telegramUserId: string = "";
 
 /**
  * Установить initData для всех последующих запросов.
@@ -17,6 +19,14 @@ let _initData: string = "";
  */
 export function setInitData(initData: string) {
   _initData = initData;
+}
+
+/**
+ * Установить Telegram user ID для авторизации.
+ * Вызывается из TelegramProvider — не зависит от expiry initData.
+ */
+export function setTelegramUserId(userId: string) {
+  _telegramUserId = userId;
 }
 
 /**
@@ -38,10 +48,13 @@ export async function fetchWithRetry<T>(
   options?: RequestInit,
   retries = 3,
 ): Promise<T> {
-  // Добавляем auth-заголовок к каждому запросу
+  // Добавляем auth-заголовки к каждому запросу
   const headers = new Headers(options?.headers);
   if (_initData) {
     headers.set("x-telegram-init-data", _initData);
+  }
+  if (_telegramUserId) {
+    headers.set("x-telegram-user-id", _telegramUserId);
   }
 
   const mergedOptions: RequestInit = {

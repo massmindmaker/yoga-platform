@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { BookX, Calendar, Clock, CheckCircle2, XCircle, FileText } from "lucide-react";
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { useUser } from "@/src/hooks/use-user-context";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface AttendanceRecord {
   id: string;
@@ -51,8 +52,9 @@ export default function StudentJournalPage() {
         setError(null);
         
         // Fetch bookings with status ATTENDED
-        const response = await fetch(`/api/bookings?userId=${user!.id}&status=ATTENDED`);
-        const data = await response.json();
+        const data = await fetchWithRetry<{ success: boolean; data?: unknown[]; error?: string }>(
+          `/api/bookings?status=ATTENDED`
+        );
         
         if (data.success) {
           // Transform bookings to attendance records format

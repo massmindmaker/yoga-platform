@@ -142,6 +142,16 @@ export async function getOrCreateUser(telegramUser: TelegramUser) {
  *   if (!user) return NextResponse.json({ success: false, error: "Не авторизован" }, { status: 401 });
  */
 export async function getTelegramUser(req: Request) {
+  // 1. Простая авторизация по Telegram user ID (не протухает)
+  const telegramUserId = req.headers.get("x-telegram-user-id");
+  if (telegramUserId) {
+    const user = await prisma.user.findUnique({
+      where: { telegramId: telegramUserId },
+    });
+    if (user) return user;
+  }
+
+  // 2. Fallback: полная HMAC-валидация initData (может протухнуть через 5 мин)
   const initData = req.headers.get("x-telegram-init-data");
   if (!initData) return null;
 

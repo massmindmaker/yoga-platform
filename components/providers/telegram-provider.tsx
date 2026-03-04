@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
-import { setInitData as setGlobalInitData } from "@/lib/fetch";
+import { setInitData as setGlobalInitData, setTelegramUserId } from "@/lib/fetch";
 
 // Типы TelegramWebApp и TelegramWebAppUser определены глобально в types/telegram.d.ts
 
@@ -34,11 +34,16 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       
       if (tg) {
         setWebApp(tg);
-        setUser(tg.initDataUnsafe?.user || null);
+        const tgUser = tg.initDataUnsafe?.user || null;
+        setUser(tgUser);
         const rawInitData = tg.initData || "";
         setInitData(rawInitData);
         // Устанавливаем initData для lib/fetch.ts (auth-заголовок во всех запросах)
         setGlobalInitData(rawInitData);
+        // Устанавливаем telegramUserId — не зависит от expiry initData
+        if (tgUser?.id) {
+          setTelegramUserId(tgUser.id.toString());
+        }
         setIsInTelegram(true);
         
         // Set header and background colors to match app

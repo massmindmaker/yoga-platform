@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/src/hooks/use-user-context";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface PaymentRecord {
   id: string;
@@ -55,17 +56,18 @@ export default function StudentPaymentsPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch(`/api/payments?userId=${user!.id}`);
-        const data = await response.json();
+        const data = await fetchWithRetry<{ success: boolean; data?: PaymentRecord[]; error?: string }>(
+          `/api/payments`
+        );
         
         if (data.success) {
           setPayments(data.data || []);
         } else {
-          setError(data.error || "Failed to fetch payments");
+          setError(data.error || "Не удалось загрузить платежи");
         }
       } catch (err) {
         console.error("Error fetching payments:", err);
-        setError("Failed to load payments");
+        setError("Не удалось загрузить платежи");
       } finally {
         setIsLoading(false);
       }
