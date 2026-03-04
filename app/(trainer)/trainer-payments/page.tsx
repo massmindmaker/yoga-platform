@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Wallet, CreditCard, Receipt } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface PaymentRecord {
   id: string;
@@ -32,10 +33,11 @@ export default function TrainerPaymentsPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch('/api/payments/all');
-        const data = await response.json();
+        const data = await fetchWithRetry<{ success: boolean; data?: PaymentRecord[]; error?: string }>(
+          "/api/payments/all"
+        );
         if (data.success) {
-          setPayments(data.data);
+          setPayments(data.data || []);
         } else {
           setError(data.error || "Ошибка загрузки платежей");
         }

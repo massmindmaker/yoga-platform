@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Loader2, BookX, Users, Calendar, CheckCircle2, XCircle, CalendarX } from "lucide-react";
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface ClassRecord {
   id: string;
@@ -54,10 +55,9 @@ export default function TrainerJournalPage() {
         const from = new Date();
         from.setDate(from.getDate() - 30);
 
-        const response = await fetch(
+        const data = await fetchWithRetry<{ success: boolean; data?: ClassRecord[]; error?: string }>(
           `/api/classes?from=${format(from, "yyyy-MM-dd")}&to=${format(to, "yyyy-MM-dd")}`
         );
-        const data = await response.json();
 
         if (data.success) {
           setClasses(data.data || []);

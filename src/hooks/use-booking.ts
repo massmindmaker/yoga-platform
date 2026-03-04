@@ -56,13 +56,15 @@ export function useBooking(userId?: string) {
     setError(null);
 
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, userId: bookUserId }),
-      });
-      
-      const data = await response.json();
+      const data = await fetchWithRetry<{ success: boolean; data?: BookingData; error?: string; code?: string }>(
+        "/api/bookings",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId, userId: bookUserId }),
+        },
+        1
+      );
 
       if (data.success) {
         toast.success('Запись подтверждена!', {
@@ -71,8 +73,7 @@ export function useBooking(userId?: string) {
         await fetchBookings();
         return { success: true };
       } else {
-        // Не показываем toast здесь, позволим компоненту обработать ошибку
-        if (response.status === 402) {
+        if (data.code === "NO_BALANCE") {
           return { success: false, error: data.error, code: 'NO_BALANCE' };
         }
         toast.error('Ошибка записи', { description: data.error });

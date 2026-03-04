@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { useVotings } from "@/src/hooks/use-votings";
 import { useTelegramUser } from "@/src/hooks/use-telegram-user";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface GroupItem {
   id: string;
@@ -126,7 +127,7 @@ export default function TrainerVotingPage() {
     if (!editVotingId) return;
     setIsSavingEdit(true);
     try {
-      const res = await fetch(`/api/votings/${editVotingId}`, {
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(`/api/votings/${editVotingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -134,8 +135,7 @@ export default function TrainerVotingPage() {
           deadline: new Date(editDeadline).toISOString(),
           minParticipants: editMinParticipants,
         }),
-      });
-      const data = await res.json();
+      }, 1);
       if (data.success) {
         toast.success("Голосование обновлено");
         setEditVotingId(null);

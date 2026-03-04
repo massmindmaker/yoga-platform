@@ -37,6 +37,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
+import { fetchWithRetry } from "@/lib/fetch";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { VotingCard } from "@/components/voting/voting-card-new";
 
@@ -83,7 +84,7 @@ export default function GroupDetailPage() {
     if (!editVotingId) return;
     setIsSavingEdit(true);
     try {
-      const res = await fetch(`/api/votings/${editVotingId}`, {
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(`/api/votings/${editVotingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,8 +92,7 @@ export default function GroupDetailPage() {
           deadline: new Date(editDeadline).toISOString(),
           minParticipants: editMinParticipants,
         }),
-      });
-      const data = await res.json();
+      }, 1);
       if (data.success) {
         toast.success("Голосование обновлено");
         setEditVotingId(null);
@@ -110,8 +110,7 @@ export default function GroupDetailPage() {
   const handlePublishToChat = async (votingId: string) => {
     setPublishingVotingId(votingId);
     try {
-      const res = await fetch(`/api/votings/${votingId}/publish`, { method: "POST" });
-      const data = await res.json();
+      const data = await fetchWithRetry<{ success: boolean; error?: string }>(`/api/votings/${votingId}/publish`, { method: "POST" }, 1);
       if (data.success) {
         toast.success("Отправлено в чат", {
           description: "Голосование опубликовано в Telegram",
@@ -321,8 +320,7 @@ export default function GroupDetailPage() {
                   onCancel={async (id) => {
                     if (!confirm("Отменить голосование? Баланс будет возвращён участникам.")) return;
                     try {
-                      const res = await fetch(`/api/votings/${id}/cancel`, { method: "POST" });
-                      const data = await res.json();
+                      const data = await fetchWithRetry<{ success: boolean; error?: string }>(`/api/votings/${id}/cancel`, { method: "POST" }, 1);
                       if (data.success) {
                         toast.success("Голосование отменено");
                         window.location.reload();
@@ -335,8 +333,7 @@ export default function GroupDetailPage() {
                   }}
                   onFinalize={async (id) => {
                     try {
-                      const res = await fetch(`/api/votings/${id}/finalize`, { method: "POST" });
-                      const data = await res.json();
+                      const data = await fetchWithRetry<{ success: boolean; error?: string }>(`/api/votings/${id}/finalize`, { method: "POST" }, 1);
                       if (data.success) {
                         toast.success("Голосование завершено");
                         window.location.reload();
@@ -374,10 +371,9 @@ export default function GroupDetailPage() {
                   size="sm"
                   onClick={async () => {
                     try {
-                      const response = await fetch(`/api/groups/${groupId}/sync-telegram`, {
-                        method: 'POST'
-                      });
-                      const data = await response.json();
+                      const data = await fetchWithRetry<{ success: boolean; message?: string; error?: string }>(`/api/groups/${groupId}/sync-telegram`, {
+                        method: "POST"
+                      }, 1);
                       if (data.success) {
                         toast.success(data.message || 'Ученики синхронизированы');
                         window.location.reload();

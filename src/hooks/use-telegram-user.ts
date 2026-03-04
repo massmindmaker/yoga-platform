@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTelegram } from "@/components/providers/telegram-provider";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface TelegramUser {
   id: string;
@@ -24,16 +25,17 @@ export function useTelegramUser() {
 
         if (!initData) {
           // Dev mode — fetch trainer from DB
-          const response = await fetch("/api/users?role=TRAINER&limit=1");
-          const data = await response.json();
+          const data = await fetchWithRetry<{ success: boolean; data?: Array<{ id: string; firstName: string; lastName?: string; role?: string }> }>(
+            "/api/users?role=TRAINER&limit=1"
+          );
           
-          if (data.success && data.data?.length > 0) {
+          if (data.success && data.data && data.data.length > 0) {
             const trainer = data.data[0];
             setUser({
               id: trainer.id,
               firstName: trainer.firstName,
               lastName: trainer.lastName || undefined,
-              role: trainer.role || "TRAINER",
+              role: (trainer.role as TelegramUser["role"]) || "TRAINER",
             });
           } else {
             // Fallback if no trainer in DB
@@ -48,20 +50,22 @@ export function useTelegramUser() {
         }
 
         // Real Telegram auth
-        const response = await fetch("/api/auth/telegram", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ initData }),
-        });
+        const data = await fetchWithRetry<{ success: boolean; data?: { user: { id: string; firstName: string; lastName?: string; role: string } } }>(
+          "/api/auth/telegram",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ initData }),
+          },
+          3
+        );
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (data.success && data.data) {
           setUser({
             id: data.data.user.id,
             firstName: data.data.user.firstName,
             lastName: data.data.user.lastName || undefined,
-            role: data.data.user.role,
+            role: data.data.user.role as TelegramUser["role"],
           });
         }
       } catch (err) {
