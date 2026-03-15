@@ -113,14 +113,21 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      // Для каждого дня в диапазоне проверяем, есть ли шаблон
-      const currentDate = new Date(fromDate);
+      // Виртуальные занятия генерируем только для сегодня и будущих дат
+      // (прошедшие виртуальные занятия не имеют смысла — они не были реально проведены)
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const virtualStartDate = fromDate < today ? today : fromDate;
+
+      const currentDate = new Date(virtualStartDate);
       while (currentDate <= toDate) {
-        const dayOfWeek = currentDate.getDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+        const dayOfWeek = currentDate.getUTCDay(); // 0=Вс, 1=Пн, ..., 6=Сб (UTC!)
         const dateStr = currentDate.toISOString().split("T")[0]; // "2026-03-15"
 
         for (const schedule of schedules) {
           if (schedule.dayOfWeek !== dayOfWeek) continue;
+          // Пропускаем расписания без тренера в группе
+          if (!schedule.group.trainer) continue;
 
           // Проверяем, нет ли уже реальной Class записи для этого schedule+date
           const hasExisting = existingClasses.some(
@@ -135,7 +142,7 @@ export async function GET(req: NextRequest) {
             allClasses.push({
               id: `virtual-${schedule.id}-${dateStr}`,
               scheduleId: schedule.id,
-              trainerId: trainer?.id || "",
+              trainerId: trainer.id,
               date: new Date(`${dateStr}T00:00:00.000Z`),
               maxStudents: schedule.group.maxStudents,
               price: schedule.group.fixedPrice || 1,
@@ -164,7 +171,7 @@ export async function GET(req: NextRequest) {
                   createdAt: schedule.group.createdAt,
                 },
               },
-              trainer: trainer || { id: "", firstName: "Тренер", lastName: null },
+              trainer: { id: trainer.id, firstName: trainer.firstName, lastName: trainer.lastName },
               bookings: [],
               _count: { bookings: 0 },
             } as (typeof existingClasses)[number]);

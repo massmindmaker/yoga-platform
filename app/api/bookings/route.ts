@@ -105,6 +105,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (!schedule.group.trainerId) {
+        return NextResponse.json(
+          { success: false, error: "У группы не назначен тренер" },
+          { status: 400 }
+        );
+      }
+
       // Проверяем, не создана ли уже Class за это время (race condition)
       const existingClass = await prisma.class.findFirst({
         where: {
@@ -122,7 +129,7 @@ export async function POST(req: NextRequest) {
         const newClass = await prisma.class.create({
           data: {
             scheduleId,
-            trainerId: schedule.group.trainerId || userId,
+            trainerId: schedule.group.trainerId!,
             date: new Date(`${dateStr}T00:00:00.000Z`),
             maxStudents: schedule.group.maxStudents,
             price: schedule.group.fixedPrice || 1,
