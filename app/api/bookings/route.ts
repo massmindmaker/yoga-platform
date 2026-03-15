@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { classId } = body;
+    let { classId } = body;
     // Используем user.id из auth — не доверяем userId из body
     const userId = user.id;
 
@@ -84,6 +84,53 @@ export async function POST(req: NextRequest) {
         { success: false, error: "classId required" },
         { status: 400 }
       );
+    }
+
+    // Если classId виртуальный (virtual-{scheduleId}-{date}), создаём реальную Class запись
+    if (typeof classId === "string" && classId.startsWith("virtual-")) {
+      const parts = classId.replace("virtual-", "").split("-");
+      // scheduleId — это UUID, date — "YYYY-MM-DD" (последние 3 части после split)
+      const dateStr = parts.slice(-3).join("-"); // "2026-03-15"
+      const scheduleId = parts.slice(0, -3).join("-"); // UUID
+
+      const schedule = await prisma.schedule.findUnique({
+        where: { id: scheduleId },
+        include: { group: true },
+      });
+
+      if (!schedule) {
+        return NextResponse.json(
+          { success: false, error: "Расписание не найдено" },
+          { status: 404 }
+        );
+      }
+
+      // Проверяем, не создана ли уже Class за это время (race condition)
+      const existingClass = await prisma.class.findFirst({
+        where: {
+          scheduleId,
+          date: {
+            gte: new Date(`${dateStr}T00:00:00.000Z`),
+            lte: new Date(`${dateStr}T23:59:59.999Z`),
+          },
+        },
+      });
+
+      if (existingClass) {
+        classId = existingClass.id;
+      } else {
+        const newClass = await prisma.class.create({
+          data: {
+            scheduleId,
+            trainerId: schedule.group.trainerId || userId,
+            date: new Date(`${dateStr}T00:00:00.000Z`),
+            maxStudents: schedule.group.maxStudents,
+            price: schedule.group.fixedPrice || 1,
+            status: "SCHEDULED",
+          },
+        });
+        classId = newClass.id;
+      }
     }
 
     // Создаем бронирование и списываем баланс атомарно
