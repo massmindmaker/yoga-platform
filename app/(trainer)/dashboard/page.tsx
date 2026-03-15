@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface DashboardStats {
   totalStudents: number;
@@ -82,16 +83,10 @@ export default function DashboardPage() {
         const today = new Date().toISOString().split('T')[0];
 
         // Fetch all required data in parallel
-        const [usersRes, groupsRes, classesRes] = await Promise.all([
-          fetch('/api/users'),
-          fetch('/api/groups'),
-          fetch(`/api/classes?from=${today}&to=${today}`)
-        ]);
-
         const [usersData, groupsData, classesData] = await Promise.all([
-          usersRes.json(),
-          groupsRes.json(),
-          classesRes.json()
+          fetchWithRetry<{ success: boolean; data?: ApiUser[] }>("/api/users"),
+          fetchWithRetry<{ success: boolean; data?: ApiGroup[] }>("/api/groups"),
+          fetchWithRetry<{ success: boolean; data?: TodayClass[] }>(`/api/classes?from=${today}&to=${today}`),
         ]);
 
         // Calculate total students from users API

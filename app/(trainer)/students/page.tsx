@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Wallet, Loader2, UserX } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorFallbackInline } from "@/components/ui/error-fallback";
+import { fetchWithRetry } from "@/lib/fetch";
 
 interface StudentData {
   id: string;
@@ -26,8 +27,9 @@ export default function StudentsPage() {
     async function fetchStudents() {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/users?role=STUDENT');
-        const json = await res.json();
+        const json = await fetchWithRetry<{ success: boolean; data?: StudentData[]; error?: string }>(
+          "/api/users?role=STUDENT"
+        );
         if (json.success && json.data) {
           setStudents(json.data);
         } else {

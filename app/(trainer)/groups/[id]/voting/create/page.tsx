@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, Calendar, Vote, CreditCard, AlertCircle } from "lucide-react";
 import { useGroup } from "@/src/hooks/use-groups";
+import { fetchWithRetry } from "@/lib/fetch";
 
 type VotingPeriod = "daily" | "weekly";
 type PricingMode = "balance" | "payment" | "free";
@@ -65,7 +66,7 @@ export default function CreateVotingPage() {
     
     try {
       // Создаём голосование через API
-      const response = await fetch("/api/votings", {
+      const result = await fetchWithRetry<{ success: boolean; data?: unknown; error?: string }>("/api/votings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -85,9 +86,7 @@ export default function CreateVotingPage() {
             };
           }),
         }),
-      });
-
-      const result = await response.json();
+      }, 1);
 
       if (result.success) {
         toast.success("Голосование создано");

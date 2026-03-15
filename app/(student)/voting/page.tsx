@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { useVotings } from "@/src/hooks/use-votings";
 import { useUser } from "@/src/hooks/use-user-context";
+import { fetchWithRetry } from "@/lib/fetch";
 import { useState } from "react";
 
 const containerVariants = {
@@ -54,7 +55,7 @@ export default function VotingPage() {
 
     // Deduct 1 class from balance
     try {
-      const res = await fetch("/api/bookings", {
+      const data = await fetchWithRetry<{ success: boolean; error?: string; code?: string }>("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -62,8 +63,7 @@ export default function VotingPage() {
           votingId,
           type: "BALANCE_DEDUCT",
         }),
-      });
-      const data = await res.json();
+      }, 1);
       if (data.success) {
         toast.success("Занятие списано с баланса");
         refetch();
